@@ -39,8 +39,7 @@ struct MaterialsTab: View {
 
 struct GlassEffectPlayground: View {
     @State private var cornerRadius: CGFloat = 24
-    @State private var tintColor: Color = .clear
-    @State private var useTint: Bool = false
+    @State private var isInteractive: Bool = false
     @State private var backgroundType: GlassBG = .blobs
     @State private var bgColor1 = Color.purple
     @State private var bgColor2 = Color.blue
@@ -63,7 +62,7 @@ struct GlassEffectPlayground: View {
                     VStack(spacing: 16) {
                         glassCard(label: "Hello, glass.")
                         HStack(spacing: 12) {
-                            glassChip("Button")
+                            glassChip("Confirm")
                             glassChip("Cancel")
                         }
                     }
@@ -92,23 +91,17 @@ struct GlassEffectPlayground: View {
                             LabeledContent("Corner Radius: \(Int(cornerRadius))") {
                                 Slider(value: $cornerRadius, in: 0...56)
                             }
-                        }
-
-                        Section("Tint") {
-                            Toggle("Apply .tint()", isOn: $useTint)
-                            if useTint {
-                                ColorPicker("Tint Color", selection: $tintColor, supportsOpacity: false)
-                            }
+                            Toggle(".interactive", isOn: $isInteractive)
                         }
 
                         Section("How it works") {
-                            Text("`.glassEffect(in:)` is the iOS 26 liquid glass modifier. Unlike Material, the system controls the blur, specular layer, and refraction — you only specify the shape.")
+                            Text("`.glassEffect(in:)` is the iOS 26 liquid glass modifier. The system synthesizes the blur, specular highlights, and refraction — you only specify the shape.")
                                 .font(.caption).foregroundStyle(.secondary)
-                            Text("`.tint()` on the view colors the glass tint layer. Use sparingly — neutral glass works best over colorful backgrounds.")
+                            Text("`.interactive` makes the glass surface respond to press gestures with a physical scale-and-dim feedback, matching system button behavior.")
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
-                    .frame(height: 560)
+                    .frame(height: 420)
                     .scrollDisabled(true)
                     .padding(.horizontal)
                 }
@@ -120,26 +113,50 @@ struct GlassEffectPlayground: View {
 
     @ViewBuilder
     func glassCard(label: String) -> some View {
-        VStack(spacing: 10) {
-            Image(systemName: "bubbles.and.sparkles")
-                .font(.system(size: 28))
-            Text(label)
-                .font(.headline)
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        if isInteractive {
+            Button(action: {}) {
+                VStack(spacing: 10) {
+                    Image(systemName: "bubbles.and.sparkles")
+                        .font(.system(size: 28))
+                    Text(label)
+                        .font(.headline)
+                }
+                .padding(.horizontal, 32)
+                .padding(.vertical, 20)
+            }
+            .buttonStyle(InteractiveGlassButtonStyle(shape: shape))
+        } else {
+            VStack(spacing: 10) {
+                Image(systemName: "bubbles.and.sparkles")
+                    .font(.system(size: 28))
+                Text(label)
+                    .font(.headline)
+            }
+            .padding(.horizontal, 32)
+            .padding(.vertical, 20)
+            .glassEffect(in: shape)
         }
-        .padding(.horizontal, 32)
-        .padding(.vertical, 20)
-        .glassEffect(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .tint(useTint ? tintColor : nil)
     }
 
     @ViewBuilder
     func glassChip(_ label: String) -> some View {
-        Text(label)
-            .font(.subheadline)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 10)
-            .glassEffect(in: RoundedRectangle(cornerRadius: cornerRadius / 2, style: .continuous))
-            .tint(useTint ? tintColor : nil)
+        let shape = RoundedRectangle(cornerRadius: max(cornerRadius / 2, 8), style: .continuous)
+        if isInteractive {
+            Button(action: {}) {
+                Text(label)
+                    .font(.subheadline)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+            }
+            .buttonStyle(InteractiveGlassButtonStyle(shape: shape))
+        } else {
+            Text(label)
+                .font(.subheadline)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .glassEffect(in: shape)
+        }
     }
 
     @ViewBuilder
@@ -156,6 +173,18 @@ struct GlassEffectPlayground: View {
                 [0,1],[0.5,1],[1,1]
             ], colors: [.red,.orange,.yellow,.purple,.pink,.orange,.blue,.cyan,.green]))
         }
+    }
+}
+
+struct InteractiveGlassButtonStyle<S: Shape>: ButtonStyle {
+    let shape: S
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .glassEffect(in: shape)
+            .scaleEffect(configuration.isPressed ? 0.94 : 1.0)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .animation(.spring(duration: 0.2, bounce: 0.3), value: configuration.isPressed)
     }
 }
 
