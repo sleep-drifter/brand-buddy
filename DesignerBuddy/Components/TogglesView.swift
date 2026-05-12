@@ -24,8 +24,8 @@ struct TogglesView: View {
                     .toggleStyle(.switch)
                 Toggle("Button style", isOn: $toggle2)
                     .toggleStyle(.button)
-                Toggle("Checkbox style", isOn: $toggle3)
-                    .toggleStyle(.checkbox)
+                Toggle("Button style (off)", isOn: .constant(false))
+                    .toggleStyle(.button)
             }
 
             Section("Tinted Toggles") {
