@@ -94,7 +94,7 @@ struct TransparentNavBarDemo: View {
                 Rectangle()
                     .fill(
                         LinearGradient(
-                            colors: [.tint.opacity(0.6), .tint.opacity(0.1)],
+                            colors: [Color.accentColor.opacity(0.6), Color.accentColor.opacity(0.1)],
                             startPoint: .top,
                             endPoint: .bottom
                         )
