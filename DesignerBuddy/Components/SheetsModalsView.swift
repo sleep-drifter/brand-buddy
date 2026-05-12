@@ -5,6 +5,7 @@ struct SheetsModalsView: View {
     @State private var showHalfSheet = false
     @State private var showFullSheet = false
     @State private var showFullScreenCover = false
+    @State private var showScrollSheet = false
     @State private var detent: PresentationDetent = .medium
 
     var body: some View {
@@ -13,6 +14,7 @@ struct SheetsModalsView: View {
                 Button("Present Sheet (medium)") { showHalfSheet = true }
                 Button("Present Sheet (large)") { showFullSheet = true }
                 Button("Present Sheet (interactive detents)") { showSheet = true }
+                Button("Scrolling content in sheet") { showScrollSheet = true }
             }
             Section("Full Screen") {
                 Button("Full Screen Cover") { showFullScreenCover = true }
@@ -47,6 +49,9 @@ struct SheetsModalsView: View {
         }
         .fullScreenCover(isPresented: $showFullScreenCover) {
             SampleSheetContent(title: "Full Screen Cover", isFullScreen: true)
+        }
+        .sheet(isPresented: $showScrollSheet) {
+            ScrollingSheetDemo(showDragIndicator: true)
         }
     }
 }
