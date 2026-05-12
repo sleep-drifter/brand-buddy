@@ -20,7 +20,6 @@ struct CornerRadiusView: View {
                             Text(".continuous")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                                .fontDesign(.monospaced)
                         }
                         VStack(spacing: 8) {
                             Rectangle()
@@ -30,7 +29,6 @@ struct CornerRadiusView: View {
                             Text(".circular")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                                .fontDesign(.monospaced)
                         }
                     }
                     .padding(.vertical, 12)
@@ -45,7 +43,6 @@ struct CornerRadiusView: View {
                 Text("radius: \(Int(radius))pt")
                     .font(.title3)
                     .fontWeight(.semibold)
-                    .fontDesign(.monospaced)
                     .monospacedDigit()
 
                 List {

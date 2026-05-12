@@ -26,8 +26,7 @@ struct SpacingView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
                         VStack(alignment: .leading, spacing: 2) {
                             Text(token.name)
-                                .font(.subheadline)
-                                .fontDesign(.monospaced)
+                                .font(.mono(.subheadline))
                             Text("\(Int(token.value))pt")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -71,7 +70,6 @@ struct MarginRow: View {
             Text("\(Int(value))pt")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .fontDesign(.monospaced)
         }
     }
 }

@@ -12,6 +12,7 @@ struct DesignerBuddyApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .appFonts()
         }
     }
 }

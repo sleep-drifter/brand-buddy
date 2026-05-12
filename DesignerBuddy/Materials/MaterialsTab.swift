@@ -210,8 +210,7 @@ struct MaterialsPlayground: View {
                         .overlay(
                             VStack(spacing: 6) {
                                 Text(selectedMaterial.rawValue)
-                                    .font(.caption)
-                                    .fontDesign(.monospaced)
+                                    .font(.mono(.caption))
                                 Text("The quick brown fox")
                                     .font(.subheadline)
                             }
@@ -259,8 +258,7 @@ struct MaterialsPlayground: View {
                                     )
                                     .background(coloredBackground.clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous)))
                                 Text(".\(item.rawValue)")
-                                    .font(.caption)
-                                    .fontDesign(.monospaced)
+                                    .font(.mono(.caption))
                             }
                         }
                     }
@@ -331,8 +329,7 @@ struct VibrancyPlayground: View {
                         ForEach(["primary", "secondary", "tertiary", "quaternary"], id: \.self) { level in
                             HStack {
                                 Text(".\(level)")
-                                    .font(.caption)
-                                    .fontDesign(.monospaced)
+                                    .font(.mono(.caption))
                                 Spacer()
                                 Text("Label")
                                     .foregroundStyle(labelStyle(for: level))

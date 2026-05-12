@@ -26,8 +26,7 @@ NavigationStack(path: $path) {
     }
 }
 """)
-                    .font(.caption)
-                    .fontDesign(.monospaced)
+                    .font(.mono(.caption))
                     .padding(8)
                     .background(.quaternary, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }

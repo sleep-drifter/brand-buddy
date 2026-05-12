@@ -79,8 +79,7 @@ struct SpringPhysicsView: View {
                         }
                         Section("Code") {
                             Text(".animation(.spring(duration: \(duration, specifier: "%.2f"), bounce: \(bounce, specifier: "%.2f")), value: animating)")
-                                .font(.caption)
-                                .fontDesign(.monospaced)
+                                .font(.mono(.caption))
                                 .foregroundStyle(.secondary)
                         }
 
@@ -95,8 +94,7 @@ struct SpringPhysicsView: View {
                         }
                         Section("Code") {
                             Text(".animation(.spring(response: \(response, specifier: "%.2f"), dampingFraction: \(dampingFraction, specifier: "%.2f")), value: animating)")
-                                .font(.caption)
-                                .fontDesign(.monospaced)
+                                .font(.mono(.caption))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -114,7 +112,7 @@ struct SpringPhysicsView: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(preset.name).font(.subheadline).foregroundStyle(.primary)
                                         Text("duration: \(preset.duration, specifier: "%.2f"), bounce: \(preset.bounce, specifier: "%.2f")")
-                                            .font(.caption).foregroundStyle(.secondary).fontDesign(.monospaced)
+                                            .font(.mono(.caption)).foregroundStyle(.secondary)
                                     }
                                     Spacer()
                                     Text(preset.feel).font(.caption).foregroundStyle(.tint)

@@ -21,8 +21,7 @@ struct SheetsModalsView: View {
                 ForEach(DetentInfo.all) { item in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(item.token)
-                            .font(.subheadline)
-                            .fontDesign(.monospaced)
+                            .font(.mono(.subheadline))
                         Text(item.description)
                             .font(.caption)
                             .foregroundStyle(.secondary)

@@ -55,7 +55,6 @@ private struct StyleMatrixSection: View {
                         Text(item.name)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                            .fontDesign(.monospaced)
                     }
                 }
             }
@@ -76,7 +75,6 @@ private struct SizeScaleSection: View {
                         Text(size.label)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                            .fontDesign(.monospaced)
                     }
                 }
             }
@@ -94,13 +92,13 @@ private struct StatesSection: View {
                 VStack(spacing: 6) {
                     Button("Normal") {}
                         .buttonStyle(.borderedProminent)
-                    Text("normal").font(.caption2).foregroundStyle(.secondary).fontDesign(.monospaced)
+                    Text("normal").font(.mono(.caption2)).foregroundStyle(.secondary)
                 }
                 VStack(spacing: 6) {
                     Button("Disabled") {}
                         .buttonStyle(.borderedProminent)
                         .disabled(true)
-                    Text("disabled").font(.caption2).foregroundStyle(.secondary).fontDesign(.monospaced)
+                    Text("disabled").font(.mono(.caption2)).foregroundStyle(.secondary)
                 }
                 VStack(spacing: 6) {
                     Button {
@@ -116,7 +114,7 @@ private struct StatesSection: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
-                    Text("loading").font(.caption2).foregroundStyle(.secondary).fontDesign(.monospaced)
+                    Text("loading").font(.mono(.caption2)).foregroundStyle(.secondary)
                 }
             }
         }
@@ -147,9 +145,9 @@ private struct IconButtonsSection: View {
                     .labelStyle(.titleAndIcon)
             }
             HStack(spacing: 6) {
-                Text(".iconOnly").font(.caption2).foregroundStyle(.secondary).fontDesign(.monospaced).frame(maxWidth: .infinity)
-                Text(".titleOnly").font(.caption2).foregroundStyle(.secondary).fontDesign(.monospaced).frame(maxWidth: .infinity)
-                Text(".titleAndIcon").font(.caption2).foregroundStyle(.secondary).fontDesign(.monospaced).frame(maxWidth: .infinity)
+                Text(".iconOnly").font(.mono(.caption2)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
+                Text(".titleOnly").font(.mono(.caption2)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
+                Text(".titleAndIcon").font(.mono(.caption2)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
             }
         }
         .padding(.vertical, 4)

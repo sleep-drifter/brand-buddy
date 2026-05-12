@@ -39,12 +39,10 @@ struct TypographyReferenceView: View {
                                 Text(entry.name)
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
-                                    .fontDesign(.monospaced)
                                 Spacer()
                                 Text("\(Int(UIFont.preferredFont(forTextStyle: entry.uiStyle).pointSize))pt")
                                     .font(.caption2)
                                     .foregroundStyle(.tertiary)
-                                    .fontDesign(.monospaced)
                             }
                         }
                     }
@@ -62,7 +60,6 @@ struct TypographyReferenceView: View {
                         Text(item.name)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .fontDesign(.monospaced)
                     }
                 }
             }
@@ -77,7 +74,6 @@ struct TypographyReferenceView: View {
                         Text(item.name)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .fontDesign(.monospaced)
                     }
                 }
             }

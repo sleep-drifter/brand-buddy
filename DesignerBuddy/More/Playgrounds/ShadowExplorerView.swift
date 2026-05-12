@@ -50,8 +50,7 @@ struct ShadowExplorerView: View {
 
                 // Code output
                 Text(".shadow(\n  color: \(shadowColor == .black ? ".black" : "color").opacity(\(opacity, specifier: "%.2f")),\n  radius: \(Int(radius)),\n  x: \(Int(x)), y: \(Int(y))\n)")
-                    .font(.caption)
-                    .fontDesign(.monospaced)
+                    .font(.mono(.caption))
                     .foregroundStyle(.secondary)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -108,7 +107,7 @@ struct ShadowExplorerView: View {
                                     }
                                     Spacer()
                                     Text("r:\(Int(preset.radius)) y:\(Int(preset.y))")
-                                        .font(.caption2).foregroundStyle(.tertiary).fontDesign(.monospaced)
+                                        .font(.mono(.caption2)).foregroundStyle(.tertiary)
                                 }
                             }
                         }

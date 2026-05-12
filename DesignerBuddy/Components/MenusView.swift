@@ -137,13 +137,13 @@ struct ProgressIndicatorsView: View {
                     VStack(spacing: 6) {
                         ProgressView()
                             .progressViewStyle(.circular)
-                        Text("circular").font(.caption2).foregroundStyle(.secondary).fontDesign(.monospaced)
+                        Text("circular").font(.mono(.caption2)).foregroundStyle(.secondary)
                     }
                     VStack(spacing: 6) {
                         ProgressView(value: progress)
                             .progressViewStyle(.linear)
                             .frame(width: 120)
-                        Text("linear").font(.caption2).foregroundStyle(.secondary).fontDesign(.monospaced)
+                        Text("linear").font(.mono(.caption2)).foregroundStyle(.secondary)
                     }
                 }
                 .padding(.vertical, 8)
@@ -317,26 +317,26 @@ struct ImagesView: View {
                         Image(systemName: "star.fill")
                             .font(.largeTitle)
                             .symbolRenderingMode(.monochrome)
-                        Text(".monochrome").font(.caption2).fontDesign(.monospaced).foregroundStyle(.secondary)
+                        Text(".monochrome").font(.mono(.caption2)).foregroundStyle(.secondary)
                     }
                     VStack(spacing: 6) {
                         Image(systemName: "star.fill")
                             .font(.largeTitle)
                             .symbolRenderingMode(.hierarchical)
-                        Text(".hierarchical").font(.caption2).fontDesign(.monospaced).foregroundStyle(.secondary)
+                        Text(".hierarchical").font(.mono(.caption2)).foregroundStyle(.secondary)
                     }
                     VStack(spacing: 6) {
                         Image(systemName: "star.fill")
                             .font(.largeTitle)
                             .symbolRenderingMode(.multicolor)
-                        Text(".multicolor").font(.caption2).fontDesign(.monospaced).foregroundStyle(.secondary)
+                        Text(".multicolor").font(.mono(.caption2)).foregroundStyle(.secondary)
                     }
                     VStack(spacing: 6) {
                         Image(systemName: "star.fill")
                             .font(.largeTitle)
                             .symbolRenderingMode(.palette)
                             .foregroundStyle(.yellow, .orange)
-                        Text(".palette").font(.caption2).fontDesign(.monospaced).foregroundStyle(.secondary)
+                        Text(".palette").font(.mono(.caption2)).foregroundStyle(.secondary)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -358,7 +358,7 @@ struct ImagesView: View {
                                         .foregroundStyle(.secondary)
                                 )
                             Text(mode == .fit ? ".fit" : ".fill")
-                                .font(.caption2).foregroundStyle(.secondary).fontDesign(.monospaced)
+                                .font(.mono(.caption2)).foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -431,8 +431,7 @@ struct ToolbarsView: View {
                 ForEach(ToolbarPlacementItem.all) { item in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(item.token)
-                            .font(.subheadline)
-                            .fontDesign(.monospaced)
+                            .font(.mono(.subheadline))
                         Text(item.description)
                             .font(.caption)
                             .foregroundStyle(.secondary)

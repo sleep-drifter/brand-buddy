@@ -39,7 +39,6 @@ struct StackAlignmentDemo: View {
                     Text(".\(label)")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                        .fontDesign(.monospaced)
                         .padding(4)
                 }
             }
@@ -55,7 +54,6 @@ struct FrameDemo: View {
                 Text("maxWidth: .infinity")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .fontDesign(.monospaced)
                     .frame(maxWidth: .infinity)
                     .padding(8)
                     .background(.tint.opacity(0.15), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -63,8 +61,7 @@ struct FrameDemo: View {
             HStack(spacing: 8) {
                 ForEach(["min", "ideal", "max"], id: \.self) { label in
                     Text(label)
-                        .font(.caption2)
-                        .fontDesign(.monospaced)
+                        .font(.mono(.caption2))
                         .frame(maxWidth: .infinity)
                         .padding(6)
                         .background(.quaternary, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -90,7 +87,6 @@ struct PaddingDemo: View {
                     Text("\(Int(padding))")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                        .fontDesign(.monospaced)
                 }
             }
         }

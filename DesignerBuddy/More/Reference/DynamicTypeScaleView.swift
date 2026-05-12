@@ -51,7 +51,6 @@ struct DynamicTypeScaleView: View {
                                 Text("\(pointSize(for: entry.style, category: selectedCategory))pt")
                                     .font(.caption2)
                                     .foregroundStyle(.tertiary)
-                                    .fontDesign(.monospaced)
                             }
                         }
                         .padding(.vertical, 2)

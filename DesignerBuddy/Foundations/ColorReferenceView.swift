@@ -37,7 +37,6 @@ struct ColorRow: View {
                 Text(item.token)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .fontDesign(.monospaced)
             }
         }
         .padding(.vertical, 4)

@@ -77,7 +77,6 @@ struct InsetBadge: View {
             Text("\(Int(value))")
                 .font(.headline)
                 .fontWeight(.bold)
-                .fontDesign(.monospaced)
             Text(label)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -110,7 +109,6 @@ struct DeviceSpecRow: View {
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundStyle(.tint)
-                .fontDesign(.monospaced)
         }
     }
 }

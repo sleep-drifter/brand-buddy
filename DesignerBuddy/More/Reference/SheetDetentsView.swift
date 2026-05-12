@@ -51,8 +51,7 @@ struct SheetDetentsView: View {
                 ForEach(DetentReferenceItem.all) { item in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(item.token)
-                            .font(.subheadline)
-                            .fontDesign(.monospaced)
+                            .font(.mono(.subheadline))
                             .fontWeight(.medium)
                         Text(item.description)
                             .font(.caption)
@@ -72,8 +71,7 @@ struct SheetDetentsView: View {
                 ForEach(SheetModifierItem.all) { item in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(item.modifier)
-                            .font(.caption)
-                            .fontDesign(.monospaced)
+                            .font(.mono(.caption))
                             .foregroundStyle(.tint)
                         Text(item.description)
                             .font(.caption)

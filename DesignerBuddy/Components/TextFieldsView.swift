@@ -80,7 +80,6 @@ struct TextFieldsView: View {
                         Text(item.token)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                            .fontDesign(.monospaced)
                     }
                 }
             }

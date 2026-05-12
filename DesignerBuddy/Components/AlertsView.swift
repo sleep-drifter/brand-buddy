@@ -66,7 +66,6 @@ struct AlertAnatomyRow: View {
                 .font(.caption)
                 .fontWeight(.semibold)
                 .foregroundStyle(.tint)
-                .fontDesign(.monospaced)
                 .frame(width: 90, alignment: .leading)
             Text(description)
                 .font(.caption)

@@ -13,7 +13,6 @@ struct SlidersView: View {
                 Text("Value: \(value1, specifier: "%.2f")")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .fontDesign(.monospaced)
             }
 
             Section("With Range & Step") {
@@ -27,7 +26,6 @@ struct SlidersView: View {
                 Text("Value: \(Int(value2))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .fontDesign(.monospaced)
             }
 
             Section("Tinted") {
@@ -44,7 +42,6 @@ struct SlidersView: View {
                 Text("Step: \(Int(stepped))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .fontDesign(.monospaced)
             }
         }
         .navigationTitle("Sliders")
