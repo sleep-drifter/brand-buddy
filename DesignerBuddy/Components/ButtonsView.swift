@@ -38,27 +38,22 @@ struct ButtonsView: View {
 }
 
 private struct StyleMatrixSection: View {
-    private let styles: [(name: String, style: AnyButtonStyle)] = [
-        ("borderedProminent", AnyButtonStyle(.borderedProminent)),
-        ("bordered", AnyButtonStyle(.bordered)),
-        ("borderless", AnyButtonStyle(.borderless)),
-        ("plain", AnyButtonStyle(.plain)),
-    ]
-
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(styles, id: \.name) { item in
-                    VStack(spacing: 8) {
-                        Button("Button") {}
-                            .buttonStyle(item.style)
-                        Text(item.name)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+            HStack(spacing: 16) {
+                styleItem("borderedProminent") { Button("Button") {}.buttonStyle(.borderedProminent) }
+                styleItem("bordered")          { Button("Button") {}.buttonStyle(.bordered) }
+                styleItem("borderless")        { Button("Button") {}.buttonStyle(.borderless) }
+                styleItem("plain")             { Button("Button") {}.buttonStyle(.plain) }
             }
             .padding(.vertical, 8)
+        }
+    }
+
+    func styleItem<V: View>(_ name: String, @ViewBuilder content: () -> V) -> some View {
+        VStack(spacing: 8) {
+            content()
+            Text(name).font(.mono(.caption2)).foregroundStyle(.secondary)
         }
     }
 }
@@ -151,16 +146,6 @@ private struct IconButtonsSection: View {
             }
         }
         .padding(.vertical, 4)
-    }
-}
-
-struct AnyButtonStyle: ButtonStyle {
-    private let base: any ButtonStyle
-
-    init(_ style: some ButtonStyle) { self.base = style }
-
-    func makeBody(configuration: Configuration) -> some View {
-        AnyView(base.makeBody(configuration: configuration))
     }
 }
 
