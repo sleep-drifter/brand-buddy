@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SheetDetentsView: View {
     @State private var showSheet = false
+    @State private var showScrollSheet = false
     @State private var selectedDetent: PresentationDetent = .medium
     @State private var availableDetents: Set<PresentationDetent> = [.medium, .large]
     @State private var showDragIndicator = true
@@ -17,6 +18,7 @@ struct SheetDetentsView: View {
         List {
             Section("Live Demo") {
                 Button("Show Interactive Sheet") { showSheet = true }
+                Button("Show Scrolling Content Sheet") { showScrollSheet = true }
                 Toggle("Show drag indicator", isOn: $showDragIndicator)
             }
 
@@ -90,6 +92,9 @@ struct SheetDetentsView: View {
                 showDragIndicator: showDragIndicator
             )
         }
+        .sheet(isPresented: $showScrollSheet) {
+            ScrollingSheetDemo(showDragIndicator: showDragIndicator)
+        }
     }
 }
 
@@ -125,6 +130,59 @@ struct SheetDetentsDemo: View {
                 }
             }
         }
+    }
+}
+
+struct ScrollingSheetDemo: View {
+    let showDragIndicator: Bool
+    @Environment(\.dismiss) var dismiss
+    @State private var selectedDetent: PresentationDetent = .medium
+
+    private let items = (1...40).map { "Row \($0) — scrollable content inside a sheet" }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Text("At **.medium** detent, dragging up on the scroll content expands the sheet first. Once at **.large**, scrolling takes over.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text("How it works")
+                }
+
+                Section("Content") {
+                    ForEach(items, id: \.self) { item in
+                        HStack(spacing: 12) {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(.tint.opacity(0.12))
+                                .frame(width: 36, height: 36)
+                                .overlay(
+                                    Text("\(items.firstIndex(of: item)! + 1)")
+                                        .font(.caption)
+                                        .foregroundStyle(.tint)
+                                )
+                            Text(item)
+                                .font(.subheadline)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Scrolling Sheet")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+                ToolbarItem(placement: .bottomBar) {
+                    Text("Detent: \(selectedDetent == .medium ? ".medium" : ".large")")
+                        .font(.mono(.caption))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
+        .presentationDragIndicator(showDragIndicator ? .visible : .hidden)
     }
 }
 
