@@ -39,7 +39,6 @@ struct MaterialsTab: View {
 
 struct GlassEffectPlayground: View {
     @State private var cornerRadius: CGFloat = 24
-    @State private var isInteractive: Bool = false
     @State private var tintColor: Color = .clear
     @State private var useTint: Bool = false
     @State private var backgroundType: GlassBG = .blobs
@@ -93,7 +92,6 @@ struct GlassEffectPlayground: View {
                             LabeledContent("Corner Radius: \(Int(cornerRadius))") {
                                 Slider(value: $cornerRadius, in: 0...56)
                             }
-                            Toggle(".interactive", isOn: $isInteractive)
                         }
 
                         Section("Tint") {
@@ -105,8 +103,6 @@ struct GlassEffectPlayground: View {
 
                         Section("How it works") {
                             Text("`.glassEffect(in:)` is the iOS 26 liquid glass modifier. Unlike Material, the system controls the blur, specular layer, and refraction — you only specify the shape.")
-                                .font(.caption).foregroundStyle(.secondary)
-                            Text("`.interactive` adds a press-response scale animation to the glass surface, matching system button behavior.")
                                 .font(.caption).foregroundStyle(.secondary)
                             Text("`.tint()` on the view colors the glass tint layer. Use sparingly — neutral glass works best over colorful backgrounds.")
                                 .font(.caption).foregroundStyle(.secondary)
@@ -132,10 +128,7 @@ struct GlassEffectPlayground: View {
         }
         .padding(.horizontal, 32)
         .padding(.vertical, 20)
-        .glassEffect(
-            isInteractive ? GlassEffect.regular.interactive() : GlassEffect.regular,
-            in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        )
+        .glassEffect(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .tint(useTint ? tintColor : nil)
     }
 
@@ -145,10 +138,7 @@ struct GlassEffectPlayground: View {
             .font(.subheadline)
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
-            .glassEffect(
-                isInteractive ? GlassEffect.regular.interactive() : GlassEffect.regular,
-                in: RoundedRectangle(cornerRadius: cornerRadius / 2, style: .continuous)
-            )
+            .glassEffect(in: RoundedRectangle(cornerRadius: cornerRadius / 2, style: .continuous))
             .tint(useTint ? tintColor : nil)
     }
 
