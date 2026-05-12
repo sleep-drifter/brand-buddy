@@ -125,7 +125,7 @@ struct MultiStepSheetDemo: View {
         NavigationStack {
             VStack(spacing: 24) {
                 ProgressView(value: Double(step), total: 3)
-                    .tint(.tint)
+                    .tint(.accentColor)
                     .padding(.horizontal)
 
                 Spacer()
