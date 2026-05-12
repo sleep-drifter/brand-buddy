@@ -1,29 +1,47 @@
 import SwiftUI
+import CoreText
 
-// MARK: - Font Constants
+// MARK: - Font API
 
 extension Font {
 
-    // Noi Grotesk — default app font
-    // Weight: use .medium for anything semibold or heavier, .regular otherwise.
     static func noi(_ style: TextStyle, weight: NoiWeight = .regular) -> Font {
-        .custom(weight.fontName, size: style.defaultSize, relativeTo: style)
+        let base = noiUIFont(postScriptName: weight.fontName, size: style.defaultSize)
+        let scaled = UIFontMetrics(forTextStyle: style.uiTextStyle).scaledFont(for: base)
+        return Font(scaled)
     }
 
-    // Chivo Mono — monospaced token / code display only
     static func mono(_ style: TextStyle = .body) -> Font {
         .custom("ChivoMono-Medium", size: style.defaultSize, relativeTo: style)
     }
 
     enum NoiWeight {
         case regular, medium
-        var fontName: String {
-            self == .medium ? "NoiGrotesk-Medium" : "NoiGrotesk-Regular"
-        }
+        var fontName: String { self == .medium ? "NoiGrotesk-Medium" : "NoiGrotesk-Regular" }
     }
 }
 
-// Maps SwiftUI text styles to their default point sizes (Large size category)
+// Builds a UIFont for Noi Grotesk with the OpenType features that match our web stack:
+// font-feature-settings: "kern","liga","calt","ss02","ss03","ss11","ss12"
+private func noiUIFont(postScriptName: String, size: CGFloat) -> UIFont {
+    let features: [[String: Any]] = [
+        [kCTFontOpenTypeFeatureTag as String: "kern", kCTFontOpenTypeFeatureValue as String: 1],
+        [kCTFontOpenTypeFeatureTag as String: "liga", kCTFontOpenTypeFeatureValue as String: 1],
+        [kCTFontOpenTypeFeatureTag as String: "calt", kCTFontOpenTypeFeatureValue as String: 1],
+        [kCTFontOpenTypeFeatureTag as String: "ss02", kCTFontOpenTypeFeatureValue as String: 1],
+        [kCTFontOpenTypeFeatureTag as String: "ss03", kCTFontOpenTypeFeatureValue as String: 1],
+        [kCTFontOpenTypeFeatureTag as String: "ss11", kCTFontOpenTypeFeatureValue as String: 1],
+        [kCTFontOpenTypeFeatureTag as String: "ss12", kCTFontOpenTypeFeatureValue as String: 1],
+    ]
+    let descriptor = UIFontDescriptor(fontAttributes: [
+        .name: postScriptName,
+        UIFontDescriptor.AttributeName(rawValue: kCTFontFeatureSettingsAttribute as String): features,
+    ])
+    return UIFont(descriptor: descriptor, size: size)
+}
+
+// MARK: - Text style helpers
+
 extension Font.TextStyle {
     var defaultSize: CGFloat {
         switch self {
@@ -41,14 +59,30 @@ extension Font.TextStyle {
         @unknown default:   return 17
         }
     }
+
+    var uiTextStyle: UIFont.TextStyle {
+        switch self {
+        case .largeTitle:   return .largeTitle
+        case .title:        return .title1
+        case .title2:       return .title2
+        case .title3:       return .title3
+        case .headline:     return .headline
+        case .body:         return .body
+        case .callout:      return .callout
+        case .subheadline:  return .subheadline
+        case .footnote:     return .footnote
+        case .caption:      return .caption1
+        case .caption2:     return .caption2
+        @unknown default:   return .body
+        }
+    }
 }
 
-// MARK: - Root Font Modifier
+// MARK: - Root modifier
 
 struct AppFontModifier: ViewModifier {
     func body(content: Content) -> some View {
-        content
-            .font(.noi(.body))
+        content.font(.noi(.body))
     }
 }
 
@@ -56,12 +90,7 @@ extension View {
     func appFonts() -> some View {
         modifier(AppFontModifier())
     }
-}
 
-// MARK: - Monospaced Convenience
-
-extension View {
-    /// Apply Chivo Mono at the given text style. Replaces .
     func monoFont(_ style: Font.TextStyle = .body) -> some View {
         self.font(.mono(style))
     }
