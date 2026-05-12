@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct MaterialsTab: View {
-    @State private var selectedSection: MaterialSection = .glassEffect
+    @State private var selectedSection: MaterialSection = .glass
 
     enum MaterialSection: String, CaseIterable {
-        case glassEffect = "iOS 26 Glass"
-        case material = "Material"
+        case glass = "Glass"
+        case surfaces = "Surfaces"
         case vibrancy = "Vibrancy"
     }
 
@@ -21,16 +21,42 @@ struct MaterialsTab: View {
                 .padding()
 
                 switch selectedSection {
-                case .glassEffect:
-                    GlassEffectPlayground()
-                case .material:
-                    GlassPlayground()
+                case .glass:
+                    CombinedGlassTab()
+                case .surfaces:
+                    SurfacesPlayground()
                 case .vibrancy:
                     VibrancyPlayground()
                 }
             }
             .navigationTitle("Materials")
             .navigationBarTitleDisplayMode(.large)
+        }
+    }
+}
+
+// MARK: - Combined Glass Tab
+
+struct CombinedGlassTab: View {
+    enum GlassMode: String, CaseIterable {
+        case ios26 = "iOS 26"
+        case material = "Material"
+    }
+    @State private var mode: GlassMode = .ios26
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker("Mode", selection: $mode) {
+                ForEach(GlassMode.allCases, id: \.self) { Text($0.rawValue) }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.bottom, 4)
+
+            switch mode {
+            case .ios26: GlassEffectPlayground()
+            case .material: GlassPlayground()
+            }
         }
     }
 }
@@ -396,116 +422,159 @@ struct GlassPlayground: View {
     }
 }
 
-// MARK: - Materials Playground
+// MARK: - Surfaces Playground
 
-struct MaterialsPlayground: View {
-    @State private var selectedMaterial: MaterialItem = .ultraThin
-    @State private var backgroundHue: Double = 220
+struct SurfacesPlayground: View {
+    var body: some View {
+        List {
+            Section {
+                Text("These are the semantic background and fill colors iOS uses for layered UI. They automatically adapt to light and dark mode.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
 
-    enum MaterialItem: String, CaseIterable {
-        case ultraThin = "ultraThinMaterial"
-        case thin = "thinMaterial"
-        case regular = "regularMaterial"
-        case thick = "thickMaterial"
-        case ultraThick = "ultraThickMaterial"
-        case bar = "bar"
+            Section("Backgrounds") {
+                ForEach(SemanticSurface.backgrounds) { s in
+                    SurfaceRow(surface: s)
+                }
+            }
 
-        var material: Material {
-            switch self {
-            case .ultraThin: return .ultraThinMaterial
-            case .thin: return .thinMaterial
-            case .regular: return .regularMaterial
-            case .thick: return .thickMaterial
-            case .ultraThick: return .ultraThickMaterial
-            case .bar: return .bar
+            Section("Grouped Backgrounds") {
+                ForEach(SemanticSurface.groupedBackgrounds) { s in
+                    SurfaceRow(surface: s)
+                }
+            }
+
+            Section("Fills") {
+                Text("Fills are semi-transparent, intended for overlaying content on any background.")
+                    .font(.caption).foregroundStyle(.secondary)
+                ForEach(SemanticSurface.fills) { s in
+                    SurfaceRow(surface: s)
+                }
+            }
+
+            Section("Separators") {
+                ForEach(SemanticSurface.separators) { s in
+                    SurfaceRow(surface: s)
+                }
+            }
+
+            Section("When to use each") {
+                VStack(alignment: .leading, spacing: 10) {
+                    UsageRow(token: ".systemBackground", note: "Root view background — the canvas everything sits on")
+                    UsageRow(token: ".secondarySystemBackground", note: "Cards, inset grouped sections, raised surfaces")
+                    UsageRow(token: ".tertiarySystemBackground", note: "Nested cards or a third layer within a view")
+                    UsageRow(token: ".systemGroupedBackground", note: "Form / settings screen base")
+                    UsageRow(token: ".secondarySystemGroupedBackground", note: "List rows inside a grouped form")
+                    UsageRow(token: ".systemFill", note: "Thin UI chrome: sliders, switches, progress bars")
+                    UsageRow(token: ".secondarySystemFill", note: "Text field backgrounds")
+                    UsageRow(token: ".tertiarySystemFill", note: "Input accessories, search bar fill")
+                    UsageRow(token: ".quaternarySystemFill", note: "Skeleton loaders, placeholder shapes")
+                }
+                .padding(.vertical, 4)
             }
         }
     }
+}
+
+struct SemanticSurface: Identifiable {
+    let id = UUID()
+    let name: String
+    let color: Color
+    let isTranslucent: Bool
+
+    static let backgrounds: [SemanticSurface] = [
+        .init(name: ".systemBackground", color: Color(.systemBackground), isTranslucent: false),
+        .init(name: ".secondarySystemBackground", color: Color(.secondarySystemBackground), isTranslucent: false),
+        .init(name: ".tertiarySystemBackground", color: Color(.tertiarySystemBackground), isTranslucent: false),
+    ]
+
+    static let groupedBackgrounds: [SemanticSurface] = [
+        .init(name: ".systemGroupedBackground", color: Color(.systemGroupedBackground), isTranslucent: false),
+        .init(name: ".secondarySystemGroupedBackground", color: Color(.secondarySystemGroupedBackground), isTranslucent: false),
+        .init(name: ".tertiarySystemGroupedBackground", color: Color(.tertiarySystemGroupedBackground), isTranslucent: false),
+    ]
+
+    static let fills: [SemanticSurface] = [
+        .init(name: ".systemFill", color: Color(.systemFill), isTranslucent: true),
+        .init(name: ".secondarySystemFill", color: Color(.secondarySystemFill), isTranslucent: true),
+        .init(name: ".tertiarySystemFill", color: Color(.tertiarySystemFill), isTranslucent: true),
+        .init(name: ".quaternarySystemFill", color: Color(.quaternarySystemFill), isTranslucent: true),
+    ]
+
+    static let separators: [SemanticSurface] = [
+        .init(name: ".separator", color: Color(.separator), isTranslucent: true),
+        .init(name: ".opaqueSeparator", color: Color(.opaqueSeparator), isTranslucent: false),
+    ]
+}
+
+struct SurfaceRow: View {
+    let surface: SemanticSurface
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                ZStack {
-                    coloredBackground
-                        .frame(height: 280)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        HStack(spacing: 12) {
+            ZStack {
+                CheckerboardPattern()
+                    .frame(width: 44, height: 44)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .opacity(surface.isTranslucent ? 1 : 0)
 
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(selectedMaterial.material)
-                        .frame(width: 200, height: 120)
-                        .overlay(
-                            VStack(spacing: 6) {
-                                Text(selectedMaterial.rawValue)
-                                    .font(.mono(.caption))
-                                Text("The quick brown fox")
-                                    .font(.subheadline)
-                            }
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .strokeBorder(.separator, lineWidth: 0.5)
-                        )
-                }
-                .padding(.horizontal)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(surface.color)
+                    .frame(width: 44, height: 44)
 
-                List {
-                    Section("Material") {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(MaterialItem.allCases, id: \.self) { item in
-                                    Button(item.rawValue) {
-                                        selectedMaterial = item
-                                    }
-                                    .buttonStyle(.bordered)
-                                    .controlSize(.small)
-                                    .buttonBorderShape(.capsule)
-                                    .tint(selectedMaterial == item ? .accentColor : .secondary)
-                                }
-                            }
-                            .padding(.vertical, 4)
-                        }
-                    }
-
-                    Section("Background") {
-                        LabeledContent("Hue: \(Int(backgroundHue))°") {
-                            Slider(value: $backgroundHue, in: 0...360)
-                        }
-                    }
-
-                    Section("All Materials") {
-                        ForEach(MaterialItem.allCases, id: \.self) { item in
-                            HStack {
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(item.material)
-                                    .frame(width: 44, height: 44)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                            .strokeBorder(.separator, lineWidth: 0.5)
-                                    )
-                                    .background(coloredBackground.clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous)))
-                                Text(".\(item.rawValue)")
-                                    .font(.mono(.caption))
-                            }
-                        }
-                    }
-                }
-                .frame(height: 500)
-                .scrollDisabled(true)
-                .padding(.horizontal)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Color(.separator), lineWidth: 0.5)
+                    .frame(width: 44, height: 44)
             }
-            .padding(.top)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(surface.name)
+                    .font(.mono(.caption))
+                if surface.isTranslucent {
+                    Text("translucent")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
+}
 
-    var coloredBackground: some View {
-        LinearGradient(
-            colors: [
-                Color(hue: backgroundHue / 360, saturation: 0.8, brightness: 0.7),
-                Color(hue: (backgroundHue + 60) / 360, saturation: 0.7, brightness: 0.5),
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+struct CheckerboardPattern: View {
+    var body: some View {
+        Canvas { ctx, size in
+            let tileSize: CGFloat = 6
+            var row = 0
+            var y: CGFloat = 0
+            while y < size.height {
+                var x: CGFloat = 0
+                var col = 0
+                while x < size.width {
+                    let isLight = (row + col) % 2 == 0
+                    ctx.fill(
+                        Path(CGRect(x: x, y: y, width: tileSize, height: tileSize)),
+                        with: .color(isLight ? .white : Color(.systemGray5))
+                    )
+                    x += tileSize
+                    col += 1
+                }
+                y += tileSize
+                row += 1
+            }
+        }
+    }
+}
+
+struct UsageRow: View {
+    let token: String
+    let note: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(token).font(.mono(.caption)).foregroundStyle(.primary)
+            Text(note).font(.caption).foregroundStyle(.secondary)
+        }
     }
 }
 
