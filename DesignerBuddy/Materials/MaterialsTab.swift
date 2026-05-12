@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MaterialsTab: View {
-    @State private var selectedSection: MaterialSection = .glass
+    @State private var selectedSection: MaterialSection = .glassEffect
 
     enum MaterialSection: String, CaseIterable {
         case glassEffect = "iOS 26 Glass"
