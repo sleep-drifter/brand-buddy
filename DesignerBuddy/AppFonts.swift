@@ -82,7 +82,9 @@ extension Font.TextStyle {
 
 struct AppFontModifier: ViewModifier {
     func body(content: Content) -> some View {
-        content.font(.noi(.body))
+        content
+            .font(.noi(.body))
+            .contentMargins(.bottom, 24, for: .scrollContent)
     }
 }
 
