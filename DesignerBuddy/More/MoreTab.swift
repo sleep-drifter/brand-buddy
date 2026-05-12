@@ -21,6 +21,11 @@ struct MoreTab: View {
                         Label("Corner Radius", systemImage: "square.on.square")
                     }
                     NavigationLink {
+                        ConcentricRadiusView()
+                    } label: {
+                        Label("Concentric Radius", systemImage: "square.inset.filled")
+                    }
+                    NavigationLink {
                         ShadowExplorerView()
                     } label: {
                         Label("Shadow Explorer", systemImage: "shadow")
