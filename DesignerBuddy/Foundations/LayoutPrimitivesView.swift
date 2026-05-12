@@ -23,10 +23,11 @@ struct LayoutPrimitivesView: View {
 
 struct StackAlignmentDemo: View {
     var body: some View {
+        let alignments: [(HorizontalAlignment, String)] = [
+            (.leading, "leading"), (.center, "center"), (.trailing, "trailing"),
+        ]
         VStack(spacing: 16) {
-            ForEach([(HorizontalAlignment.leading, "leading"),
-                     (HorizontalAlignment.center, "center"),
-                     (HorizontalAlignment.trailing, "trailing")], id: \.1) { alignment, label in
+            ForEach(alignments, id: \.1) { alignment, label in
                 VStack(alignment: alignment, spacing: 4) {
                     Rectangle().fill(.tint.opacity(0.3)).frame(width: 180, height: 6).clipShape(Capsule())
                     Rectangle().fill(.tint.opacity(0.5)).frame(width: 120, height: 6).clipShape(Capsule())

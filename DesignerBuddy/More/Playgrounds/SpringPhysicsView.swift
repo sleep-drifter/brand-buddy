@@ -33,7 +33,7 @@ struct SpringPhysicsView: View {
                         .frame(height: 200)
 
                     Circle()
-                        .fill(.tint.gradient)
+                        .fill(.tint)
                         .frame(width: 56, height: 56)
                         .shadow(color: .tint.opacity(0.4), radius: 12, y: 6)
                         .offset(y: animating ? -140 : -16)

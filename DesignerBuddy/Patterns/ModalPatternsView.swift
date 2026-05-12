@@ -426,7 +426,7 @@ struct SettingsPatternView: View {
             Section {
                 HStack(spacing: 14) {
                     Circle()
-                        .fill(.tint.gradient)
+                        .fill(.tint)
                         .frame(width: 56, height: 56)
                         .overlay(
                             Text("MW")

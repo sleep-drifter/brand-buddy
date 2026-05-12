@@ -14,7 +14,7 @@ struct CornerRadiusView: View {
                     HStack(spacing: 24) {
                         VStack(spacing: 8) {
                             Rectangle()
-                                .fill(.tint.gradient)
+                                .fill(.tint)
                                 .frame(width: shapeSize, height: shapeSize)
                                 .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
                             Text(".continuous")
@@ -23,7 +23,7 @@ struct CornerRadiusView: View {
                         }
                         VStack(spacing: 8) {
                             Rectangle()
-                                .fill(.tint.gradient.opacity(0.6))
+                                .fill(.tint.opacity(0.6))
                                 .frame(width: shapeSize, height: shapeSize)
                                 .clipShape(RoundedRectangle(cornerRadius: radius, style: .circular))
                             Text(".circular")
@@ -34,7 +34,7 @@ struct CornerRadiusView: View {
                     .padding(.vertical, 12)
                 } else {
                     Rectangle()
-                        .fill(.tint.gradient)
+                        .fill(.tint)
                         .frame(width: shapeSize, height: shapeSize)
                         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
                         .padding(.vertical, 12)
