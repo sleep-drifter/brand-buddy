@@ -254,7 +254,7 @@ struct CardsView: View {
                     title: "Card with Fill",
                     description: "Secondary background fill, no shadow"
                 )
-                .background(.secondarySystemBackground)
+                .background(Color(.secondarySystemBackground))
                 HStack(spacing: 12) {
                     ForEach(["Card A", "Card B"], id: \.self) { title in
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -283,7 +283,7 @@ struct CardExample: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(.secondarySystemBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 

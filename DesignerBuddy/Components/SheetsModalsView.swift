@@ -185,7 +185,7 @@ struct ToastsView: View {
                         Spacer()
                     }
                     .padding(12)
-                    .background(.secondarySystemBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                     HStack(spacing: 12) {
                         Image(systemName: "exclamationmark.triangle.fill")
@@ -195,7 +195,7 @@ struct ToastsView: View {
                         Spacer()
                     }
                     .padding(12)
-                    .background(.secondarySystemBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .padding(.vertical, 4)
             }
