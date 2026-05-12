@@ -1,21 +1,24 @@
-//
-//  ContentView.swift
-//  DesignerBuddy
-//
-//  Created by Matt Wujek on 5/11/26.
-//
-
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            Tab("Foundations", systemImage: "paintbrush") {
+                FoundationsTab()
+            }
+            Tab("Components", systemImage: "rectangle.3.group") {
+                ComponentsTab()
+            }
+            Tab("Patterns", systemImage: "arrow.triangle.2.circlepath") {
+                PatternsTab()
+            }
+            Tab("Materials", systemImage: "bubbles.and.sparkles") {
+                MaterialsTab()
+            }
+            Tab("More", systemImage: "ellipsis.circle") {
+                MoreTab()
+            }
         }
-        .padding()
     }
 }
 
