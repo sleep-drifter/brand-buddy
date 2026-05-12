@@ -4,8 +4,8 @@ struct MaterialsTab: View {
     @State private var selectedSection: MaterialSection = .glass
 
     enum MaterialSection: String, CaseIterable {
-        case glass = "Glass"
-        case materials = "Materials"
+        case glassEffect = "iOS 26 Glass"
+        case material = "Material"
         case vibrancy = "Vibrancy"
     }
 
@@ -21,10 +21,10 @@ struct MaterialsTab: View {
                 .padding()
 
                 switch selectedSection {
-                case .glass:
+                case .glassEffect:
+                    GlassEffectPlayground()
+                case .material:
                     GlassPlayground()
-                case .materials:
-                    MaterialsPlayground()
                 case .vibrancy:
                     VibrancyPlayground()
                 }
@@ -35,7 +35,141 @@ struct MaterialsTab: View {
     }
 }
 
-// MARK: - Glass Playground
+// MARK: - iOS 26 GlassEffect Playground
+
+struct GlassEffectPlayground: View {
+    @State private var cornerRadius: CGFloat = 24
+    @State private var isInteractive: Bool = false
+    @State private var tintColor: Color = .clear
+    @State private var useTint: Bool = false
+    @State private var backgroundType: GlassBG = .blobs
+    @State private var bgColor1 = Color.purple
+    @State private var bgColor2 = Color.blue
+    @State private var showControls = true
+
+    enum GlassBG: String, CaseIterable {
+        case blobs = "Blobs"
+        case gradient = "Gradient"
+        case mesh = "Mesh"
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                ZStack {
+                    bgContent
+                        .frame(height: 300)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                    VStack(spacing: 16) {
+                        glassCard(label: "Hello, glass.")
+                        HStack(spacing: 12) {
+                            glassChip("Button")
+                            glassChip("Cancel")
+                        }
+                    }
+                }
+                .padding(.horizontal)
+
+                Button(showControls ? "Hide Controls" : "Show Controls") {
+                    withAnimation(.spring(duration: 0.3)) { showControls.toggle() }
+                }
+                .buttonStyle(.bordered)
+
+                if showControls {
+                    List {
+                        Section("Background") {
+                            Picker("Background", selection: $backgroundType) {
+                                ForEach(GlassBG.allCases, id: \.self) { Text($0.rawValue) }
+                            }
+                            .pickerStyle(.segmented)
+                            if backgroundType == .gradient {
+                                ColorPicker("Color 1", selection: $bgColor1, supportsOpacity: false)
+                                ColorPicker("Color 2", selection: $bgColor2, supportsOpacity: false)
+                            }
+                        }
+
+                        Section("GlassEffect") {
+                            LabeledContent("Corner Radius: \(Int(cornerRadius))") {
+                                Slider(value: $cornerRadius, in: 0...56)
+                            }
+                            Toggle(".interactive", isOn: $isInteractive)
+                        }
+
+                        Section("Tint") {
+                            Toggle("Apply .tint()", isOn: $useTint)
+                            if useTint {
+                                ColorPicker("Tint Color", selection: $tintColor, supportsOpacity: false)
+                            }
+                        }
+
+                        Section("How it works") {
+                            Text("`.glassEffect(in:)` is the iOS 26 liquid glass modifier. Unlike Material, the system controls the blur, specular layer, and refraction — you only specify the shape.")
+                                .font(.caption).foregroundStyle(.secondary)
+                            Text("`.interactive` adds a press-response scale animation to the glass surface, matching system button behavior.")
+                                .font(.caption).foregroundStyle(.secondary)
+                            Text("`.tint()` on the view colors the glass tint layer. Use sparingly — neutral glass works best over colorful backgrounds.")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(height: 560)
+                    .scrollDisabled(true)
+                    .padding(.horizontal)
+                }
+            }
+            .padding(.top)
+            .padding(.bottom, 32)
+        }
+    }
+
+    @ViewBuilder
+    func glassCard(label: String) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: "bubbles.and.sparkles")
+                .font(.system(size: 28))
+            Text(label)
+                .font(.headline)
+        }
+        .padding(.horizontal, 32)
+        .padding(.vertical, 20)
+        .glassEffect(
+            isInteractive ? GlassEffect.regular.interactive() : GlassEffect.regular,
+            in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        )
+        .tint(useTint ? tintColor : nil)
+    }
+
+    @ViewBuilder
+    func glassChip(_ label: String) -> some View {
+        Text(label)
+            .font(.subheadline)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .glassEffect(
+                isInteractive ? GlassEffect.regular.interactive() : GlassEffect.regular,
+                in: RoundedRectangle(cornerRadius: cornerRadius / 2, style: .continuous)
+            )
+            .tint(useTint ? tintColor : nil)
+    }
+
+    @ViewBuilder
+    var bgContent: some View {
+        switch backgroundType {
+        case .blobs:
+            BlobBackground()
+        case .gradient:
+            LinearGradient(colors: [bgColor1, bgColor2], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .mesh:
+            Rectangle().fill(MeshGradient(width: 3, height: 3, points: [
+                [0,0],[0.5,0],[1,0],
+                [0,0.5],[0.5,0.5],[1,0.5],
+                [0,1],[0.5,1],[1,1]
+            ], colors: [.red,.orange,.yellow,.purple,.pink,.orange,.blue,.cyan,.green]))
+        }
+    }
+}
+
+// MARK: - Material Playground (old API)
 
 struct GlassPlayground: View {
     // Background
