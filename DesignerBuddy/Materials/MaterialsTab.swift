@@ -38,43 +38,81 @@ struct MaterialsTab: View {
 // MARK: - Glass Playground
 
 struct GlassPlayground: View {
-    @State private var cornerRadius: CGFloat = 24
-    @State private var backgroundType: BackgroundType = .gradient
+    // Background
+    @State private var backgroundType: BackgroundType = .blobs
     @State private var gradientAngle: Double = 45
     @State private var bgColor1 = Color.purple
     @State private var bgColor2 = Color.blue
+
+    // Material
+    @State private var materialThickness: MaterialThickness = .ultraThin
+    @State private var cardOpacity: Double = 1.0
+
+    // Tint
+    @State private var tintColor = Color.white
+    @State private var tintOpacity: Double = 0.08
+
+    // Shape
+    @State private var cornerRadius: CGFloat = 24
+
+    // Border
+    @State private var borderColor = Color.white
+    @State private var borderOpacity: Double = 0.3
+    @State private var borderWidth: Double = 0.5
+
+    // Shadow
+    @State private var shadowOpacity: Double = 0.2
+    @State private var shadowRadius: Double = 20
+    @State private var shadowY: Double = 10
+
     @State private var showControls = true
 
     enum BackgroundType: String, CaseIterable {
         case gradient = "Gradient"
-        case photo = "Photo"
+        case mesh = "Mesh"
         case blobs = "Blobs"
+    }
+
+    enum MaterialThickness: String, CaseIterable {
+        case ultraThin = "ultraThin"
+        case thin = "thin"
+        case regular = "regular"
+        case thick = "thick"
+        case ultraThick = "ultraThick"
+
+        var material: Material {
+            switch self {
+            case .ultraThin: return .ultraThinMaterial
+            case .thin: return .thinMaterial
+            case .regular: return .regularMaterial
+            case .thick: return .thickMaterial
+            case .ultraThick: return .ultraThickMaterial
+            }
+        }
     }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Live preview
                 ZStack {
                     backgroundContent
                         .frame(height: 280)
                         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-
                     glassCard
                 }
                 .padding(.horizontal)
-
-                if showControls {
-                    controlsPanel
-                }
 
                 Button(showControls ? "Hide Controls" : "Show Controls") {
                     withAnimation(.spring(duration: 0.3)) { showControls.toggle() }
                 }
                 .buttonStyle(.bordered)
-                .padding(.bottom)
+
+                if showControls {
+                    controlsPanel
+                }
             }
             .padding(.top)
+            .padding(.bottom, 32)
         }
     }
 
@@ -95,7 +133,7 @@ struct GlassPlayground: View {
             )
         case .blobs:
             BlobBackground()
-        case .photo:
+        case .mesh:
             Rectangle()
                 .fill(
                     MeshGradient(width: 3, height: 3, points: [
@@ -119,53 +157,88 @@ struct GlassPlayground: View {
             Text("Glass Surface")
                 .font(.headline)
                 .foregroundStyle(.white)
-            Text("iOS 26 liquid glass")
-                .font(.caption)
+            Text(".\(materialThickness.rawValue)Material")
+                .font(.mono(.caption))
                 .foregroundStyle(.white.opacity(0.8))
         }
         .padding(24)
         .frame(width: 200)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .background(materialThickness.material, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .strokeBorder(.white.opacity(0.3), lineWidth: 0.5)
+                .fill(tintColor.opacity(tintOpacity))
         )
-        .shadow(color: .black.opacity(0.2), radius: 20, y: 10)
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .strokeBorder(borderColor.opacity(borderOpacity), lineWidth: borderWidth)
+        )
+        .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, y: shadowY)
+        .opacity(cardOpacity)
     }
 
     var controlsPanel: some View {
-        VStack(spacing: 0) {
-            List {
-                Section("Background") {
-                    Picker("Type", selection: $backgroundType) {
-                        ForEach(BackgroundType.allCases, id: \.self) { Text($0.rawValue) }
-                    }
-                    .pickerStyle(.segmented)
-
-                    if backgroundType == .gradient {
-                        ColorPicker("Color 1", selection: $bgColor1, supportsOpacity: false)
-                        ColorPicker("Color 2", selection: $bgColor2, supportsOpacity: false)
-                        LabeledContent("Angle: \(Int(gradientAngle))°") {
-                            Slider(value: $gradientAngle, in: 0...360)
-                        }
-                    }
+        List {
+            Section("Background") {
+                Picker("Type", selection: $backgroundType) {
+                    ForEach(BackgroundType.allCases, id: \.self) { Text($0.rawValue) }
                 }
-
-                Section("Glass Surface") {
-                    LabeledContent("Corner Radius: \(Int(cornerRadius))") {
-                        Slider(value: $cornerRadius, in: 0...48)
+                .pickerStyle(.segmented)
+                if backgroundType == .gradient {
+                    ColorPicker("Color 1", selection: $bgColor1, supportsOpacity: false)
+                    ColorPicker("Color 2", selection: $bgColor2, supportsOpacity: false)
+                    LabeledContent("Angle: \(Int(gradientAngle))°") {
+                        Slider(value: $gradientAngle, in: 0...360)
                     }
-                }
-
-                Section("iOS 26 Note") {
-                    Text("In iOS 26, use .glassEffect() on views placed over rich backgrounds. The system automatically applies the correct blur, tint, and specular highlights.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
             }
-            .frame(height: 420)
-            .scrollDisabled(true)
+
+            Section("Material") {
+                Picker("Thickness", selection: $materialThickness) {
+                    ForEach(MaterialThickness.allCases, id: \.self) { Text($0.rawValue) }
+                }
+                .pickerStyle(.menu)
+                LabeledContent("Opacity: \(cardOpacity, specifier: "%.2f")") {
+                    Slider(value: $cardOpacity, in: 0.1...1.0)
+                }
+            }
+
+            Section("Shape") {
+                LabeledContent("Corner Radius: \(Int(cornerRadius))") {
+                    Slider(value: $cornerRadius, in: 0...56)
+                }
+            }
+
+            Section("Tint Overlay") {
+                ColorPicker("Tint Color", selection: $tintColor, supportsOpacity: false)
+                LabeledContent("Opacity: \(tintOpacity, specifier: "%.2f")") {
+                    Slider(value: $tintOpacity, in: 0...0.5)
+                }
+            }
+
+            Section("Border") {
+                ColorPicker("Color", selection: $borderColor, supportsOpacity: false)
+                LabeledContent("Opacity: \(borderOpacity, specifier: "%.2f")") {
+                    Slider(value: $borderOpacity, in: 0...1.0)
+                }
+                LabeledContent("Width: \(borderWidth, specifier: "%.1f")pt") {
+                    Slider(value: $borderWidth, in: 0...4)
+                }
+            }
+
+            Section("Shadow") {
+                LabeledContent("Opacity: \(shadowOpacity, specifier: "%.2f")") {
+                    Slider(value: $shadowOpacity, in: 0...0.8)
+                }
+                LabeledContent("Radius: \(Int(shadowRadius))") {
+                    Slider(value: $shadowRadius, in: 0...60)
+                }
+                LabeledContent("Y Offset: \(Int(shadowY))") {
+                    Slider(value: $shadowY, in: -30...30)
+                }
+            }
         }
+        .frame(height: 820)
+        .scrollDisabled(true)
         .padding(.horizontal)
     }
 }
