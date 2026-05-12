@@ -35,7 +35,7 @@ struct SpringPhysicsView: View {
                     Circle()
                         .fill(.tint)
                         .frame(width: 56, height: 56)
-                        .shadow(color: .tint.opacity(0.4), radius: 12, y: 6)
+                        .shadow(color: Color.accentColor.opacity(0.4), radius: 12, y: 6)
                         .offset(y: animating ? -140 : -16)
                         .animation(currentAnimation, value: animating)
                 }

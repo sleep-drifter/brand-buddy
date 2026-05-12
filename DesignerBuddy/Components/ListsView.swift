@@ -258,7 +258,7 @@ struct CardsView: View {
                 HStack(spacing: 12) {
                     ForEach(["Card A", "Card B"], id: \.self) { title in
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(.secondarySystemBackground)
+                            .fill(Color(.secondarySystemBackground))
                             .frame(height: 120)
                             .overlay(Text(title).font(.headline))
                             .frame(maxWidth: .infinity)
