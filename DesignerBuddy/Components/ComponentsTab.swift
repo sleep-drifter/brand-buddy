@@ -4,6 +4,14 @@ struct ComponentsTab: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("Visual") {
+                    NavigationLink("Color") { ColorReferenceView() }
+                    NavigationLink("Typography") { TypographyReferenceView() }
+                }
+                Section("Primitives") {
+                    NavigationLink("Spacing & Grid") { SpacingView() }
+                    NavigationLink("Layout Primitives") { LayoutPrimitivesView() }
+                }
                 Section("Actions") {
                     NavigationLink("Buttons") { ButtonsView() }
                     NavigationLink("Menus & Context Menus") { MenusView() }
