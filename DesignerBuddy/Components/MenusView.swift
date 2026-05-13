@@ -426,50 +426,207 @@ struct TabBarsView: View {
 }
 
 struct ToolbarsView: View {
+    @State private var lastTapped: String? = nil
+    @State private var showKeyboardDemo = false
+    @State private var keyboardText = ""
+
     var body: some View {
         List {
-            Section("Toolbar Placements") {
-                ForEach(ToolbarPlacementItem.all) { item in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(item.token)
-                            .font(.mono(.subheadline))
-                        Text(item.description)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+
+            // MARK: Placement reference
+            Section {
+                PlacementRow(token: ".navigationBarLeading",  description: "Left side of the navigation bar",            example: "Cancel, back, edit")
+                PlacementRow(token: ".navigationBarTrailing", description: "Right side of the navigation bar",           example: "Done, Save, Add (+)")
+                PlacementRow(token: ".principal",             description: "Center — replaces the title",                example: "Segmented control, custom title")
+                PlacementRow(token: ".bottomBar",             description: "Bottom toolbar, above the tab bar",          example: "Mail compose, document actions")
+                PlacementRow(token: ".confirmationAction",    description: "Primary action, system-placed (trailing)",   example: "Done, Send")
+                PlacementRow(token: ".cancellationAction",    description: "Cancel action, system-placed (leading)",     example: "Cancel")
+                PlacementRow(token: ".destructiveAction",     description: "Destructive action rendered in red",         example: "Delete")
+                PlacementRow(token: ".keyboard",              description: "Floats above the software keyboard",         example: "Format, done, emoji")
+                PlacementRow(token: ".automatic",             description: "System chooses the best placement",          example: "Default for most items")
+            } header: {
+                Text("Placements")
+            }
+
+            // MARK: Bottom bar live demo
+            Section {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("This page has a live `.bottomBar` toolbar — see the icons at the bottom. Tap any of them to see the action name.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    if let tapped = lastTapped {
+                        Label("Tapped: \(tapped)", systemImage: "hand.tap")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.tint)
+                            .transition(.scale(scale: 0.8).combined(with: .opacity))
                     }
-                    .padding(.vertical, 2)
                 }
+                .animation(.spring(duration: 0.3), value: lastTapped)
+                .padding(.vertical, 4)
+            } header: {
+                Text("Bottom bar demo")
+            } footer: {
+                Text("Toolbar items use `ToolbarItemGroup` for grouped layout with automatic `Spacer` support.")
+            }
+
+            // MARK: Nav bar trailing demo
+            Section {
+                Text("The **Edit** button in the nav bar trailing position is a `.navigationBarTrailing` item. Tap it to see the label.")
+                    .font(.subheadline)
+            } header: {
+                Text("Nav bar trailing")
+            }
+
+            // MARK: Principal / center
+            Section {
+                Text("A `.principal` item replaces the navigation title entirely. Common for a segmented control at the top of a master list (e.g. Photos, Maps).")
+                    .font(.subheadline)
+            } header: {
+                Text("Principal (center)")
+            } footer: {
+                Text("Use `.principal` sparingly — it removes the back-button label context.")
+            }
+
+            // MARK: Keyboard toolbar
+            Section {
+                Button {
+                    showKeyboardDemo = true
+                } label: {
+                    Label("Try keyboard toolbar", systemImage: "keyboard")
+                }
+            } header: {
+                Text("Keyboard toolbar (.keyboard)")
+            } footer: {
+                Text("Toolbar items with `.keyboard` placement float above the software keyboard. Useful for formatting, emoji, or Done.")
+            }
+
+            // MARK: Visibility
+            Section {
+                PlacementRow(token: ".toolbar(.hidden)", description: "Hides the nav bar or tab bar in a child view", example: "Full-screen reader, media player")
+                PlacementRow(token: ".toolbar(.hidden, for: .tabBar)", description: "Hides only the tab bar, keeps nav bar", example: "Detail views inside a tab")
+            } header: {
+                Text("Visibility")
+            }
+
+            // MARK: Confirmation / Cancellation
+            Section {
+                Text("Use `.confirmationAction` and `.cancellationAction` in sheets and modal flows. The system positions them correctly on all platforms (iOS, macOS, watchOS).")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                CodeSnippetRow(code: """
+.toolbar {
+    ToolbarItem(placement: .cancellationAction) {
+        Button("Cancel") { dismiss() }
+    }
+    ToolbarItem(placement: .confirmationAction) {
+        Button("Save") { save() }
+    }
+}
+""")
+            } header: {
+                Text("Confirmation / Cancellation (sheets)")
             }
         }
         .navigationTitle("Toolbars")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItemGroup(placement: .bottomBar) {
-                Button { } label: { Image(systemName: "trash") }
-                Spacer()
-                Button { } label: { Image(systemName: "square.and.arrow.up") }
-                Spacer()
-                Button { } label: { Image(systemName: "folder") }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Edit") { lastTapped = ".navigationBarTrailing → Edit" }
             }
+            ToolbarItemGroup(placement: .bottomBar) {
+                Button {
+                    lastTapped = ".bottomBar → Trash"
+                } label: {
+                    Image(systemName: "trash")
+                }
+                Spacer()
+                Button {
+                    lastTapped = ".bottomBar → Share"
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                Spacer()
+                Button {
+                    lastTapped = ".bottomBar → Move"
+                } label: {
+                    Image(systemName: "folder")
+                }
+            }
+        }
+        .sheet(isPresented: $showKeyboardDemo) {
+            KeyboardToolbarDemo()
         }
     }
 }
 
-struct ToolbarPlacementItem: Identifiable {
-    let id = UUID()
+// MARK: - Sub-views
+
+private struct PlacementRow: View {
     let token: String
     let description: String
+    let example: String
 
-    static let all: [ToolbarPlacementItem] = [
-        ToolbarPlacementItem(token: ".navigationBarLeading", description: "Left side of nav bar"),
-        ToolbarPlacementItem(token: ".navigationBarTrailing", description: "Right side of nav bar"),
-        ToolbarPlacementItem(token: ".principal", description: "Center of nav bar (replaces title)"),
-        ToolbarPlacementItem(token: ".bottomBar", description: "Bottom toolbar above tab bar"),
-        ToolbarPlacementItem(token: ".confirmationAction", description: "Primary action, trailing position"),
-        ToolbarPlacementItem(token: ".cancellationAction", description: "Cancel action, leading position"),
-        ToolbarPlacementItem(token: ".destructiveAction", description: "Destructive action (red)"),
-        ToolbarPlacementItem(token: ".keyboard", description: "Above the keyboard"),
-    ]
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(token)
+                .font(.mono(.subheadline))
+                .foregroundStyle(.primary)
+            Text(description)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Text("e.g. \(example)")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+private struct CodeSnippetRow: View {
+    let code: String
+    var body: some View {
+        Text(code)
+            .font(.mono(.caption))
+            .foregroundStyle(.secondary)
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+private struct KeyboardToolbarDemo: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Type something") {
+                    TextField("Message…", text: $text, axis: .vertical)
+                        .lineLimit(4...)
+                        .focused($focused)
+                }
+            }
+            .navigationTitle("Keyboard Toolbar")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Button { text += "😊" } label: { Image(systemName: "face.smiling") }
+                    Button { text += "**bold** " } label: { Image(systemName: "bold") }
+                    Button { text += "_italic_ " } label: { Image(systemName: "italic") }
+                    Spacer()
+                    Button("Done") { focused = false }
+                        .fontWeight(.semibold)
+                }
+            }
+            .onAppear { focused = true }
+        }
+    }
 }
 
 struct SearchComponentView: View {
