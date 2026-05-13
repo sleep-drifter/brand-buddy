@@ -80,10 +80,10 @@ struct HapticButton: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(label)
                         .font(.subheadline)
-                        .foregroundStyle(fired ? .tint : .primary)
+                        .foregroundStyle(fired ? Color.accentColor : Color.primary)
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundStyle(fired ? .tint.opacity(0.7) : .secondary)
+                        .foregroundStyle(fired ? Color.accentColor.opacity(0.7) : Color.secondary)
                 }
                 Spacer()
                 Image(systemName: fired ? "hand.tap.fill" : "hand.tap")
