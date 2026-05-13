@@ -26,6 +26,7 @@ struct MenusView: View {
             }
 
             Section("Context Menu (long press)") {
+                NavigationLink("Context Menus") { ContextMenusView() }
                 HStack {
                     Image(systemName: "photo")
                         .font(.system(size: 32))
@@ -516,6 +517,111 @@ struct SteppersView: View {
             }
         }
         .navigationTitle("Steppers")
+        .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+struct ContextMenusView: View {
+    var body: some View {
+        List {
+            Section {
+                Text("Long-press any item below to trigger its context menu. Each demo shows a different content type and menu configuration.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Photo Card") {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(LinearGradient(colors: [.purple, .blue], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(height: 160)
+                    .overlay(
+                        Image(systemName: "photo")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.white.opacity(0.8))
+                    )
+                    .contextMenu {
+                        Button("Share", systemImage: "square.and.arrow.up") {}
+                        Button("Copy Image", systemImage: "doc.on.doc") {}
+                        Button("Save to Photos", systemImage: "square.and.arrow.down") {}
+                        Divider()
+                        Button("Delete", systemImage: "trash", role: .destructive) {}
+                    } preview: {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(LinearGradient(colors: [.purple, .blue], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 260, height: 200)
+                            .overlay(
+                                Image(systemName: "photo")
+                                    .font(.system(size: 52))
+                                    .foregroundStyle(.white.opacity(0.8))
+                            )
+                    }
+            }
+
+            Section("List Row") {
+                ForEach(["Project Alpha", "Project Beta", "Project Gamma"], id: \.self) { name in
+                    Label(name, systemImage: "folder")
+                        .contextMenu {
+                            Button("Open", systemImage: "arrow.up.right") {}
+                            Button("Rename", systemImage: "pencil") {}
+                            Button("Duplicate", systemImage: "plus.square.on.square") {}
+                            Divider()
+                            Menu("Move to…") {
+                                Button("Archive") {}
+                                Button("Trash", role: .destructive) {}
+                            }
+                            Divider()
+                            Button("Delete", systemImage: "trash", role: .destructive) {}
+                        }
+                }
+            }
+
+            Section("No Preview") {
+                Text("Long press — no custom preview")
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 4)
+                    .contextMenu {
+                        Button("Copy", systemImage: "doc.on.doc") {}
+                        Button("Look Up", systemImage: "magnifyingglass") {}
+                        Button("Share", systemImage: "square.and.arrow.up") {}
+                    }
+            }
+
+            Section("Button Roles") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Standard, .cancel, and .destructive roles affect button appearance and ordering automatically.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(.quaternary)
+                        .frame(height: 60)
+                        .overlay(Text("Long press me").font(.subheadline).foregroundStyle(.secondary))
+                        .contextMenu {
+                            Button("Default action") {}
+                            Button("Another action", systemImage: "star") {}
+                            Button("Cancel", role: .cancel) {}
+                            Button("Delete everything", systemImage: "trash", role: .destructive) {}
+                        }
+                }
+                .padding(.vertical, 4)
+            }
+
+            Section("API") {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(".contextMenu { ... }")
+                        .font(.mono(.subheadline)).fontWeight(.medium)
+                    Text("Attach to any view. Long press triggers the menu with the view lifted and blurred behind it.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Divider()
+                    Text(".contextMenu { ... } preview: { ... }")
+                        .font(.mono(.subheadline)).fontWeight(.medium)
+                    Text("Supply a custom preview view shown above the menu. Scales in from the source rect.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
+            }
+        }
+        .navigationTitle("Context Menus")
         .navigationBarTitleDisplayMode(.large)
     }
 }

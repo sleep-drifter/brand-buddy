@@ -91,6 +91,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Layout Primitives":      LayoutPrimitivesView()
     case "Buttons":                ButtonsView()
     case "Menus & Context Menus":  MenusView()
+    case "Context Menus":          ContextMenusView()
     case "Text Fields":            TextFieldsView()
     case "Toggles & Switches":     TogglesView()
     case "Sliders":                SlidersView()

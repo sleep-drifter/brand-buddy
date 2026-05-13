@@ -16,6 +16,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Layout Primitives",     section: "Primitives",  tab: "Components"),
         .init(name: "Buttons",               section: "Actions",     tab: "Components"),
         .init(name: "Menus & Context Menus", section: "Actions",     tab: "Components"),
+        .init(name: "Context Menus",         section: "Actions",     tab: "Components"),
         .init(name: "Text Fields",           section: "Inputs",      tab: "Components"),
         .init(name: "Toggles & Switches",    section: "Inputs",      tab: "Components"),
         .init(name: "Sliders",               section: "Inputs",      tab: "Components"),
@@ -98,6 +99,7 @@ struct ComponentsTab: View {
                 Section("Actions") {
                     NavigationLink("Buttons") { ButtonsView() }
                     NavigationLink("Menus & Context Menus") { MenusView() }
+                    NavigationLink("Context Menus") { ContextMenusView() }
                 }
                 Section("Inputs") {
                     NavigationLink("Text Fields") { TextFieldsView() }
