@@ -2,24 +2,16 @@ import SwiftUI
 
 struct ComponentSearchView: View {
     @State private var searchText = ""
-    @State private var debouncedText = ""
-
-    var results: [AppEntry] {
-        guard !debouncedText.isEmpty else { return [] }
-        return AppEntry.all.filter {
-            fuzzyMatch(debouncedText, in: $0.name) ||
-            fuzzyMatch(debouncedText, in: $0.section) ||
-            fuzzyMatch(debouncedText, in: $0.tab)
-        }
-    }
+    @State private var results: [AppEntry] = []
+    @State private var searchTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
             Group {
-                if debouncedText.isEmpty {
-                    allSections
+                if searchText.isEmpty {
+                    AllSectionsView()
                 } else if results.isEmpty {
-                    ContentUnavailableView.search(text: debouncedText)
+                    ContentUnavailableView.search(text: searchText)
                 } else {
                     List(results) { entry in
                         NavigationLink(value: entry) {
@@ -40,12 +32,21 @@ struct ComponentSearchView: View {
             .navigationTitle("Search")
             .searchable(text: $searchText, prompt: "Search for anything")
             .onChange(of: searchText) { _, newValue in
-                // Debounce: wait until the user pauses typing before filtering
-                Task {
-                    try? await Task.sleep(for: .milliseconds(120))
-                    if searchText == newValue {
-                        debouncedText = newValue
+                searchTask?.cancel()
+                guard !newValue.isEmpty else {
+                    results = []
+                    return
+                }
+                searchTask = Task {
+                    try? await Task.sleep(for: .milliseconds(100))
+                    guard !Task.isCancelled else { return }
+                    let filtered = AppEntry.all.filter {
+                        fuzzyMatch(newValue, in: $0.name) ||
+                        fuzzyMatch(newValue, in: $0.section) ||
+                        fuzzyMatch(newValue, in: $0.tab)
                     }
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run { results = filtered }
                 }
             }
             .navigationDestination(for: AppEntry.self) { entry in
@@ -53,8 +54,11 @@ struct ComponentSearchView: View {
             }
         }
     }
+}
 
-    var allSections: some View {
+// Extracted into its own struct so SwiftUI never re-renders it during search.
+private struct AllSectionsView: View {
+    var body: some View {
         List {
             ForEach(["Components", "Patterns", "Materials", "More"], id: \.self) { tab in
                 Section(tab) {
@@ -97,8 +101,7 @@ func appDestination(for entry: AppEntry) -> some View {
     switch entry.name {
     case "Color":                  ColorReferenceView()
     case "Typography":             TypographyReferenceView()
-    case "Spacing & Grid":         SpacingView()
-    case "Layout Primitives":      LayoutPrimitivesView()
+    case "Spacing & Layout":       SpacingView()
     case "Buttons":                ButtonsView()
     case "Menus & Context Menus":  MenusView()
     case "Context Menus":          ContextMenusView()

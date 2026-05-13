@@ -67,13 +67,14 @@ struct HapticButton: View {
     let action: () -> Void
 
     @State private var fired = false
+    @GestureState private var isDown = false
 
     var body: some View {
         Button {
             action()
-            withAnimation(.spring(duration: 0.12)) { fired = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                withAnimation(.spring(duration: 0.3)) { fired = false }
+            fired = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.175) {
+                withAnimation(.spring(duration: 0.15)) { fired = false }
             }
         } label: {
             HStack {
@@ -88,11 +89,17 @@ struct HapticButton: View {
                 Spacer()
                 Image(systemName: fired ? "hand.tap.fill" : "hand.tap")
                     .font(.caption)
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(Color.accentColor)
                     .scaleEffect(fired ? 1.2 : 1.0)
             }
         }
-        .scaleEffect(fired ? 0.95 : 1.0)
+        .buttonStyle(.plain)
+        .scaleEffect(isDown ? 0.95 : 1.0)
+        .animation(.spring(duration: 0.12), value: isDown)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .updating($isDown) { _, state, _ in state = true }
+        )
         .padding(.vertical, 2)
     }
 }

@@ -12,8 +12,7 @@ struct AppEntry: Identifiable, Hashable {
     static let components: [AppEntry] = [
         .init(name: "Color",                 section: "Visual",      tab: "Components"),
         .init(name: "Typography",            section: "Visual",      tab: "Components"),
-        .init(name: "Spacing & Grid",        section: "Primitives",  tab: "Components"),
-        .init(name: "Layout Primitives",     section: "Primitives",  tab: "Components"),
+        .init(name: "Spacing & Layout",       section: "Primitives",  tab: "Components"),
         .init(name: "Buttons",               section: "Actions",     tab: "Components"),
         .init(name: "Menus & Context Menus", section: "Actions",     tab: "Components"),
         .init(name: "Context Menus",         section: "Actions",     tab: "Components"),
@@ -94,8 +93,7 @@ struct ComponentsTab: View {
                     NavigationLink("Typography") { TypographyReferenceView() }
                 }
                 Section("Primitives") {
-                    NavigationLink("Spacing & Grid") { SpacingView() }
-                    NavigationLink("Layout Primitives") { LayoutPrimitivesView() }
+                    NavigationLink("Spacing & Layout") { SpacingView() }
                 }
                 Section("Actions") {
                     NavigationLink("Buttons") { ButtonsView() }
