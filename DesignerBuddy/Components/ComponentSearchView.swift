@@ -20,19 +20,17 @@ struct ComponentSearchView: View {
                 } else if results.isEmpty {
                     ContentUnavailableView.search(text: searchText)
                 } else {
-                    List {
-                        ForEach(results) { entry in
-                            NavigationLink(destination: appDestination(for: entry)) {
-                                HStack {
-                                    Text(entry.name)
-                                    Spacer()
-                                    Text(entry.tab)
-                                        .font(.caption2)
-                                        .foregroundStyle(entry.tab.chipColor)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(entry.tab.chipColor.opacity(0.15), in: Capsule())
-                                }
+                    List(results) { entry in
+                        NavigationLink(value: entry) {
+                            HStack {
+                                Text(entry.name)
+                                Spacer()
+                                Text(entry.tab)
+                                    .font(.caption2)
+                                    .foregroundStyle(entry.tab.chipColor)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(entry.tab.chipColor.opacity(0.15), in: Capsule())
                             }
                         }
                     }
@@ -40,16 +38,20 @@ struct ComponentSearchView: View {
             }
             .navigationTitle("Search")
             .searchable(text: $searchText, prompt: "Search for anything")
+            .navigationDestination(for: AppEntry.self) { entry in
+                appDestination(for: entry)
+            }
         }
     }
 
     var allSections: some View {
         List {
             ForEach(["Components", "Patterns", "Materials", "More"], id: \.self) { tab in
-                let entries = AppEntry.all.filter { $0.tab == tab }
                 Section(tab) {
-                    ForEach(entries) { entry in
-                        NavigationLink(entry.name, destination: appDestination(for: entry))
+                    ForEach(AppEntry.all.filter { $0.tab == tab }) { entry in
+                        NavigationLink(value: entry) {
+                            Text(entry.name)
+                        }
                     }
                 }
             }
@@ -69,7 +71,6 @@ private extension String {
     }
 }
 
-// Fuzzy match: all query chars must appear in order in target
 private func fuzzyMatch(_ query: String, in target: String) -> Bool {
     guard !query.isEmpty else { return true }
     let q = query.lowercased(), t = target.lowercased()
@@ -84,7 +85,6 @@ private func fuzzyMatch(_ query: String, in target: String) -> Bool {
 @ViewBuilder
 func appDestination(for entry: AppEntry) -> some View {
     switch entry.name {
-    // Components
     case "Color":                  ColorReferenceView()
     case "Typography":             TypographyReferenceView()
     case "Spacing & Grid":         SpacingView()
@@ -119,7 +119,6 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Action Sheets":          ActionSheetsView()
     case "Popovers":               PopoversView()
     case "Toasts & Banners":       ToastsView()
-    // Patterns
     case "Navigation Patterns":    NavigationPatternsView()
     case "Tab Bar Patterns":       TabPatternView()
     case "Modal Patterns":         ModalPatternsView()
@@ -131,12 +130,10 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Error States":           ErrorStatesView()
     case "Settings Patterns":      SettingsPatternView()
     case "Onboarding Flows":       OnboardingView()
-    // Materials
     case "iOS 26 Glass":           GlassEffectPlayground()
     case "Material (blur)":        GlassPlayground()
     case "Surfaces":               SurfacesPlayground()
     case "Vibrancy":               VibrancyPlayground()
-    // More
     case "Spring Physics":         SpringPhysicsView()
     case "Haptics":                HapticsView()
     case "Corner Radius":          CornerRadiusView()
@@ -149,7 +146,6 @@ func appDestination(for entry: AppEntry) -> some View {
     }
 }
 
-// Keep old name working
 func componentDestination(for entry: AppEntry) -> some View {
     appDestination(for: entry)
 }

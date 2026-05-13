@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct AppEntry: Identifiable {
+struct AppEntry: Identifiable, Hashable {
     let id = UUID()
     let name: String
     let section: String
