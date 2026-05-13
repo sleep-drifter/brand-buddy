@@ -696,48 +696,54 @@ private struct ButtonGroupDemo: View {
         switch variant {
         case .single:
             return """
-ToolbarItem(placement: .navigationBarTrailing) {
-    Button { } label: {
-        Image(systemName: "square.grid.2x2")
-    }
-}"""
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button { } label: {
+                        Image(systemName: "square.grid.2x2")
+                    }
+                }
+                """
         case .two:
             return """
-ToolbarItemGroup(placement: .navigationBarTrailing) {
-    Button { } label: { Image(systemName: "checkmark.circle") }
-    Button { } label: { Image(systemName: "square.and.arrow.up") }
-}"""
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    Button { } label: { Image(systemName: "checkmark.circle") }
+                    Button { } label: { Image(systemName: "square.and.arrow.up") }
+                }
+                """
         case .three:
             return """
-ToolbarItemGroup(placement: .navigationBarTrailing) {
-    Button { } label: { Image(systemName: "line.3.horizontal.decrease.circle") }
-    Button { } label: { Image(systemName: "square.grid.2x2") }
-    Button { } label: { Image(systemName: "ellipsis") }
-}"""
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    Button { } label: { Image(systemName: "line.3.horizontal.decrease.circle") }
+                    Button { } label: { Image(systemName: "square.grid.2x2") }
+                    Button { } label: { Image(systemName: "ellipsis") }
+                }
+                """
         case .mixed:
             return """
-ToolbarItemGroup(placement: .navigationBarTrailing) {
-    Button("Edit") { }
-    Button { } label: { Image(systemName: "square.and.arrow.up") }
-    Button { } label: { Image(systemName: "ellipsis") }
-}"""
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    Button("Edit") { }
+                    Button { } label: { Image(systemName: "square.and.arrow.up") }
+                    Button { } label: { Image(systemName: "ellipsis") }
+                }
+                """
         case .bothSides:
             return """
-ToolbarItem(placement: .navigationBarLeading) {
-    Button { } label: { Image(systemName: "xmark") }
-}
-ToolbarItemGroup(placement: .navigationBarTrailing) {
-    Button { } label: { Image(systemName: "checkmark.circle") }
-    Button { } label: { Image(systemName: "ellipsis") }
-}"""
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button { } label: { Image(systemName: "xmark") }
+                }
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    Button { } label: { Image(systemName: "checkmark.circle") }
+                    Button { } label: { Image(systemName: "ellipsis") }
+                }
+                """
         case .controlGroup:
             return """
-ToolbarItem(placement: .navigationBarTrailing) {
-    ControlGroup {
-        Button { } label: { Image(systemName: "minus") }
-        Button { } label: { Image(systemName: "plus") }
-    }
-}"""
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    ControlGroup {
+                        Button { } label: { Image(systemName: "minus") }
+                        Button { } label: { Image(systemName: "plus") }
+                    }
+                }
+                """
         }
     }
 
