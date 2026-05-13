@@ -33,10 +33,10 @@ struct ComponentSearchView: View {
                                     Spacer()
                                     Text(entry.tab)
                                         .font(.caption2)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(entry.tab.chipColor)
                                         .padding(.horizontal, 6)
                                         .padding(.vertical, 2)
-                                        .background(.quaternary, in: Capsule())
+                                        .background(entry.tab.chipColor.opacity(0.15), in: Capsule())
                                 }
                             }
                         }
@@ -65,6 +65,18 @@ struct ComponentSearchView: View {
                     }
                 }
             }
+        }
+    }
+}
+
+private extension String {
+    var chipColor: Color {
+        switch self {
+        case "Components": return .blue
+        case "Patterns":   return .purple
+        case "Materials":  return .teal
+        case "More":       return .orange
+        default:           return .secondary
         }
     }
 }
