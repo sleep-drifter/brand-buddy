@@ -7,6 +7,7 @@ struct DesignerBuddyApp: App {
 
     init() {
         registerFonts()
+        warmFontCache()
     }
 
     var body: some Scene {
@@ -54,6 +55,22 @@ struct SplashView: View {
             }
         }
         .onAppear { pulse = true }
+    }
+}
+
+// Pre-populate the font cache on a background thread during the splash delay
+// so all Text views get cached Font objects on first render.
+private func warmFontCache() {
+    DispatchQueue.global(qos: .userInitiated).async {
+        let styles: [Font.TextStyle] = [
+            .largeTitle, .title, .title2, .title3,
+            .headline, .body, .callout, .subheadline,
+            .footnote, .caption, .caption2
+        ]
+        for style in styles {
+            _ = Font.noi(style, weight: .regular)
+            _ = Font.noi(style, weight: .medium)
+        }
     }
 }
 

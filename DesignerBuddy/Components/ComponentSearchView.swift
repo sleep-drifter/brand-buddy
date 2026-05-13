@@ -2,23 +2,24 @@ import SwiftUI
 
 struct ComponentSearchView: View {
     @State private var searchText = ""
+    @State private var debouncedText = ""
 
     var results: [AppEntry] {
-        guard !searchText.isEmpty else { return [] }
+        guard !debouncedText.isEmpty else { return [] }
         return AppEntry.all.filter {
-            fuzzyMatch(searchText, in: $0.name) ||
-            fuzzyMatch(searchText, in: $0.section) ||
-            fuzzyMatch(searchText, in: $0.tab)
+            fuzzyMatch(debouncedText, in: $0.name) ||
+            fuzzyMatch(debouncedText, in: $0.section) ||
+            fuzzyMatch(debouncedText, in: $0.tab)
         }
     }
 
     var body: some View {
         NavigationStack {
             Group {
-                if searchText.isEmpty {
+                if debouncedText.isEmpty {
                     allSections
                 } else if results.isEmpty {
-                    ContentUnavailableView.search(text: searchText)
+                    ContentUnavailableView.search(text: debouncedText)
                 } else {
                     List(results) { entry in
                         NavigationLink(value: entry) {
@@ -38,6 +39,15 @@ struct ComponentSearchView: View {
             }
             .navigationTitle("Search")
             .searchable(text: $searchText, prompt: "Search for anything")
+            .onChange(of: searchText) { _, newValue in
+                // Debounce: wait until the user pauses typing before filtering
+                Task {
+                    try? await Task.sleep(for: .milliseconds(120))
+                    if searchText == newValue {
+                        debouncedText = newValue
+                    }
+                }
+            }
             .navigationDestination(for: AppEntry.self) { entry in
                 appDestination(for: entry)
             }

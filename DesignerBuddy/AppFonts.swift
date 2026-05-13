@@ -6,9 +6,7 @@ import CoreText
 extension Font {
 
     static func noi(_ style: TextStyle, weight: NoiWeight = .regular) -> Font {
-        let base = noiUIFont(postScriptName: weight.fontName, size: style.defaultSize)
-        let scaled = UIFontMetrics(forTextStyle: style.uiTextStyle).scaledFont(for: base)
-        return Font(scaled)
+        NoiFontCache.shared.swiftUIFont(style: style, weight: weight)
     }
 
     static func mono(_ style: TextStyle = .body) -> Font {
@@ -21,23 +19,53 @@ extension Font {
     }
 }
 
-// Builds a UIFont for Noi Grotesk with the OpenType features that match our web stack:
-// font-feature-settings: "kern","liga","calt","ss02","ss03","ss11","ss12"
-private func noiUIFont(postScriptName: String, size: CGFloat) -> UIFont {
-    let features: [[String: Any]] = [
-        [kCTFontOpenTypeFeatureTag as String: "kern", kCTFontOpenTypeFeatureValue as String: 1],
-        [kCTFontOpenTypeFeatureTag as String: "liga", kCTFontOpenTypeFeatureValue as String: 1],
-        [kCTFontOpenTypeFeatureTag as String: "calt", kCTFontOpenTypeFeatureValue as String: 1],
-        [kCTFontOpenTypeFeatureTag as String: "ss02", kCTFontOpenTypeFeatureValue as String: 1],
-        [kCTFontOpenTypeFeatureTag as String: "ss03", kCTFontOpenTypeFeatureValue as String: 1],
-        [kCTFontOpenTypeFeatureTag as String: "ss11", kCTFontOpenTypeFeatureValue as String: 1],
-        [kCTFontOpenTypeFeatureTag as String: "ss12", kCTFontOpenTypeFeatureValue as String: 1],
-    ]
-    let descriptor = UIFontDescriptor(fontAttributes: [
-        .name: postScriptName,
-        UIFontDescriptor.AttributeName(rawValue: kCTFontFeatureSettingsAttribute as String): features,
-    ])
-    return UIFont(descriptor: descriptor, size: size)
+// MARK: - Cache
+
+private final class NoiFontCache: @unchecked Sendable {
+    static let shared = NoiFontCache()
+    private init() {}
+
+    private struct Key: Hashable {
+        let style: Font.TextStyle
+        let weight: Font.NoiWeight
+        static func == (lhs: Key, rhs: Key) -> Bool { lhs.style == rhs.style && lhs.weight == rhs.weight }
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(style)
+            hasher.combine(weight == .medium)
+        }
+    }
+
+    private let lock = NSLock()
+    private var cache: [Key: Font] = [:]
+
+    func swiftUIFont(style: Font.TextStyle, weight: Font.NoiWeight) -> Font {
+        let key = Key(style: style, weight: weight)
+        lock.lock()
+        if let hit = cache[key] { lock.unlock(); return hit }
+        lock.unlock()
+        let uiFont = makeUIFont(postScriptName: weight.fontName, size: style.defaultSize)
+        let scaled = UIFontMetrics(forTextStyle: style.uiTextStyle).scaledFont(for: uiFont)
+        let font = Font(scaled)
+        lock.lock(); cache[key] = font; lock.unlock()
+        return font
+    }
+
+    private func makeUIFont(postScriptName: String, size: CGFloat) -> UIFont {
+        let features: [[String: Any]] = [
+            [kCTFontOpenTypeFeatureTag as String: "kern", kCTFontOpenTypeFeatureValue as String: 1],
+            [kCTFontOpenTypeFeatureTag as String: "liga", kCTFontOpenTypeFeatureValue as String: 1],
+            [kCTFontOpenTypeFeatureTag as String: "calt", kCTFontOpenTypeFeatureValue as String: 1],
+            [kCTFontOpenTypeFeatureTag as String: "ss02", kCTFontOpenTypeFeatureValue as String: 1],
+            [kCTFontOpenTypeFeatureTag as String: "ss03", kCTFontOpenTypeFeatureValue as String: 1],
+            [kCTFontOpenTypeFeatureTag as String: "ss11", kCTFontOpenTypeFeatureValue as String: 1],
+            [kCTFontOpenTypeFeatureTag as String: "ss12", kCTFontOpenTypeFeatureValue as String: 1],
+        ]
+        let descriptor = UIFontDescriptor(fontAttributes: [
+            .name: postScriptName,
+            UIFontDescriptor.AttributeName(rawValue: kCTFontFeatureSettingsAttribute as String): features,
+        ])
+        return UIFont(descriptor: descriptor, size: size)
+    }
 }
 
 // MARK: - Text style helpers
