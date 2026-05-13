@@ -1,47 +1,87 @@
 import SwiftUI
 
-struct ComponentEntry: Identifiable {
+struct AppEntry: Identifiable {
     let id = UUID()
     let name: String
     let section: String
+    let tab: String
 
-    static let all: [ComponentEntry] = [
-        .init(name: "Color",                 section: "Visual"),
-        .init(name: "Typography",            section: "Visual"),
-        .init(name: "Spacing & Grid",        section: "Primitives"),
-        .init(name: "Layout Primitives",     section: "Primitives"),
-        .init(name: "Buttons",               section: "Actions"),
-        .init(name: "Menus & Context Menus", section: "Actions"),
-        .init(name: "Text Fields",           section: "Inputs"),
-        .init(name: "Toggles & Switches",    section: "Inputs"),
-        .init(name: "Sliders",               section: "Inputs"),
-        .init(name: "Steppers",              section: "Inputs"),
-        .init(name: "Pickers",               section: "Selection"),
-        .init(name: "Segmented Controls",    section: "Selection"),
-        .init(name: "Date & Time Pickers",   section: "Selection"),
-        .init(name: "Color Picker",          section: "Selection"),
-        .init(name: "Labels & Text",         section: "Display"),
-        .init(name: "Images & Icons",        section: "Display"),
-        .init(name: "Progress Indicators",   section: "Display"),
-        .init(name: "Gauges",                section: "Display"),
-        .init(name: "Badges",                section: "Display"),
-        .init(name: "Tags",                  section: "Display"),
-        .init(name: "Lists & Tables",        section: "Layout"),
-        .init(name: "Scroll Views",          section: "Layout"),
-        .init(name: "Grids",                 section: "Layout"),
-        .init(name: "Grouped Forms",         section: "Layout"),
-        .init(name: "Cards",                 section: "Layout"),
-        .init(name: "Navigation Bars",       section: "Navigation"),
-        .init(name: "Tab Bars",              section: "Navigation"),
-        .init(name: "Toolbars",              section: "Navigation"),
-        .init(name: "Search",                section: "Navigation"),
-        .init(name: "Sheets & Modals",       section: "Overlays"),
-        .init(name: "Alerts & Dialogs",      section: "Overlays"),
-        .init(name: "Action Sheets",         section: "Overlays"),
-        .init(name: "Popovers",              section: "Overlays"),
-        .init(name: "Toasts & Banners",      section: "Overlays"),
+    // Keep ComponentEntry as a typealias for backwards compat with ComponentSearchView
+    static let all: [AppEntry] = components + patterns + materials + more
+
+    static let components: [AppEntry] = [
+        .init(name: "Color",                 section: "Visual",      tab: "Components"),
+        .init(name: "Typography",            section: "Visual",      tab: "Components"),
+        .init(name: "Spacing & Grid",        section: "Primitives",  tab: "Components"),
+        .init(name: "Layout Primitives",     section: "Primitives",  tab: "Components"),
+        .init(name: "Buttons",               section: "Actions",     tab: "Components"),
+        .init(name: "Menus & Context Menus", section: "Actions",     tab: "Components"),
+        .init(name: "Text Fields",           section: "Inputs",      tab: "Components"),
+        .init(name: "Toggles & Switches",    section: "Inputs",      tab: "Components"),
+        .init(name: "Sliders",               section: "Inputs",      tab: "Components"),
+        .init(name: "Steppers",              section: "Inputs",      tab: "Components"),
+        .init(name: "Pickers",               section: "Selection",   tab: "Components"),
+        .init(name: "Segmented Controls",    section: "Selection",   tab: "Components"),
+        .init(name: "Date & Time Pickers",   section: "Selection",   tab: "Components"),
+        .init(name: "Color Picker",          section: "Selection",   tab: "Components"),
+        .init(name: "Labels & Text",         section: "Display",     tab: "Components"),
+        .init(name: "Images & Icons",        section: "Display",     tab: "Components"),
+        .init(name: "Progress Indicators",   section: "Display",     tab: "Components"),
+        .init(name: "Gauges",                section: "Display",     tab: "Components"),
+        .init(name: "Badges",                section: "Display",     tab: "Components"),
+        .init(name: "Tags",                  section: "Display",     tab: "Components"),
+        .init(name: "Lists & Tables",        section: "Layout",      tab: "Components"),
+        .init(name: "Scroll Views",          section: "Layout",      tab: "Components"),
+        .init(name: "Grids",                 section: "Layout",      tab: "Components"),
+        .init(name: "Grouped Forms",         section: "Layout",      tab: "Components"),
+        .init(name: "Cards",                 section: "Layout",      tab: "Components"),
+        .init(name: "Navigation Bars",       section: "Navigation",  tab: "Components"),
+        .init(name: "Tab Bars",              section: "Navigation",  tab: "Components"),
+        .init(name: "Toolbars",              section: "Navigation",  tab: "Components"),
+        .init(name: "Search",                section: "Navigation",  tab: "Components"),
+        .init(name: "Sheets & Modals",       section: "Overlays",    tab: "Components"),
+        .init(name: "Alerts & Dialogs",      section: "Overlays",    tab: "Components"),
+        .init(name: "Action Sheets",         section: "Overlays",    tab: "Components"),
+        .init(name: "Popovers",              section: "Overlays",    tab: "Components"),
+        .init(name: "Toasts & Banners",      section: "Overlays",    tab: "Components"),
+    ]
+
+    static let patterns: [AppEntry] = [
+        .init(name: "Navigation Patterns",   section: "Navigation",  tab: "Patterns"),
+        .init(name: "Tab Bar Patterns",      section: "Navigation",  tab: "Patterns"),
+        .init(name: "Modal Patterns",        section: "Presentation",tab: "Patterns"),
+        .init(name: "Sheet Flows",           section: "Presentation",tab: "Patterns"),
+        .init(name: "Search Patterns",       section: "Input",       tab: "Patterns"),
+        .init(name: "Form Patterns",         section: "Input",       tab: "Patterns"),
+        .init(name: "Empty States",          section: "Content",     tab: "Patterns"),
+        .init(name: "Loading States",        section: "Content",     tab: "Patterns"),
+        .init(name: "Error States",          section: "Content",     tab: "Patterns"),
+        .init(name: "Settings Patterns",     section: "Settings",    tab: "Patterns"),
+        .init(name: "Onboarding Flows",      section: "Onboarding",  tab: "Patterns"),
+    ]
+
+    static let materials: [AppEntry] = [
+        .init(name: "iOS 26 Glass",          section: "Glass",       tab: "Materials"),
+        .init(name: "Material (blur)",       section: "Glass",       tab: "Materials"),
+        .init(name: "Surfaces",              section: "Surfaces",    tab: "Materials"),
+        .init(name: "Vibrancy",              section: "Vibrancy",    tab: "Materials"),
+    ]
+
+    static let more: [AppEntry] = [
+        .init(name: "Spring Physics",        section: "Playgrounds", tab: "More"),
+        .init(name: "Haptics",               section: "Playgrounds", tab: "More"),
+        .init(name: "Corner Radius",         section: "Playgrounds", tab: "More"),
+        .init(name: "Concentric Radius",     section: "Playgrounds", tab: "More"),
+        .init(name: "Shadow Explorer",       section: "Playgrounds", tab: "More"),
+        .init(name: "Blur Stack",            section: "Playgrounds", tab: "More"),
+        .init(name: "Safe Areas",            section: "Reference",   tab: "More"),
+        .init(name: "Dynamic Type Scale",    section: "Reference",   tab: "More"),
+        .init(name: "Sheet Detents",         section: "Reference",   tab: "More"),
     ]
 }
+
+// Keep old name working in ComponentSearchView
+typealias ComponentEntry = AppEntry
 
 struct ComponentsTab: View {
     var body: some View {
