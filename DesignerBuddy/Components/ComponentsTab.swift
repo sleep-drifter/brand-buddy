@@ -32,6 +32,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Badges",                section: "Display",     tab: "Components"),
         .init(name: "Tags",                  section: "Display",     tab: "Components"),
         .init(name: "Lists & Tables",        section: "Layout",      tab: "Components"),
+        .init(name: "Swipeable Rows",        section: "Layout",      tab: "Components"),
         .init(name: "Scroll Views",          section: "Layout",      tab: "Components"),
         .init(name: "Grids",                 section: "Layout",      tab: "Components"),
         .init(name: "Grouped Forms",         section: "Layout",      tab: "Components"),
@@ -123,6 +124,7 @@ struct ComponentsTab: View {
                 }
                 Section("Layout") {
                     NavigationLink("Lists & Tables") { ListsView() }
+                    NavigationLink("Swipeable Rows") { SwipeableRowsView() }
                     NavigationLink("Scroll Views") { ScrollViewsView() }
                     NavigationLink("Grids") { GridsView() }
                     NavigationLink("Grouped Forms") { GroupedFormsView() }

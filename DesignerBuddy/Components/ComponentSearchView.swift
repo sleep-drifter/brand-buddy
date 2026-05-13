@@ -107,6 +107,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Badges":                 BadgesView()
     case "Tags":                   TagsView()
     case "Lists & Tables":         ListsView()
+    case "Swipeable Rows":         SwipeableRowsView()
     case "Scroll Views":           ScrollViewsView()
     case "Grids":                  GridsView()
     case "Grouped Forms":          GroupedFormsView()
