@@ -44,7 +44,7 @@ struct ComponentSearchView: View {
                 }
             }
             .navigationTitle("Search")
-            .searchable(text: $searchText, prompt: "Components, patterns, materials…")
+            .searchable(text: $searchText, prompt: "Search for anything")
         }
     }
 
