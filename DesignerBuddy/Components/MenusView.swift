@@ -525,97 +525,70 @@ struct ContextMenusView: View {
     var body: some View {
         List {
             Section {
-                Text("Long-press any item below to trigger its context menu. Each demo shows a different content type and menu configuration.")
+                Text("Long-press each row. The preview reveals content that isn't visible in the list — the key capability of contextMenu(preview:).")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            Section("Photo Card") {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(LinearGradient(colors: [.purple, .blue], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(height: 160)
-                    .overlay(
-                        Image(systemName: "photo")
-                            .font(.system(size: 40))
-                            .foregroundStyle(.white.opacity(0.8))
-                    )
-                    .contextMenu {
-                        Button("Share", systemImage: "square.and.arrow.up") {}
-                        Button("Copy Image", systemImage: "doc.on.doc") {}
-                        Button("Save to Photos", systemImage: "square.and.arrow.down") {}
-                        Divider()
-                        Button("Delete", systemImage: "trash", role: .destructive) {}
-                    } preview: {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(LinearGradient(colors: [.purple, .blue], startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 260, height: 200)
-                            .overlay(
-                                Image(systemName: "photo")
-                                    .font(.system(size: 52))
-                                    .foregroundStyle(.white.opacity(0.8))
-                            )
-                    }
-            }
-
-            Section("List Row") {
-                ForEach(["Project Alpha", "Project Beta", "Project Gamma"], id: \.self) { name in
-                    Label(name, systemImage: "folder")
+            Section("iMessage-style") {
+                ForEach(MessageThread.samples) { thread in
+                    MessageRow(thread: thread)
                         .contextMenu {
-                            Button("Open", systemImage: "arrow.up.right") {}
-                            Button("Rename", systemImage: "pencil") {}
-                            Button("Duplicate", systemImage: "plus.square.on.square") {}
-                            Divider()
-                            Menu("Move to…") {
-                                Button("Archive") {}
-                                Button("Trash", role: .destructive) {}
-                            }
+                            Button("Reply", systemImage: "arrowshape.turn.up.left") {}
+                            Button("React", systemImage: "face.smiling") {}
+                            Button("Copy", systemImage: "doc.on.doc") {}
+                            Button("Forward", systemImage: "arrowshape.turn.up.right") {}
                             Divider()
                             Button("Delete", systemImage: "trash", role: .destructive) {}
+                        } preview: {
+                            MessagePreview(thread: thread)
                         }
                 }
             }
 
-            Section("No Preview") {
-                Text("Long press — no custom preview")
-                    .font(.subheadline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 4)
-                    .contextMenu {
-                        Button("Copy", systemImage: "doc.on.doc") {}
-                        Button("Look Up", systemImage: "magnifyingglass") {}
-                        Button("Share", systemImage: "square.and.arrow.up") {}
-                    }
-            }
-
-            Section("Button Roles") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Standard, .cancel, and .destructive roles affect button appearance and ordering automatically.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(.quaternary)
-                        .frame(height: 60)
-                        .overlay(Text("Long press me").font(.subheadline).foregroundStyle(.secondary))
+            Section("Spotify-style") {
+                ForEach(Track.samples) { track in
+                    TrackRow(track: track)
                         .contextMenu {
-                            Button("Default action") {}
-                            Button("Another action", systemImage: "star") {}
-                            Button("Cancel", role: .cancel) {}
-                            Button("Delete everything", systemImage: "trash", role: .destructive) {}
+                            Button("Play Next", systemImage: "text.line.first.and.arrowtriangle.forward") {}
+                            Button("Add to Queue", systemImage: "text.badge.plus") {}
+                            Button("Save to Library", systemImage: "heart") {}
+                            Divider()
+                            Menu("Add to Playlist") {
+                                Button("Chill Vibes") {}
+                                Button("Morning Run") {}
+                                Button("Focus") {}
+                            }
+                            Divider()
+                            Button("Share Song", systemImage: "square.and.arrow.up") {}
+                        } preview: {
+                            TrackPreview(track: track)
                         }
                 }
-                .padding(.vertical, 4)
+            }
+
+            Section("Link / Rich Preview") {
+                ForEach(LinkItem.samples) { link in
+                    LinkRow(link: link)
+                        .contextMenu {
+                            Button("Open", systemImage: "safari") {}
+                            Button("Copy Link", systemImage: "link") {}
+                            Button("Share", systemImage: "square.and.arrow.up") {}
+                            Divider()
+                            Button("Remove", systemImage: "xmark.circle", role: .destructive) {}
+                        } preview: {
+                            LinkPreview(link: link)
+                        }
+                }
             }
 
             Section("API") {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(".contextMenu { ... }")
-                        .font(.mono(.subheadline)).fontWeight(.medium)
-                    Text("Attach to any view. Long press triggers the menu with the view lifted and blurred behind it.")
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(".contextMenu { actions } preview: { customView }")
+                        .font(.mono(.caption)).fontWeight(.medium)
+                    Text("The preview can be any SwiftUI view — completely different from the source. It scales in from the tap point and shows above the action menu.")
                         .font(.caption).foregroundStyle(.secondary)
-                    Divider()
-                    Text(".contextMenu { ... } preview: { ... }")
-                        .font(.mono(.subheadline)).fontWeight(.medium)
-                    Text("Supply a custom preview view shown above the menu. Scales in from the source rect.")
+                    Text("Use previews to surface detail that wouldn't fit in the list row: full message bodies, album art + metadata, link thumbnails, contact cards.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 4)
@@ -623,6 +596,198 @@ struct ContextMenusView: View {
         }
         .navigationTitle("Context Menus")
         .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+// MARK: - iMessage demo
+
+struct MessageThread: Identifiable {
+    let id = UUID()
+    let sender: String
+    let avatar: String
+    let snippet: String
+    let fullMessage: String
+    let time: String
+    let unread: Bool
+
+    static let samples: [MessageThread] = [
+        .init(sender: "Sarah K.", avatar: "person.circle.fill", snippet: "Are you coming to the…", fullMessage: "Are you coming to the design review tomorrow at 2pm? I think we'll need everyone's input on the new nav patterns before we ship.", time: "9:41 AM", unread: true),
+        .init(sender: "Team iOS", avatar: "person.3.fill", snippet: "Build failed on main 🔴", fullMessage: "Build failed on main 🔴\n\nError: Type 'ShapeStyle' has no member 'tint'\nFile: MaterialsTab.swift:136\n\nLooks like another iOS 26 API change. Someone want to take a look?", time: "Yesterday", unread: false),
+        .init(sender: "Marcus", avatar: "person.circle", snippet: "lgtm, shipping it 🚀", fullMessage: "lgtm, shipping it 🚀\n\nI went through the whole PR, left a couple minor comments but nothing blocking. Nice work on the glass effect section.", time: "Mon", unread: false),
+    ]
+}
+
+struct MessageRow: View {
+    let thread: MessageThread
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: thread.avatar)
+                .font(.system(size: 36))
+                .foregroundStyle(.tint)
+                .frame(width: 44, height: 44)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(thread.sender).font(.subheadline).fontWeight(.semibold)
+                    Spacer()
+                    Text(thread.time).font(.caption).foregroundStyle(.secondary)
+                }
+                Text(thread.snippet).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+            }
+            if thread.unread {
+                Circle().fill(.tint).frame(width: 8, height: 8)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+struct MessagePreview: View {
+    let thread: MessageThread
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: thread.avatar)
+                    .font(.system(size: 28))
+                    .foregroundStyle(.tint)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(thread.sender).font(.subheadline).fontWeight(.semibold)
+                    Text(thread.time).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Text(thread.fullMessage)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(width: 300, alignment: .leading)
+        .background(Color(.secondarySystemBackground))
+    }
+}
+
+// MARK: - Spotify demo
+
+struct Track: Identifiable {
+    let id = UUID()
+    let title: String
+    let artist: String
+    let album: String
+    let duration: String
+    let color: Color
+
+    static let samples: [Track] = [
+        .init(title: "Midnight City", artist: "M83", album: "Hurry Up, We're Dreaming", duration: "4:03", color: .indigo),
+        .init(title: "Redbone", artist: "Childish Gambino", album: "Awaken, My Love!", duration: "5:27", color: .red),
+        .init(title: "Motion Picture Soundtrack", artist: "Radiohead", album: "Kid A", duration: "7:01", color: .teal),
+    ]
+}
+
+struct TrackRow: View {
+    let track: Track
+    var body: some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(track.color.gradient)
+                .frame(width: 44, height: 44)
+                .overlay(Image(systemName: "music.note").foregroundStyle(.white))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(track.title).font(.subheadline).fontWeight(.medium)
+                Text(track.artist).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Text(track.duration).font(.caption).foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+struct TrackPreview: View {
+    let track: Track
+    var body: some View {
+        VStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: 0, style: .continuous)
+                .fill(track.color.gradient)
+                .frame(width: 280, height: 280)
+                .overlay(
+                    Image(systemName: "music.note")
+                        .font(.system(size: 80, weight: .light))
+                        .foregroundStyle(.white.opacity(0.6))
+                )
+            VStack(alignment: .leading, spacing: 4) {
+                Text(track.title).font(.headline).fontWeight(.semibold)
+                Text(track.artist).font(.subheadline).foregroundStyle(.secondary)
+                Text(track.album).font(.caption).foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(Color(.secondarySystemBackground))
+        }
+        .frame(width: 280)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+// MARK: - Link preview demo
+
+struct LinkItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let url: String
+    let description: String
+    let color: Color
+    let icon: String
+
+    static let samples: [LinkItem] = [
+        .init(title: "Apple HIG", url: "developer.apple.com", description: "Human Interface Guidelines — design patterns, components, and best practices for all Apple platforms.", color: .blue, icon: "apple.logo"),
+        .init(title: "SwiftUI Docs", url: "developer.apple.com/documentation/swiftui", description: "Complete API reference for SwiftUI — views, modifiers, data flow, animations, and more.", color: .orange, icon: "swift"),
+    ]
+}
+
+struct LinkRow: View {
+    let link: LinkItem
+    var body: some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(link.color.opacity(0.15))
+                .frame(width: 36, height: 36)
+                .overlay(Image(systemName: link.icon).foregroundStyle(link.color).font(.system(size: 16)))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(link.title).font(.subheadline).fontWeight(.medium)
+                Text(link.url).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+struct LinkPreview: View {
+    let link: LinkItem
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Rectangle()
+                .fill(link.color.gradient)
+                .frame(height: 140)
+                .overlay(
+                    Image(systemName: link.icon)
+                        .font(.system(size: 52, weight: .light))
+                        .foregroundStyle(.white.opacity(0.85))
+                )
+            VStack(alignment: .leading, spacing: 6) {
+                Text(link.url)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(link.title)
+                    .font(.headline)
+                Text(link.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(14)
+            .background(Color(.secondarySystemBackground))
+        }
+        .frame(width: 300)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
