@@ -433,6 +433,36 @@ struct ToolbarsView: View {
     var body: some View {
         List {
 
+            // MARK: iOS 26 Glass Button Groups
+            Section {
+                Text("In iOS 26, adjacent icon buttons in the nav bar are automatically grouped into a frosted glass pill. Tap any example to see it in context.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                NavigationLink("Single icon button") {
+                    ButtonGroupDemo(variant: .single)
+                }
+                NavigationLink("Two-button group") {
+                    ButtonGroupDemo(variant: .two)
+                }
+                NavigationLink("Three-button group") {
+                    ButtonGroupDemo(variant: .three)
+                }
+                NavigationLink("Label + icon group (mixed)") {
+                    ButtonGroupDemo(variant: .mixed)
+                }
+                NavigationLink("Leading + trailing groups") {
+                    ButtonGroupDemo(variant: .bothSides)
+                }
+                NavigationLink("ControlGroup (explicit grouping)") {
+                    ButtonGroupDemo(variant: .controlGroup)
+                }
+            } header: {
+                Text("iOS 26 glass button groups")
+            } footer: {
+                Text("Adjacent `Button` items inside `ToolbarItemGroup` are visually merged. Use `ControlGroup` for explicit grouping when items come from separate `ToolbarItem` blocks.")
+            }
+
             // MARK: Placement reference
             Section {
                 PlacementRow(token: ".navigationBarLeading",  description: "Left side of the navigation bar",            example: "Cancel, back, edit")
@@ -556,6 +586,169 @@ struct ToolbarsView: View {
         }
         .sheet(isPresented: $showKeyboardDemo) {
             KeyboardToolbarDemo()
+        }
+    }
+}
+
+// MARK: - Button Group Demos
+
+private enum ButtonGroupVariant {
+    case single, two, three, mixed, bothSides, controlGroup
+}
+
+private struct ButtonGroupDemo: View {
+    let variant: ButtonGroupVariant
+    @State private var lastTapped: String? = nil
+
+    var title: String {
+        switch variant {
+        case .single:       return "Single button"
+        case .two:          return "Two-button group"
+        case .three:        return "Three-button group"
+        case .mixed:        return "Label + icon group"
+        case .bothSides:    return "Both sides"
+        case .controlGroup: return "ControlGroup"
+        }
+    }
+
+    var body: some View {
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Look at the navigation bar above to see the glass button group in context.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    if let t = lastTapped {
+                        Label("Tapped: \(t)", systemImage: "hand.tap")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.tint)
+                            .transition(.scale(scale: 0.85).combined(with: .opacity))
+                    }
+                }
+                .animation(.spring(duration: 0.3), value: lastTapped)
+                .padding(.vertical, 4)
+            }
+
+            Section("Pattern") {
+                CodeSnippetRow(code: codeSnippet)
+            }
+
+            Section("Notes") {
+                Text(notes)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { toolbarContent }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        switch variant {
+
+        case .single:
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { lastTapped = "Grid" } label: { Image(systemName: "square.grid.2x2") }
+            }
+
+        case .two:
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Button { lastTapped = "Select" } label: { Image(systemName: "checkmark.circle") }
+                Button { lastTapped = "Share" } label: { Image(systemName: "square.and.arrow.up") }
+            }
+
+        case .three:
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Button { lastTapped = "Sort" }  label: { Image(systemName: "line.3.horizontal.decrease.circle") }
+                Button { lastTapped = "Grid" }  label: { Image(systemName: "square.grid.2x2") }
+                Button { lastTapped = "More" }  label: { Image(systemName: "ellipsis") }
+            }
+
+        case .mixed:
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Button { lastTapped = "Edit" } label: { Text("Edit") }
+                Button { lastTapped = "Share" } label: { Image(systemName: "square.and.arrow.up") }
+                Button { lastTapped = "More" }  label: { Image(systemName: "ellipsis") }
+            }
+
+        case .bothSides:
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button { lastTapped = "Close" } label: { Image(systemName: "xmark") }
+            }
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Button { lastTapped = "Select" } label: { Image(systemName: "checkmark.circle") }
+                Button { lastTapped = "More" }   label: { Image(systemName: "ellipsis") }
+            }
+
+        case .controlGroup:
+            ToolbarItem(placement: .navigationBarTrailing) {
+                ControlGroup {
+                    Button { lastTapped = "Decrease" } label: { Image(systemName: "minus") }
+                    Button { lastTapped = "Increase" } label: { Image(systemName: "plus") }
+                }
+            }
+        }
+    }
+
+    private var codeSnippet: String {
+        switch variant {
+        case .single:
+            return """
+ToolbarItem(placement: .navigationBarTrailing) {
+    Button { } label: {
+        Image(systemName: "square.grid.2x2")
+    }
+}"""
+        case .two:
+            return """
+ToolbarItemGroup(placement: .navigationBarTrailing) {
+    Button { } label: { Image(systemName: "checkmark.circle") }
+    Button { } label: { Image(systemName: "square.and.arrow.up") }
+}"""
+        case .three:
+            return """
+ToolbarItemGroup(placement: .navigationBarTrailing) {
+    Button { } label: { Image(systemName: "line.3.horizontal.decrease.circle") }
+    Button { } label: { Image(systemName: "square.grid.2x2") }
+    Button { } label: { Image(systemName: "ellipsis") }
+}"""
+        case .mixed:
+            return """
+ToolbarItemGroup(placement: .navigationBarTrailing) {
+    Button("Edit") { }
+    Button { } label: { Image(systemName: "square.and.arrow.up") }
+    Button { } label: { Image(systemName: "ellipsis") }
+}"""
+        case .bothSides:
+            return """
+ToolbarItem(placement: .navigationBarLeading) {
+    Button { } label: { Image(systemName: "xmark") }
+}
+ToolbarItemGroup(placement: .navigationBarTrailing) {
+    Button { } label: { Image(systemName: "checkmark.circle") }
+    Button { } label: { Image(systemName: "ellipsis") }
+}"""
+        case .controlGroup:
+            return """
+ToolbarItem(placement: .navigationBarTrailing) {
+    ControlGroup {
+        Button { } label: { Image(systemName: "minus") }
+        Button { } label: { Image(systemName: "plus") }
+    }
+}"""
+        }
+    }
+
+    private var notes: String {
+        switch variant {
+        case .single:       return "A lone icon button gets the round glass pill shape. Text labels stay as plain buttons."
+        case .two:          return "Two adjacent icons merge into a single elongated glass pill — the pattern shown in the iOS 26 Mail and Files apps."
+        case .three:        return "Three buttons form a wider pill. Beyond three, consider moving secondary actions to a menu."
+        case .mixed:        return "Mixing a text label with icons breaks the automatic glass grouping on some seeds — test carefully."
+        case .bothSides:    return "Leading and trailing groups render independently. The leading close/xmark gets its own pill."
+        case .controlGroup: return "ControlGroup provides explicit visual grouping regardless of how many separate ToolbarItem blocks you use. Ideal for stepper-style controls."
         }
     }
 }
