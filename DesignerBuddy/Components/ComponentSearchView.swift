@@ -24,12 +24,7 @@ struct ComponentSearchView: View {
                         ForEach(results) { entry in
                             NavigationLink(destination: appDestination(for: entry)) {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(entry.name)
-                                        Text(entry.section)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
+                                    Text(entry.name)
                                     Spacer()
                                     Text(entry.tab)
                                         .font(.caption2)
@@ -54,14 +49,7 @@ struct ComponentSearchView: View {
                 let entries = AppEntry.all.filter { $0.tab == tab }
                 Section(tab) {
                     ForEach(entries) { entry in
-                        NavigationLink(destination: appDestination(for: entry)) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(entry.name)
-                                Text(entry.section)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
+                        NavigationLink(entry.name, destination: appDestination(for: entry))
                     }
                 }
             }
