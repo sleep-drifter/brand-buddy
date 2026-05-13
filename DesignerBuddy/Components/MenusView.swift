@@ -426,167 +426,60 @@ struct TabBarsView: View {
 }
 
 struct ToolbarsView: View {
-    @State private var lastTapped: String? = nil
-    @State private var showKeyboardDemo = false
-    @State private var keyboardText = ""
-
     var body: some View {
         List {
 
             // MARK: iOS 26 Glass Button Groups
             Section {
-                Text("In iOS 26, adjacent icon buttons in the nav bar are automatically grouped into a frosted glass pill. Tap any example to see it in context.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                NavigationLink("Single icon button") {
-                    ButtonGroupDemo(variant: .single)
-                }
-                NavigationLink("Two-button group") {
-                    ButtonGroupDemo(variant: .two)
-                }
-                NavigationLink("Three-button group") {
-                    ButtonGroupDemo(variant: .three)
-                }
-                NavigationLink("Label + icon group (mixed)") {
-                    ButtonGroupDemo(variant: .mixed)
-                }
-                NavigationLink("Leading + trailing groups") {
-                    ButtonGroupDemo(variant: .bothSides)
-                }
-                NavigationLink("ControlGroup (explicit grouping)") {
-                    ButtonGroupDemo(variant: .controlGroup)
-                }
+                NavigationLink("Single icon button")         { ButtonGroupDemo(variant: .single) }
+                NavigationLink("Two-button group")           { ButtonGroupDemo(variant: .two) }
+                NavigationLink("Three-button group")         { ButtonGroupDemo(variant: .three) }
+                NavigationLink("Label + icon group (mixed)") { ButtonGroupDemo(variant: .mixed) }
+                NavigationLink("Leading + trailing groups")  { ButtonGroupDemo(variant: .bothSides) }
+                NavigationLink("ControlGroup")               { ButtonGroupDemo(variant: .controlGroup) }
             } header: {
                 Text("iOS 26 glass button groups")
             } footer: {
-                Text("Adjacent `Button` items inside `ToolbarItemGroup` are visually merged. Use `ControlGroup` for explicit grouping when items come from separate `ToolbarItem` blocks.")
+                Text("Adjacent buttons inside ToolbarItemGroup are merged into a glass pill. Use ControlGroup to force grouping across separate ToolbarItem blocks.")
+            }
+
+            // MARK: Live demos
+            Section {
+                NavigationLink("Bottom bar (.bottomBar)")    { BottomBarDemo() }
+                NavigationLink("Keyboard toolbar")           { KeyboardToolbarDemo() }
+                NavigationLink("Confirmation / Cancellation") { ConfirmationDemo() }
+                NavigationLink("Principal (center replace)") { PrincipalDemo() }
+            } header: {
+                Text("Live demos")
+            } footer: {
+                Text("Each demo shows the toolbar in context so it cannot block this list's scroll or touch.")
             }
 
             // MARK: Placement reference
             Section {
-                PlacementRow(token: ".navigationBarLeading",  description: "Left side of the navigation bar",            example: "Cancel, back, edit")
-                PlacementRow(token: ".navigationBarTrailing", description: "Right side of the navigation bar",           example: "Done, Save, Add (+)")
-                PlacementRow(token: ".principal",             description: "Center — replaces the title",                example: "Segmented control, custom title")
-                PlacementRow(token: ".bottomBar",             description: "Bottom toolbar, above the tab bar",          example: "Mail compose, document actions")
-                PlacementRow(token: ".confirmationAction",    description: "Primary action, system-placed (trailing)",   example: "Done, Send")
-                PlacementRow(token: ".cancellationAction",    description: "Cancel action, system-placed (leading)",     example: "Cancel")
-                PlacementRow(token: ".destructiveAction",     description: "Destructive action rendered in red",         example: "Delete")
-                PlacementRow(token: ".keyboard",              description: "Floats above the software keyboard",         example: "Format, done, emoji")
-                PlacementRow(token: ".automatic",             description: "System chooses the best placement",          example: "Default for most items")
+                PlacementRow(token: ".navigationBarLeading",  description: "Left side of the navigation bar",          example: "Cancel, back, edit")
+                PlacementRow(token: ".navigationBarTrailing", description: "Right side of the navigation bar",         example: "Done, Save, Add (+)")
+                PlacementRow(token: ".principal",             description: "Center — replaces the title",              example: "Segmented control, custom title")
+                PlacementRow(token: ".bottomBar",             description: "Bottom toolbar, above the tab bar",        example: "Mail compose, document actions")
+                PlacementRow(token: ".confirmationAction",    description: "Primary action, trailing",                 example: "Done, Send")
+                PlacementRow(token: ".cancellationAction",    description: "Cancel action, leading",                   example: "Cancel")
+                PlacementRow(token: ".destructiveAction",     description: "Destructive action (red)",                 example: "Delete")
+                PlacementRow(token: ".keyboard",              description: "Floats above the software keyboard",       example: "Format, done, emoji")
+                PlacementRow(token: ".automatic",             description: "System chooses the best placement",        example: "Default for most items")
             } header: {
                 Text("Placements")
             }
 
-            // MARK: Bottom bar live demo
-            Section {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("This page has a live `.bottomBar` toolbar — see the icons at the bottom. Tap any of them to see the action name.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    if let tapped = lastTapped {
-                        Label("Tapped: \(tapped)", systemImage: "hand.tap")
-                            .font(.subheadline.bold())
-                            .foregroundStyle(.tint)
-                            .transition(.scale(scale: 0.8).combined(with: .opacity))
-                    }
-                }
-                .animation(.spring(duration: 0.3), value: lastTapped)
-                .padding(.vertical, 4)
-            } header: {
-                Text("Bottom bar demo")
-            } footer: {
-                Text("Toolbar items use `ToolbarItemGroup` for grouped layout with automatic `Spacer` support.")
-            }
-
-            // MARK: Nav bar trailing demo
-            Section {
-                Text("The **Edit** button in the nav bar trailing position is a `.navigationBarTrailing` item. Tap it to see the label.")
-                    .font(.subheadline)
-            } header: {
-                Text("Nav bar trailing")
-            }
-
-            // MARK: Principal / center
-            Section {
-                Text("A `.principal` item replaces the navigation title entirely. Common for a segmented control at the top of a master list (e.g. Photos, Maps).")
-                    .font(.subheadline)
-            } header: {
-                Text("Principal (center)")
-            } footer: {
-                Text("Use `.principal` sparingly — it removes the back-button label context.")
-            }
-
-            // MARK: Keyboard toolbar
-            Section {
-                Button {
-                    showKeyboardDemo = true
-                } label: {
-                    Label("Try keyboard toolbar", systemImage: "keyboard")
-                }
-            } header: {
-                Text("Keyboard toolbar (.keyboard)")
-            } footer: {
-                Text("Toolbar items with `.keyboard` placement float above the software keyboard. Useful for formatting, emoji, or Done.")
-            }
-
             // MARK: Visibility
             Section {
-                PlacementRow(token: ".toolbar(.hidden)", description: "Hides the nav bar or tab bar in a child view", example: "Full-screen reader, media player")
-                PlacementRow(token: ".toolbar(.hidden, for: .tabBar)", description: "Hides only the tab bar, keeps nav bar", example: "Detail views inside a tab")
+                PlacementRow(token: ".toolbar(.hidden)",                   description: "Hides the nav bar or tab bar",  example: "Full-screen reader, media player")
+                PlacementRow(token: ".toolbar(.hidden, for: .tabBar)",    description: "Hides only the tab bar",         example: "Detail views inside a tab")
             } header: {
                 Text("Visibility")
             }
-
-            // MARK: Confirmation / Cancellation
-            Section {
-                Text("Use `.confirmationAction` and `.cancellationAction` in sheets and modal flows. The system positions them correctly on all platforms (iOS, macOS, watchOS).")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                CodeSnippetRow(code: """
-.toolbar {
-    ToolbarItem(placement: .cancellationAction) {
-        Button("Cancel") { dismiss() }
-    }
-    ToolbarItem(placement: .confirmationAction) {
-        Button("Save") { save() }
-    }
-}
-""")
-            } header: {
-                Text("Confirmation / Cancellation (sheets)")
-            }
         }
         .navigationTitle("Toolbars")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Edit") { lastTapped = ".navigationBarTrailing → Edit" }
-            }
-            ToolbarItemGroup(placement: .bottomBar) {
-                Button {
-                    lastTapped = ".bottomBar → Trash"
-                } label: {
-                    Image(systemName: "trash")
-                }
-                Spacer()
-                Button {
-                    lastTapped = ".bottomBar → Share"
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                }
-                Spacer()
-                Button {
-                    lastTapped = ".bottomBar → Move"
-                } label: {
-                    Image(systemName: "folder")
-                }
-            }
-        }
-        .sheet(isPresented: $showKeyboardDemo) {
-            KeyboardToolbarDemo()
-        }
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -794,36 +687,180 @@ private struct CodeSnippetRow: View {
     }
 }
 
+private struct BottomBarDemo: View {
+    @State private var lastTapped: String? = nil
+
+    var body: some View {
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("The three icons below are `.bottomBar` toolbar items. Tap any to confirm they respond.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    if let t = lastTapped {
+                        Label("Tapped: \(t)", systemImage: "hand.tap")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.tint)
+                            .transition(.scale(scale: 0.85).combined(with: .opacity))
+                    }
+                }
+                .animation(.spring(duration: 0.3), value: lastTapped)
+                .padding(.vertical, 4)
+            }
+            Section("Code") {
+                CodeSnippetRow(code: """
+                    ToolbarItemGroup(placement: .bottomBar) {
+                        Button { } label: { Image(systemName: "trash") }
+                        Spacer()
+                        Button { } label: { Image(systemName: "square.and.arrow.up") }
+                        Spacer()
+                        Button { } label: { Image(systemName: "folder") }
+                    }
+                    """)
+            }
+        }
+        .navigationTitle("Bottom bar")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .bottomBar) {
+                Button { lastTapped = "Trash" }  label: { Image(systemName: "trash") }
+                Spacer()
+                Button { lastTapped = "Share" }  label: { Image(systemName: "square.and.arrow.up") }
+                Spacer()
+                Button { lastTapped = "Move" }   label: { Image(systemName: "folder") }
+            }
+        }
+    }
+}
+
 private struct KeyboardToolbarDemo: View {
-    @Environment(\.dismiss) private var dismiss
     @State private var text = ""
     @FocusState private var focused: Bool
 
     var body: some View {
+        Form {
+            Section("Type something") {
+                TextField("Message…", text: $text, axis: .vertical)
+                    .lineLimit(4...)
+                    .focused($focused)
+            }
+            Section("Code") {
+                CodeSnippetRow(code: """
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Button { } label: { Image(systemName: "bold") }
+                        Button { } label: { Image(systemName: "italic") }
+                        Spacer()
+                        Button("Done") { focused = false }
+                    }
+                    """)
+            }
+        }
+        .navigationTitle("Keyboard toolbar")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Button { text += "😊" }        label: { Image(systemName: "face.smiling") }
+                Button { text += "**bold** " } label: { Image(systemName: "bold") }
+                Button { text += "_italic_ " } label: { Image(systemName: "italic") }
+                Spacer()
+                Button("Done") { focused = false }.fontWeight(.semibold)
+            }
+        }
+        .onAppear { focused = true }
+    }
+}
+
+private struct ConfirmationDemo: View {
+    @State private var showSheet = false
+
+    var body: some View {
+        List {
+            Section {
+                Text("`.confirmationAction` and `.cancellationAction` auto-position Cancel (leading) and Done/Save (trailing) correctly across all platforms.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Button("Open sheet demo") { showSheet = true }
+            }
+            Section("Code") {
+                CodeSnippetRow(code: """
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { dismiss() }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") { save() }
+                    }
+                    """)
+            }
+        }
+        .navigationTitle("Confirmation / Cancel")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showSheet) {
+            ConfirmationSheetDemo()
+        }
+    }
+}
+
+private struct ConfirmationSheetDemo: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+
+    var body: some View {
         NavigationStack {
             Form {
-                Section("Type something") {
-                    TextField("Message…", text: $text, axis: .vertical)
-                        .lineLimit(4...)
-                        .focused($focused)
+                Section("New item") {
+                    TextField("Name", text: $name)
                 }
             }
-            .navigationTitle("Keyboard Toolbar")
+            .navigationTitle("Add Item")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
-                ToolbarItemGroup(placement: .keyboard) {
-                    Button { text += "😊" } label: { Image(systemName: "face.smiling") }
-                    Button { text += "**bold** " } label: { Image(systemName: "bold") }
-                    Button { text += "_italic_ " } label: { Image(systemName: "italic") }
-                    Spacer()
-                    Button("Done") { focused = false }
-                        .fontWeight(.semibold)
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { dismiss() }.disabled(name.isEmpty)
                 }
             }
-            .onAppear { focused = true }
+        }
+    }
+}
+
+private struct PrincipalDemo: View {
+    @State private var selection = "All"
+    let segments = ["All", "Photos", "Videos"]
+
+    var body: some View {
+        List {
+            Section {
+                Text("The segmented control above is a `.principal` toolbar item — it replaces the navigation title in the center of the nav bar.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text("Selected: **\(selection)**")
+                    .font(.subheadline)
+            }
+            Section("Code") {
+                CodeSnippetRow(code: """
+                    ToolbarItem(placement: .principal) {
+                        Picker("", selection: $selection) {
+                            ForEach(segments, id: \\.self) {
+                                Text($0).tag($0)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                    """)
+            }
+        }
+        .navigationTitle("Principal")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Picker("", selection: $selection) {
+                    ForEach(segments, id: \.self) { Text($0).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .frame(minWidth: 200)
+            }
         }
     }
 }
