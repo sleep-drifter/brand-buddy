@@ -12,7 +12,7 @@ struct AppEntry: Identifiable, Hashable {
     static let components: [AppEntry] = [
         .init(name: "Color",                 section: "Visual",      tab: "Components"),
         .init(name: "Typography",            section: "Visual",      tab: "Components"),
-        .init(name: "Spacing & Layout",       section: "Primitives",  tab: "Components"),
+        .init(name: "Spacing & Layout",      section: "Visual",      tab: "Components"),
         .init(name: "Buttons",               section: "Actions",     tab: "Components"),
         .init(name: "Menus & Context Menus", section: "Actions",     tab: "Components"),
         .init(name: "Context Menus",         section: "Actions",     tab: "Components"),
@@ -76,7 +76,6 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Shadow Explorer",       section: "Playgrounds", tab: "More"),
         .init(name: "Blur Stack",            section: "Playgrounds", tab: "More"),
         .init(name: "Safe Areas",            section: "Reference",   tab: "More"),
-        .init(name: "Dynamic Type Scale",    section: "Reference",   tab: "More"),
         .init(name: "Sheet Detents",         section: "Reference",   tab: "More"),
     ]
 }
@@ -91,8 +90,6 @@ struct ComponentsTab: View {
                 Section("Visual") {
                     NavigationLink("Color") { ColorReferenceView() }
                     NavigationLink("Typography") { TypographyReferenceView() }
-                }
-                Section("Primitives") {
                     NavigationLink("Spacing & Layout") { SpacingView() }
                 }
                 Section("Actions") {

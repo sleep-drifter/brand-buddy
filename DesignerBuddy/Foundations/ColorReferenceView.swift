@@ -38,8 +38,36 @@ struct ColorRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            Spacer()
+            HStack(spacing: 4) {
+                ColorSwatch(color: item.color, scheme: .dark)
+                ColorSwatch(color: item.color, scheme: .light)
+            }
         }
         .padding(.vertical, 4)
+    }
+}
+
+private struct ColorSwatch: View {
+    let color: Color
+    let scheme: ColorScheme
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .fill(color)
+            .frame(width: 28, height: 28)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(.separator, lineWidth: 0.5)
+            )
+            .environment(\.colorScheme, scheme)
+            .overlay(alignment: .bottom) {
+                Text(scheme == .dark ? "D" : "L")
+                    .font(.system(size: 7, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .shadow(radius: 1)
+                    .padding(.bottom, 2)
+            }
     }
 }
 

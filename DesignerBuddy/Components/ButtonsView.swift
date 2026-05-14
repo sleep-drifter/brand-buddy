@@ -24,12 +24,18 @@ struct ButtonsView: View {
                 }
             }
             Section("Full Width") {
-                Button("Full Width Filled") {}
-                    .buttonStyle(.borderedProminent)
-                    .frame(maxWidth: .infinity)
-                Button("Full Width Bordered") {}
-                    .buttonStyle(.bordered)
-                    .frame(maxWidth: .infinity)
+                VStack(spacing: 12) {
+                    Button("Full Width Filled") {}
+                        .buttonStyle(.borderedProminent)
+                        .frame(maxWidth: .infinity)
+                    Button("Full Width Bordered") {}
+                        .buttonStyle(.bordered)
+                        .frame(maxWidth: .infinity)
+                    Button("Full Width Borderless") {}
+                        .buttonStyle(.borderless)
+                        .frame(maxWidth: .infinity)
+                }
+                .padding(.vertical, 4)
             }
         }
         .navigationTitle("Buttons")
@@ -119,7 +125,7 @@ private struct StatesSection: View {
 
 private struct IconButtonsSection: View {
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             HStack(spacing: 12) {
                 Button { } label: { Label("Share", systemImage: "square.and.arrow.up") }
                     .buttonStyle(.borderedProminent)
@@ -129,20 +135,24 @@ private struct IconButtonsSection: View {
                     .buttonStyle(.bordered)
             }
             HStack(spacing: 12) {
-                Button { } label: { Label("Share", systemImage: "square.and.arrow.up") }
-                    .buttonStyle(.bordered)
-                    .labelStyle(.iconOnly)
-                Button { } label: { Label("Share", systemImage: "square.and.arrow.up") }
-                    .buttonStyle(.bordered)
-                    .labelStyle(.titleOnly)
-                Button { } label: { Label("Share", systemImage: "square.and.arrow.up") }
-                    .buttonStyle(.bordered)
-                    .labelStyle(.titleAndIcon)
-            }
-            HStack(spacing: 6) {
-                Text(".iconOnly").font(.mono(.caption2)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
-                Text(".titleOnly").font(.mono(.caption2)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
-                Text(".titleAndIcon").font(.mono(.caption2)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
+                VStack(spacing: 4) {
+                    Button { } label: { Label("Share", systemImage: "square.and.arrow.up") }
+                        .buttonStyle(.bordered)
+                        .labelStyle(.iconOnly)
+                    Text(".iconOnly").font(.mono(.caption2)).foregroundStyle(.secondary)
+                }
+                VStack(spacing: 4) {
+                    Button { } label: { Label("Share", systemImage: "square.and.arrow.up") }
+                        .buttonStyle(.bordered)
+                        .labelStyle(.titleOnly)
+                    Text(".titleOnly").font(.mono(.caption2)).foregroundStyle(.secondary)
+                }
+                VStack(spacing: 4) {
+                    Button { } label: { Label("Share", systemImage: "square.and.arrow.up") }
+                        .buttonStyle(.bordered)
+                        .labelStyle(.titleAndIcon)
+                    Text(".titleAndIcon").font(.mono(.caption2)).foregroundStyle(.secondary)
+                }
             }
         }
         .padding(.vertical, 4)

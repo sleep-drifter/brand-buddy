@@ -4,7 +4,7 @@ struct SlidersView: View {
     @State private var value1 = 0.5
     @State private var value2 = 30.0
     @State private var value3 = 0.7
-    @State private var stepped = 3.0
+    @State private var stepped = 5.0
 
     var body: some View {
         List {
@@ -37,8 +37,8 @@ struct SlidersView: View {
                     .tint(.red)
             }
 
-            Section("Stepped (0–5, step 1)") {
-                Slider(value: $stepped, in: 0...5, step: 1)
+            Section("Stepped (0–10, step 1)") {
+                Slider(value: $stepped, in: 0...10, step: 1)
                 Text("Step: \(Int(stepped))")
                     .font(.caption)
                     .foregroundStyle(.secondary)

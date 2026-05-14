@@ -71,21 +71,44 @@ struct TextFieldsView: View {
                 }
             }
 
-            Section("Keyboard Types") {
+            Section {
                 ForEach(KeyboardTypeItem.all) { item in
-                    HStack {
-                        TextField(item.name, text: .constant(""))
-                            .keyboardType(item.type)
-                        Spacer()
-                        Text(item.token)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
+                    KeyboardTypeRow(item: item)
                 }
+            } header: {
+                Text("Keyboard Types")
+            } footer: {
+                Text("Tap any field to trigger that keyboard type.")
             }
         }
         .navigationTitle("Text Fields")
         .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+struct KeyboardTypeRow: View {
+    let item: KeyboardTypeItem
+    @State private var text = ""
+
+    var body: some View {
+        HStack(spacing: 10) {
+            TextField("tap to type…", text: $text)
+                .keyboardType(item.type)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            Text(item.token)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize()
+        }
+        .overlay(alignment: .topLeading) {
+            Text(item.name)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .offset(y: -16)
+        }
+        .padding(.top, 12)
     }
 }
 

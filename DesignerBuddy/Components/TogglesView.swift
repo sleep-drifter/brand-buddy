@@ -10,22 +10,10 @@ struct TogglesView: View {
             Section("Toggle (Switch)") {
                 Toggle("Default toggle", isOn: $toggle1)
                 Toggle("Off by default", isOn: $toggle2)
-                Toggle(isOn: $toggle3) {
-                    Label("With icon", systemImage: "wifi")
-                }
                 Toggle("Disabled (on)", isOn: .constant(true))
                     .disabled(true)
                 Toggle("Disabled (off)", isOn: .constant(false))
                     .disabled(true)
-            }
-
-            Section("Toggle Styles") {
-                Toggle("Switch style (default)", isOn: $toggle1)
-                    .toggleStyle(.switch)
-                Toggle("Button style", isOn: $toggle2)
-                    .toggleStyle(.button)
-                Toggle("Button style (off)", isOn: .constant(false))
-                    .toggleStyle(.button)
             }
 
             Section("Tinted Toggles") {

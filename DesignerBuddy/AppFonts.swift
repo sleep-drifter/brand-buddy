@@ -23,7 +23,20 @@ extension Font {
 
 private final class NoiFontCache: @unchecked Sendable {
     static let shared = NoiFontCache()
-    private init() {}
+
+    private init() {
+        // Clear cached Font objects whenever the user changes Dynamic Type —
+        // UIFontMetrics.scaledFont(for:) bakes the current size, so stale
+        // entries would serve wrong sizes after a settings change.
+        NotificationCenter.default.addObserver(
+            forName: UIContentSizeCategory.didChangeNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.lock.lock()
+            self?.cache.removeAll()
+            self?.lock.unlock()
+        }
+    }
 
     private struct Key: Hashable {
         let style: Font.TextStyle

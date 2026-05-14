@@ -23,17 +23,23 @@ struct MenusView: View {
                 } label: {
                     Label("Options", systemImage: "ellipsis.circle")
                 }
+                .buttonStyle(.borderedProminent)
             }
 
-            Section("Context Menu (long press)") {
-                NavigationLink("Context Menus") { ContextMenusView() }
+            Section {
+                // Basic context menu
                 HStack {
                     Image(systemName: "photo")
                         .font(.system(size: 32))
                         .frame(width: 60, height: 60)
                         .background(.quaternary, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    Text("Long press for context menu")
-                        .font(.subheadline)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Basic context menu")
+                            .font(.subheadline)
+                        Text("Long press to reveal actions")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .contextMenu {
                     Button("Share", systemImage: "square.and.arrow.up") {}
@@ -46,6 +52,20 @@ struct MenusView: View {
                         .padding(24)
                         .background(.tint.opacity(0.1))
                 }
+
+                // iMessage-style: preview reveals hidden content
+                ForEach(InlineMessageItem.samples) { msg in
+                    MessageContextRow(msg: msg)
+                }
+
+                // Spotify-style: preview shows rich album art
+                ForEach(InlineTrackItem.samples) { track in
+                    TrackContextRow(track: track)
+                }
+            } header: {
+                Text("Context Menu (long press)")
+            } footer: {
+                Text("Use contextMenu(menuItems:preview:) to show a custom preview — it can reveal content not visible in the list.")
             }
 
             Section("Menu with Selection") {
@@ -66,6 +86,100 @@ struct MenusView: View {
         }
         .navigationTitle("Menus & Context Menus")
         .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+// MARK: - Inline context menu models & rows
+
+private struct InlineMessageItem: Identifiable {
+    let id = UUID()
+    let sender: String
+    let snippet: String
+    let fullMessage: String
+    let time: String
+
+    static let samples = [
+        InlineMessageItem(sender: "Sarah K.", snippet: "Are you free tomorrow?", fullMessage: "Hey! Are you free tomorrow afternoon? Thinking of grabbing coffee and catching up — it's been ages. Let me know!", time: "2m ago"),
+        InlineMessageItem(sender: "Team iOS", snippet: "Build passed ✓", fullMessage: "🎉 Build #1042 passed all checks. Ready to submit to TestFlight. Great work everyone on shipping the new camera module!", time: "14m ago"),
+    ]
+}
+
+private struct MessageContextRow: View {
+    let msg: InlineMessageItem
+    var body: some View {
+        HStack(spacing: 10) {
+            Circle()
+                .fill(Color.accentColor.opacity(0.2))
+                .frame(width: 36, height: 36)
+                .overlay(Text(String(msg.sender.prefix(1))).font(.subheadline.bold()).foregroundStyle(.tint))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(msg.sender).font(.subheadline).fontWeight(.semibold)
+                Text(msg.snippet).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer()
+            Text(msg.time).font(.caption2).foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 2)
+        .contextMenu {
+            Button("Reply", systemImage: "arrowshape.turn.up.left") {}
+            Button("Copy", systemImage: "doc.on.doc") {}
+            Button("Delete", systemImage: "trash", role: .destructive) {}
+        } preview: {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(msg.sender).font(.headline)
+                Text(msg.fullMessage).font(.body).fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(16)
+            .frame(width: 300, alignment: .leading)
+        }
+    }
+}
+
+private struct InlineTrackItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let artist: String
+    let color: Color
+
+    static let samples = [
+        InlineTrackItem(title: "Midnight City", artist: "M83", color: .indigo),
+        InlineTrackItem(title: "Redbone",       artist: "Childish Gambino", color: .orange),
+    ]
+}
+
+private struct TrackContextRow: View {
+    let track: InlineTrackItem
+    var body: some View {
+        HStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(track.color.gradient)
+                .frame(width: 40, height: 40)
+                .overlay(Image(systemName: "music.note").foregroundStyle(.white))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(track.title).font(.subheadline).fontWeight(.medium)
+                Text(track.artist).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Image(systemName: "ellipsis").foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
+        .contextMenu {
+            Button("Play Next", systemImage: "text.line.first.and.arrowtriangle.forward") {}
+            Button("Add to Playlist", systemImage: "plus") {}
+            Button("Share Song", systemImage: "square.and.arrow.up") {}
+        } preview: {
+            VStack(spacing: 12) {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(track.color.gradient)
+                    .frame(width: 200, height: 200)
+                    .overlay(Image(systemName: "music.note").font(.system(size: 64)).foregroundStyle(.white.opacity(0.8)))
+                VStack(spacing: 4) {
+                    Text(track.title).font(.title3.bold())
+                    Text(track.artist).font(.subheadline).foregroundStyle(.secondary)
+                }
+            }
+            .padding(20)
+        }
     }
 }
 
@@ -445,14 +559,15 @@ struct ToolbarsView: View {
 
             // MARK: Live demos
             Section {
-                NavigationLink("Bottom bar (.bottomBar)")    { BottomBarDemo() }
-                NavigationLink("Keyboard toolbar")           { KeyboardToolbarDemo() }
-                NavigationLink("Confirmation / Cancellation") { ConfirmationDemo() }
-                NavigationLink("Principal (center replace)") { PrincipalDemo() }
+                NavigationLink("Primary action (Save + Cancel)") { PrimaryActionDemo() }
+                NavigationLink("Bottom bar (.bottomBar)")         { BottomBarDemo() }
+                NavigationLink("Keyboard toolbar")                { KeyboardToolbarDemo() }
+                NavigationLink("Confirmation / Cancellation")     { ConfirmationDemo() }
+                NavigationLink("Principal (center replace)")      { PrincipalDemo() }
             } header: {
                 Text("Live demos")
             } footer: {
-                Text("Each demo shows the toolbar in context so it cannot block this list's scroll or touch.")
+                Text("Per HIG, use .borderedProminent for confirm/save actions in modal sheets. Plain style for cancel.")
             }
 
             // MARK: Placement reference
@@ -687,6 +802,69 @@ private struct CodeSnippetRow: View {
     }
 }
 
+private struct PrimaryActionDemo: View {
+    @State private var showSheet = false
+
+    var body: some View {
+        List {
+            Section {
+                Text("The most common modal toolbar pattern: a plain **Cancel** on the leading side and a filled **.borderedProminent** **Save** on the trailing side.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Button("Open demo sheet") { showSheet = true }
+            }
+            Section("HIG guidance") {
+                Text("Use a filled primary button for the confirmation action in modal sheets. It draws the eye to the intended next step and distinguishes it clearly from the destructive cancel path.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Section("Code") {
+                CodeSnippetRow(code: """
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { dismiss() }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") { save() }
+                            .buttonStyle(.borderedProminent)
+                    }
+                    """)
+            }
+        }
+        .navigationTitle("Primary Action")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showSheet) {
+            PrimaryActionSheet()
+        }
+    }
+}
+
+private struct PrimaryActionSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var value = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Details") {
+                    TextField("Enter a value…", text: $value)
+                }
+            }
+            .navigationTitle("New Item")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { dismiss() }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(value.isEmpty)
+                }
+            }
+        }
+    }
+}
+
 private struct BottomBarDemo: View {
     @State private var lastTapped: String? = nil
 
@@ -721,6 +899,7 @@ private struct BottomBarDemo: View {
         }
         .navigationTitle("Bottom bar")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItemGroup(placement: .bottomBar) {
                 Button { lastTapped = "Trash" }  label: { Image(systemName: "trash") }
@@ -759,6 +938,7 @@ private struct KeyboardToolbarDemo: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
+                Divider()
                 Button { text += "😊" }        label: { Image(systemName: "face.smiling") }
                 Button { text += "**bold** " } label: { Image(systemName: "bold") }
                 Button { text += "_italic_ " } label: { Image(systemName: "italic") }
@@ -818,7 +998,9 @@ private struct ConfirmationSheetDemo: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { dismiss() }.disabled(name.isEmpty)
+                    Button("Save") { dismiss() }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(name.isEmpty)
                 }
             }
         }

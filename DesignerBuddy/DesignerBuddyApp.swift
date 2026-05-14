@@ -8,6 +8,7 @@ struct DesignerBuddyApp: App {
     init() {
         registerFonts()
         warmFontCache()
+        applyGlobalAppearance()
     }
 
     var body: some Scene {
@@ -71,6 +72,26 @@ private func warmFontCache() {
             _ = Font.noi(style, weight: .regular)
             _ = Font.noi(style, weight: .medium)
         }
+    }
+}
+
+private func applyGlobalAppearance() {
+    // Apply NoiGrotesk to UIKit nav bar button items (plain text buttons in .toolbar)
+    if let regular = UIFont(name: "NoiGrotesk-Regular", size: 17) {
+        let attrs: [NSAttributedString.Key: Any] = [.font: regular]
+        UIBarButtonItem.appearance().setTitleTextAttributes(attrs, for: .normal)
+        UIBarButtonItem.appearance().setTitleTextAttributes(attrs, for: .highlighted)
+    }
+    // Nav bar large + inline title
+    if let medium = UIFont(name: "NoiGrotesk-Medium", size: 17),
+       let large  = UIFont(name: "NoiGrotesk-Medium", size: 34) {
+        let navAppearance = UINavigationBarAppearance()
+        navAppearance.configureWithDefaultBackground()
+        navAppearance.titleTextAttributes      = [.font: medium]
+        navAppearance.largeTitleTextAttributes = [.font: large]
+        UINavigationBar.appearance().standardAppearance   = navAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
+        UINavigationBar.appearance().compactAppearance    = navAppearance
     }
 }
 

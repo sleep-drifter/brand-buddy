@@ -44,11 +44,6 @@ struct MoreTab: View {
                         Label("Safe Areas", systemImage: "iphone")
                     }
                     NavigationLink {
-                        DynamicTypeScaleView()
-                    } label: {
-                        Label("Dynamic Type Scale", systemImage: "textformat.size")
-                    }
-                    NavigationLink {
                         SheetDetentsView()
                     } label: {
                         Label("Sheet Detents", systemImage: "rectangle.bottomhalf.inset.filled")
