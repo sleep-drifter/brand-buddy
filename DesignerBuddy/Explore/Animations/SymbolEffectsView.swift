@@ -7,6 +7,14 @@ struct SymbolEffectsView: View {
     @State private var variableValue: Double = 0.5
     @State private var breatheActive = false
     @State private var appearActive = false
+    @State private var wiggleTrigger = 0
+    @State private var bounceDownTrigger = 0
+    @State private var pulseActive = false
+    @State private var variableColorActive = false
+    @State private var showPlay = true
+    @State private var appearByLayerActive = false
+    @State private var disappearByLayerActive = false
+    @State private var wiggleByLayerTrigger = 0
 
     var body: some View {
         ScrollView {
@@ -86,6 +94,126 @@ struct SymbolEffectsView: View {
                             .symbolEffect(.appear, isActive: appearActive)
                         Toggle("Appear", isOn: $appearActive)
                             .toggleStyle(.button)
+                            .controlSize(.small)
+                    }
+                }
+
+                // MARK: - Wiggle
+                effectCard(title: ".wiggle", icon: "bell.badge.fill", color: .orange, code: ".symbolEffect(.wiggle, value: trigger)") {
+                    VStack(spacing: 12) {
+                        Image(systemName: "bell.badge.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.orange)
+                            .symbolEffect(.wiggle, value: wiggleTrigger)
+                        Button("Wiggle") { wiggleTrigger += 1 }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                    }
+                }
+
+                // MARK: - Bounce (arrow)
+                effectCard(title: ".bounce (arrow)", icon: "arrow.down.circle", color: .cyan, code: ".symbolEffect(.bounce, value: trigger)") {
+                    VStack(spacing: 12) {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.cyan)
+                            .symbolEffect(.bounce, value: bounceDownTrigger)
+                        Button("Bounce") { bounceDownTrigger += 1 }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                    }
+                }
+
+                // MARK: - Pulse (continuous)
+                effectCard(title: ".pulse (continuous)", icon: "heart.fill", color: .red, code: ".symbolEffect(.pulse, isActive: isActive)") {
+                    VStack(spacing: 12) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.red)
+                            .symbolEffect(.pulse, isActive: pulseActive)
+                        Toggle("Active", isOn: $pulseActive)
+                            .toggleStyle(.button)
+                            .controlSize(.small)
+                        Text("Continuous pulse, distinct from .breathe")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                // MARK: - Variable Color Iterative Reversing
+                effectCard(title: ".variableColor.iterative.reversing", icon: "wifi", color: .blue, code: ".symbolEffect(.variableColor.iterative.reversing, isActive: isActive)") {
+                    VStack(spacing: 12) {
+                        Image(systemName: "wifi")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.blue)
+                            .symbolEffect(.variableColor.iterative.reversing, isActive: variableColorActive)
+                        Toggle("Active", isOn: $variableColorActive)
+                            .toggleStyle(.button)
+                            .controlSize(.small)
+                    }
+                }
+
+                // MARK: - Replace (play/pause toggle)
+                effectCard(title: ".replace", icon: "play.fill", color: .green, code: ".contentTransition(.symbolEffect(.replace))") {
+                    VStack(spacing: 12) {
+                        Button { showPlay.toggle() } label: {
+                            Image(systemName: showPlay ? "play.fill" : "pause.fill")
+                                .font(.system(size: 44))
+                                .foregroundStyle(.green)
+                                .contentTransition(.symbolEffect(.replace))
+                                .animation(.default, value: showPlay)
+                        }
+                        .buttonStyle(.plain)
+                        Text("Most common real-world use — toggle play/pause state")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                // MARK: - By Layer Section Header
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("By Layer")
+                        .font(.title3.weight(.semibold))
+                    Text(".byLayer applies the effect to each symbol path layer independently, creating a staggered sequential animation.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                // MARK: - Appear By Layer
+                effectCard(title: ".appear.byLayer", icon: "eye", color: .indigo, code: ".symbolEffect(.appear.byLayer, isActive: isActive)") {
+                    VStack(spacing: 12) {
+                        Image(systemName: "square.stack.3d.up.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.indigo)
+                            .symbolEffect(.appear.byLayer, isActive: appearByLayerActive)
+                        Toggle("Appear", isOn: $appearByLayerActive)
+                            .toggleStyle(.button)
+                            .controlSize(.small)
+                    }
+                }
+
+                // MARK: - Disappear By Layer
+                effectCard(title: ".disappear.byLayer", icon: "eye.slash", color: .purple, code: ".symbolEffect(.disappear.byLayer, isActive: isActive)") {
+                    VStack(spacing: 12) {
+                        Image(systemName: "square.stack.3d.down.right.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.purple)
+                            .symbolEffect(.disappear.byLayer, isActive: disappearByLayerActive)
+                        Toggle("Disappear", isOn: $disappearByLayerActive)
+                            .toggleStyle(.button)
+                            .controlSize(.small)
+                    }
+                }
+
+                // MARK: - Wiggle By Layer
+                effectCard(title: ".wiggle.byLayer", icon: "waveform", color: .mint, code: ".symbolEffect(.wiggle.byLayer, value: trigger)") {
+                    VStack(spacing: 12) {
+                        Image(systemName: "waveform")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.mint)
+                            .symbolEffect(.wiggle.byLayer, value: wiggleByLayerTrigger)
+                        Button("Wiggle Layers") { wiggleByLayerTrigger += 1 }
+                            .buttonStyle(.bordered)
                             .controlSize(.small)
                     }
                 }

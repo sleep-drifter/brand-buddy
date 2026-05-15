@@ -22,9 +22,26 @@ struct ActivityViewController: UIViewControllerRepresentable {
 struct ShareSheetView: View {
     @State private var showCustomSheet = false
     @State private var customSharedItem = "Hello from Designer Buddy!"
+    @State private var showImageShare = false
+    @State private var showDeepLinkSheet = false
 
-    private let sampleText = "Check out Designer Buddy — a SwiftUI reference app."
-    private let sampleURL = URL(string: "https://apple.com")!
+    private let sampleText = "Check out Designer Buddy — the best iOS component reference app!"
+    private let sampleURL = URL(string: "https://apps.apple.com")!
+
+    private var renderedColorSwatch: Image {
+        let renderer = ImageRenderer(content:
+            HStack(spacing: 0) {
+                ForEach([Color.blue, .purple, .pink, .orange, .yellow], id: \.self) { color in
+                    color.frame(width: 40, height: 80)
+                }
+            }
+        )
+        renderer.scale = 3.0
+        if let uiImage = renderer.uiImage {
+            return Image(uiImage: uiImage)
+        }
+        return Image(systemName: "photo")
+    }
 
     var body: some View {
         ScrollView {
@@ -60,6 +77,18 @@ struct ShareSheetView: View {
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
+
+                        // Share Image via ShareLink + ImageRenderer
+                        if #available(iOS 16, *) {
+                            ShareLink(
+                                item: renderedColorSwatch,
+                                preview: SharePreview("Color Swatch", image: renderedColorSwatch)
+                            ) {
+                                Label("Share Image (Color Swatch)", systemImage: "photo")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                        }
                     }
 
                     infoRow(icon: "info.circle", text: "ShareLink is the SwiftUI-native way to trigger the system share sheet. Use it for text, URLs, or any Transferable item.")
@@ -95,6 +124,30 @@ struct ShareSheetView: View {
                 .padding(16)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
 
+                // MARK: Deep Link sharing
+                VStack(spacing: 12) {
+                    HStack {
+                        Label("Deep Link Sharing", systemImage: "link.badge.plus")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    Text("Construct a custom deep link and share it via ShareLink. The recipient opens the link and your app handles the navigation.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    let deepLink = URL(string: "designerbuddy://component/buttons")!
+                    ShareLink(item: deepLink, message: Text("Open this in Designer Buddy")) {
+                        Label("Share Deep Link", systemImage: "arrow.branch")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.indigo)
+
+                    infoRow(icon: "info.circle", text: "Deep link format: myapp://section/item — register your URL scheme in Info.plist under URL Types.")
+                }
+                .padding(16)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+
                 // MARK: When to use which
                 VStack(spacing: 12) {
                     HStack {
@@ -106,6 +159,7 @@ struct ShareSheetView: View {
                     VStack(spacing: 8) {
                         compareRow(title: "ShareLink", detail: "SwiftUI-native, simple, Transferable items", preferred: true)
                         compareRow(title: "UIActivityViewController", detail: "Multiple item types, excluded activities, custom UIActivity subclasses", preferred: false)
+                        compareRow(title: "ShareLink + ImageRenderer", detail: "Share rendered SwiftUI views as images — iOS 16+", preferred: true)
                     }
                 }
                 .padding(16)

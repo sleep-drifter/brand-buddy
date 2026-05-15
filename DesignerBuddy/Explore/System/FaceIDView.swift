@@ -180,6 +180,14 @@ struct FaceIDView: View {
                         showPasscodeEntry = true
                     case .userCancel, .systemCancel, .appCancel:
                         authState = .idle
+                    case .biometryNotAvailable:
+                        authState = .failure("Biometrics not available on this device")
+                    case .biometryNotEnrolled:
+                        authState = .failure("No Face ID / Touch ID enrolled — set up in Settings")
+                    case .biometryLockout:
+                        authState = .failure("Biometrics locked out after too many failures — use passcode")
+                    case .authenticationFailed:
+                        authState = .failure("Authentication failed — biometry did not match")
                     default:
                         authState = .failure(err.localizedDescription)
                     }

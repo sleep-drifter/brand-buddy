@@ -3,6 +3,14 @@ import SwiftUI
 struct MatchedGeometryView: View {
     @Namespace private var heroNamespace
     @State private var selectedItem: Item? = nil
+    @Namespace private var tabNamespace
+    @State private var selectedTab = 0
+    @Namespace private var pillNamespace
+    @State private var pillExpanded = false
+    @Namespace private var iconNamespace
+    @State private var iconExpanded = false
+
+    private let tabItems = ["Home", "Search", "Library", "Profile"]
 
     private let items: [Item] = [
         Item(id: "1", color: .blue,   icon: "star.fill",       title: "Favorites"),
@@ -112,6 +120,153 @@ struct MatchedGeometryView: View {
                         ruleRow("Wrap the state toggle in withAnimation for the morph.")
                         ruleRow("Works across any view hierarchy — list rows to modal sheets.")
                     }
+                }
+                .padding(16)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+
+                // MARK: - Tab Bar Indicator Demo
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Label("Tab Bar Indicator", systemImage: "rectangle.on.rectangle")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    HStack {
+                        Spacer()
+                        HStack {
+                            ForEach(tabItems.indices, id: \.self) { i in
+                                Button {
+                                    withAnimation(.spring(duration: 0.3, bounce: 0.2)) { selectedTab = i }
+                                } label: {
+                                    Text(tabItems[i])
+                                        .font(.subheadline.weight(selectedTab == i ? .semibold : .regular))
+                                        .foregroundStyle(selectedTab == i ? .primary : .secondary)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 8)
+                                        .background {
+                                            if selectedTab == i {
+                                                Capsule()
+                                                    .fill(.regularMaterial)
+                                                    .matchedGeometryEffect(id: "tab", in: tabNamespace)
+                                            }
+                                        }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(4)
+                        .background(.quaternary, in: Capsule())
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                    Text("matchedGeometryEffect(id: \"tab\", in: namespace) — shared capsule slides between tabs")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+
+                // MARK: - Pill → Card Expansion Demo
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Label("Pill → Card Expansion", systemImage: "rectangle.compress.vertical")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    HStack {
+                        Spacer()
+                        if pillExpanded {
+                            VStack(spacing: 16) {
+                                HStack {
+                                    Image(systemName: "music.note")
+                                        .font(.system(size: 36))
+                                        .foregroundStyle(.pink)
+                                        .matchedGeometryEffect(id: "pillIcon", in: pillNamespace)
+                                    VStack(alignment: .leading) {
+                                        Text("Now Playing").font(.headline)
+                                        Text("Designer Buddy Radio").font(.subheadline).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Button {
+                                        withAnimation(.spring(duration: 0.4, bounce: 0.15)) { pillExpanded = false }
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                            .padding(16)
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                            .matchedGeometryEffect(id: "pill", in: pillNamespace)
+                        } else {
+                            HStack(spacing: 8) {
+                                Image(systemName: "music.note")
+                                    .foregroundStyle(.pink)
+                                    .matchedGeometryEffect(id: "pillIcon", in: pillNamespace)
+                                Text("Now Playing").font(.subheadline.weight(.medium))
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(.ultraThinMaterial, in: Capsule())
+                            .matchedGeometryEffect(id: "pill", in: pillNamespace)
+                            .onTapGesture {
+                                withAnimation(.spring(duration: 0.4, bounce: 0.15)) { pillExpanded = true }
+                            }
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                    Text("Mirrors iOS Music mini-player expand pattern")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+
+                // MARK: - Icon → Full Bleed Hero Demo
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Label("Icon → Full Bleed Hero", systemImage: "arrow.up.left.and.arrow.down.right")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    HStack {
+                        Spacer()
+                        if iconExpanded {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(Color.teal.gradient)
+                                    .matchedGeometryEffect(id: "icon", in: iconNamespace)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 160)
+                                Image(systemName: "star.fill")
+                                    .font(.system(size: 56))
+                                    .foregroundStyle(.white)
+                                    .matchedGeometryEffect(id: "iconSymbol", in: iconNamespace)
+                            }
+                            .onTapGesture {
+                                withAnimation(.spring(duration: 0.4, bounce: 0.15)) { iconExpanded = false }
+                            }
+                        } else {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(Color.teal.gradient)
+                                    .matchedGeometryEffect(id: "icon", in: iconNamespace)
+                                    .frame(width: 60, height: 60)
+                                Image(systemName: "star.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(.white)
+                                    .matchedGeometryEffect(id: "iconSymbol", in: iconNamespace)
+                            }
+                            .onTapGesture {
+                                withAnimation(.spring(duration: 0.4, bounce: 0.15)) { iconExpanded = true }
+                            }
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                    Text("SF Symbol morphs from icon to full-bleed hero banner")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
                 }
                 .padding(16)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))

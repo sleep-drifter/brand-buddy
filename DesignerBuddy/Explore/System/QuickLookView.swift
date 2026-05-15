@@ -6,19 +6,30 @@ import UIKit
 
 struct QuickLookPreview: UIViewControllerRepresentable {
     let url: URL
+    @Environment(\.dismiss) private var dismiss
 
     func makeCoordinator() -> Coordinator { Coordinator(url: url) }
 
-    func makeUIViewController(context: Context) -> QLPreviewController {
+    func makeUIViewController(context: Context) -> UINavigationController {
         let controller = QLPreviewController()
         controller.dataSource = context.coordinator
-        return controller
+        let nav = UINavigationController(rootViewController: controller)
+        controller.navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "Done",
+            style: .done,
+            target: context.coordinator,
+            action: #selector(Coordinator.dismiss)
+        )
+        context.coordinator.dismissAction = { nav.dismiss(animated: true) }
+        return nav
     }
 
-    func updateUIViewController(_ uiViewController: QLPreviewController, context: Context) {}
+    func updateUIViewController(_ uiViewController: UINavigationController, context: Context) {}
 
     final class Coordinator: NSObject, QLPreviewControllerDataSource {
         let url: URL
+        var dismissAction: (() -> Void)?
+
         init(url: URL) { self.url = url }
 
         func numberOfPreviewItems(in controller: QLPreviewController) -> Int { 1 }
@@ -26,6 +37,10 @@ struct QuickLookPreview: UIViewControllerRepresentable {
         func previewController(_ controller: QLPreviewController,
                                previewItemAt index: Int) -> QLPreviewItem {
             url as NSURL
+        }
+
+        @objc func dismiss() {
+            dismissAction?()
         }
     }
 }
@@ -37,6 +52,7 @@ struct QuickLookView: View {
     @State private var showHTMLPreview = false
     @State private var textFileURL: URL?
     @State private var htmlFileURL: URL?
+    @State private var errorMessage: String? = nil
 
     var body: some View {
         ScrollView {
@@ -148,6 +164,14 @@ struct QuickLookView: View {
                 QuickLookPreview(url: url).ignoresSafeArea()
             }
         }
+        .alert("Preview Error", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { errorMessage = nil }
+        } message: {
+            Text(errorMessage ?? "")
+        }
     }
 
     // MARK: File generation
@@ -172,11 +196,15 @@ struct QuickLookView: View {
 
         Generated: \(Date().formatted(date: .complete, time: .complete))
         """
-
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("DesignerBuddy-Demo.txt")
-        try? content.write(to: url, atomically: true, encoding: .utf8)
-        return url
+        do {
+            try content.write(to: url, atomically: true, encoding: .utf8)
+            return url
+        } catch {
+            errorMessage = "Failed to create text file: \(error.localizedDescription)"
+            return nil
+        }
     }
 
     private func makeHTMLFile() -> URL? {
@@ -203,11 +231,15 @@ struct QuickLookView: View {
         </body>
         </html>
         """
-
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("DesignerBuddy-Demo.html")
-        try? content.write(to: url, atomically: true, encoding: .utf8)
-        return url
+        do {
+            try content.write(to: url, atomically: true, encoding: .utf8)
+            return url
+        } catch {
+            errorMessage = "Failed to create HTML file: \(error.localizedDescription)"
+            return nil
+        }
     }
 
     // MARK: Helpers
