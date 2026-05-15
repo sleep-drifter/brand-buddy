@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreHaptics
+import Combine
 
 // MARK: - Custom Haptics View
 
