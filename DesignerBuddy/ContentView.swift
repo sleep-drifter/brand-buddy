@@ -15,6 +15,9 @@ struct ContentView: View {
             Tab("More", systemImage: "ellipsis.circle") {
                 MoreTab()
             }
+            Tab("Explore", systemImage: "safari") {
+                ExploreTab()
+            }
             Tab(role: .search) {
                 ComponentSearchView()
             }

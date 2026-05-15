@@ -40,10 +40,11 @@ struct ComponentSearchView: View {
                 searchTask = Task {
                     try? await Task.sleep(for: .milliseconds(100))
                     guard !Task.isCancelled else { return }
-                    let filtered = AppEntry.all.filter {
-                        fuzzyMatch(newValue, in: $0.name) ||
-                        fuzzyMatch(newValue, in: $0.section) ||
-                        fuzzyMatch(newValue, in: $0.tab)
+                    let filtered = AppEntry.all.filter { entry in
+                        fuzzyMatch(newValue, in: entry.name) ||
+                        fuzzyMatch(newValue, in: entry.section) ||
+                        fuzzyMatch(newValue, in: entry.tab) ||
+                        entry.keywords.contains { fuzzyMatch(newValue, in: $0) }
                     }
                     guard !Task.isCancelled else { return }
                     await MainActor.run { results = filtered }
@@ -60,7 +61,7 @@ struct ComponentSearchView: View {
 private struct AllSectionsView: View {
     var body: some View {
         List {
-            ForEach(["Components", "Patterns", "Materials", "More"], id: \.self) { tab in
+            ForEach(["Components", "Patterns", "Native", "More", "Explore"], id: \.self) { tab in
                 Section(tab) {
                     ForEach(AppEntry.all.filter { $0.tab == tab }) { entry in
                         NavigationLink(value: entry) {
@@ -78,8 +79,9 @@ private extension String {
         switch self {
         case "Components": return .blue
         case "Patterns":   return .purple
-        case "Materials":  return .teal
+        case "Native":     return .mint
         case "More":       return .orange
+        case "Explore":    return .indigo
         default:           return .secondary
         }
     }
@@ -157,6 +159,11 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Blur Stack":             BlurStackView()
     case "Safe Areas":             SafeAreasView()
     case "Dynamic Type Scale":     DynamicTypeScaleView()
+    case "Share Sheet":            ShareSheetView()
+    case "Face ID / Touch ID":     FaceIDView()
+    case "Clipboard":              ClipboardView()
+    case "Quick Look":             QuickLookView()
+    case "Document Picker":        DocumentPickerView()
     default:                       SheetDetentsView()
     }
 }

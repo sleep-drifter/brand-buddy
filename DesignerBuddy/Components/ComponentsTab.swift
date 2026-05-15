@@ -5,9 +5,17 @@ struct AppEntry: Identifiable, Hashable {
     let name: String
     let section: String
     let tab: String
+    let keywords: [String]
+
+    init(name: String, section: String, tab: String, keywords: [String] = []) {
+        self.name = name
+        self.section = section
+        self.tab = tab
+        self.keywords = keywords
+    }
 
     // Keep ComponentEntry as a typealias for backwards compat with ComponentSearchView
-    static let all: [AppEntry] = components + patterns + materials + more
+    static let all: [AppEntry] = components + materials + patterns + native + more + exploreB
 
     static let components: [AppEntry] = [
         .init(name: "Color",                 section: "Visual",      tab: "Components"),
@@ -62,10 +70,26 @@ struct AppEntry: Identifiable, Hashable {
     ]
 
     static let materials: [AppEntry] = [
-        .init(name: "iOS 26 Glass",          section: "Glass",       tab: "Materials"),
-        .init(name: "Material (blur)",       section: "Glass",       tab: "Materials"),
-        .init(name: "Surfaces",              section: "Surfaces",    tab: "Materials"),
-        .init(name: "Vibrancy",              section: "Vibrancy",    tab: "Materials"),
+        .init(name: "iOS 26 Glass",          section: "Glass",       tab: "Components"),
+        .init(name: "Material (blur)",       section: "Glass",       tab: "Components"),
+        .init(name: "Surfaces",              section: "Surfaces",    tab: "Components"),
+        .init(name: "Vibrancy",              section: "Vibrancy",    tab: "Components"),
+    ]
+
+    static let native: [AppEntry] = [
+        .init(name: "Permission Requests",        section: "Permissions",   tab: "Native"),
+        .init(name: "Permission Denied Recovery", section: "Permissions",   tab: "Native"),
+        .init(name: "Push Notifications",         section: "Permissions",   tab: "Native"),
+        .init(name: "Camera Viewfinder",          section: "Camera",        tab: "Native"),
+        .init(name: "Capture UI Patterns",        section: "Camera",        tab: "Native"),
+        .init(name: "Photo Picker",               section: "Photo Library", tab: "Native"),
+        .init(name: "Photo Library Patterns",     section: "Photo Library", tab: "Native"),
+        .init(name: "Audio Recording",            section: "Audio",         tab: "Native"),
+        .init(name: "Waveform Visualization",     section: "Audio",         tab: "Native"),
+        .init(name: "Playback UI Patterns",       section: "Audio",         tab: "Native"),
+        .init(name: "Map Basics",                 section: "Maps",          tab: "Native"),
+        .init(name: "Map Annotations",            section: "Maps",          tab: "Native"),
+        .init(name: "Map Overlays",               section: "Maps",          tab: "Native"),
     ]
 
     static let more: [AppEntry] = [
@@ -77,6 +101,14 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Blur Stack",            section: "Playgrounds", tab: "More"),
         .init(name: "Safe Areas",            section: "Reference",   tab: "More"),
         .init(name: "Sheet Detents",         section: "Reference",   tab: "More"),
+    ]
+
+    static let exploreB: [AppEntry] = [
+        .init(name: "Share Sheet",       section: "System Integrations", tab: "Explore", keywords: ["share", "ShareLink", "UIActivityViewController", "send", "export"]),
+        .init(name: "Face ID / Touch ID", section: "System Integrations", tab: "Explore", keywords: ["face id", "touch id", "biometrics", "LocalAuthentication", "auth"]),
+        .init(name: "Clipboard",         section: "System Integrations", tab: "Explore", keywords: ["clipboard", "pasteboard", "UIPasteboard", "copy", "paste"]),
+        .init(name: "Quick Look",        section: "System Integrations", tab: "Explore", keywords: ["quick look", "preview", "QuickLookPreviewController", "document"]),
+        .init(name: "Document Picker",   section: "System Integrations", tab: "Explore", keywords: ["document", "picker", "UIDocumentPicker", "file", "importer"]),
     ]
 }
 
