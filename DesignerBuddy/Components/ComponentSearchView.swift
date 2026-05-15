@@ -11,7 +11,11 @@ struct ComponentSearchView: View {
             // SwiftUI only diffs row content, not the entire view tree.
             List {
                 if searchText.isEmpty {
+<<<<<<< HEAD
                     ForEach(["Components", "Patterns", "Native", "More", "Explore"], id: \.self) { tab in
+=======
+                    ForEach(["Components", "Patterns", "Materials", "Native", "More", "Explore"], id: \.self) { tab in
+>>>>>>> feature/explore-batch-d
                         Section(tab) {
                             ForEach(AppEntry.all.filter { $0.tab == tab }) { entry in
                                 NavigationLink(value: entry) {
@@ -183,6 +187,11 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Writing Tools Integration":  WritingToolsView()
     case "Image Generation":           ImageGenerationView()
     case "Prompt Input Patterns":      PromptInputView()
+    case "Custom Haptics":             CustomHapticsView()
+    case "Accelerometer & Gyroscope":  AccelerometerView()
+    case "Barometer":                  BarometerView()
+    case "Proximity & Ambient Light":  ProximityLightView()
+    case "Battery State":              BatteryStateView()
     default:                       SheetDetentsView()
     }
 }

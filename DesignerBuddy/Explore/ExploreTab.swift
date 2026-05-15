@@ -88,11 +88,21 @@ struct ExploreTab: View {
                 }
 
                 Section("Device & Sensors") {
-                    ExploreComingSoonRow(name: "Custom Haptics", icon: "waveform.path.ecg.rectangle")
-                    ExploreComingSoonRow(name: "Accelerometer & Gyroscope", icon: "gyroscope")
-                    ExploreComingSoonRow(name: "Barometer", icon: "thermometer.medium")
-                    ExploreComingSoonRow(name: "Proximity & Ambient Light", icon: "light.max")
-                    ExploreComingSoonRow(name: "Battery State", icon: "battery.75percent")
+                    NavigationLink { CustomHapticsView() } label: {
+                        Label("Custom Haptics", systemImage: "waveform.path.ecg.rectangle")
+                    }
+                    NavigationLink { AccelerometerView() } label: {
+                        Label("Accelerometer & Gyroscope", systemImage: "gyroscope")
+                    }
+                    NavigationLink { BarometerView() } label: {
+                        Label("Barometer", systemImage: "thermometer.medium")
+                    }
+                    NavigationLink { ProximityLightView() } label: {
+                        Label("Proximity & Ambient Light", systemImage: "light.max")
+                    }
+                    NavigationLink { BatteryStateView() } label: {
+                        Label("Battery State", systemImage: "battery.75percent")
+                    }
                 }
             }
             .navigationTitle("Explore")

@@ -23,7 +23,7 @@ struct AppEntry: Identifiable, Hashable {
     }
 
     // Keep ComponentEntry as a typealias for backwards compat with ComponentSearchView
-    static let all: [AppEntry] = components + materials + patterns + native + more + exploreA + exploreB + exploreC
+    static let all: [AppEntry] = components + materials + patterns + native + more + exploreA + exploreB + exploreC + exploreD
 
     static let components: [AppEntry] = [
         .init(name: "Color",                 section: "Visual",      tab: "Components", keywords: ["colour", "palette", "dark mode", "light mode", "semantic", "tint"]),
@@ -140,6 +140,14 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Writing Tools Integration",  section: "AI & Generation", tab: "Explore", keywords: ["writing tools", "iOS 18", "writingToolsBehavior", "text editor", "AI"]),
         .init(name: "Image Generation",           section: "AI & Generation", tab: "Explore", keywords: ["image generation", "skeleton", "shimmer", "loading", "AI", "placeholder"]),
         .init(name: "Prompt Input Patterns",      section: "AI & Generation", tab: "Explore", keywords: ["prompt", "input", "chat", "multi-line", "grow", "attachment", "send button"]),
+    ]
+
+    static let exploreD: [AppEntry] = [
+        .init(name: "Custom Haptics",            section: "Device & Sensors", tab: "Explore", keywords: ["haptics", "CHHapticEngine", "taptic", "vibration", "pattern", "transient", "continuous"]),
+        .init(name: "Accelerometer & Gyroscope", section: "Device & Sensors", tab: "Explore", keywords: ["accelerometer", "gyroscope", "CMMotionManager", "CoreMotion", "tilt", "motion"]),
+        .init(name: "Barometer",                 section: "Device & Sensors", tab: "Explore", keywords: ["barometer", "CMAltimeter", "altitude", "pressure", "sensor"]),
+        .init(name: "Proximity & Ambient Light", section: "Device & Sensors", tab: "Explore", keywords: ["proximity", "ambient light", "brightness", "UIScreen", "sensor"]),
+        .init(name: "Battery State",             section: "Device & Sensors", tab: "Explore", keywords: ["battery", "batteryLevel", "batteryState", "low power mode", "UIDevice"]),
     ]
 }
 
