@@ -1,6 +1,5 @@
 import SwiftUI
 import AVFoundation
-import Combine
 
 // MARK: - Camera Preview UIView Wrapper
 
@@ -22,6 +21,24 @@ struct CameraPreviewView: UIViewRepresentable {
     }
 }
 
+// MARK: - Photo Capture Processor
+
+private final class PhotoCaptureProcessor: NSObject, AVCapturePhotoCaptureDelegate {
+    var onCapture: ((UIImage?) -> Void)?
+
+    func photoOutput(
+        _ output: AVCapturePhotoOutput,
+        didFinishProcessingPhoto photo: AVCapturePhoto,
+        error: Error?
+    ) {
+        guard error == nil, let data = photo.fileDataRepresentation() else {
+            onCapture?(nil)
+            return
+        }
+        onCapture?(UIImage(data: data))
+    }
+}
+
 // MARK: - Camera Model
 
 @MainActor
@@ -29,8 +46,11 @@ final class CameraModel: ObservableObject {
     @Published var isAuthorized = false
     @Published var isRunning = false
     @Published var isFrontCamera = false
+    @Published var capturedImage: UIImage? = nil
 
     let session = AVCaptureSession()
+    private let photoOutput = AVCapturePhotoOutput()
+    private var captureProcessor: PhotoCaptureProcessor?
 
     func checkAuthorization() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -51,6 +71,7 @@ final class CameraModel: ObservableObject {
         Task.detached { [weak self] in
             guard let self else { return }
             let session = await self.session
+            let photoOutput = await self.photoOutput
             session.beginConfiguration()
             let position: AVCaptureDevice.Position = await self.isFrontCamera ? .front : .back
             guard
@@ -60,9 +81,8 @@ final class CameraModel: ObservableObject {
                 session.commitConfiguration()
                 return
             }
-            if session.canAddInput(input) {
-                session.addInput(input)
-            }
+            if session.canAddInput(input) { session.addInput(input) }
+            if session.canAddOutput(photoOutput) { session.addOutput(photoOutput) }
             session.commitConfiguration()
             session.startRunning()
             await MainActor.run { self.isRunning = true }
@@ -74,9 +94,7 @@ final class CameraModel: ObservableObject {
             guard let self else { return }
             let session = await self.session
             session.beginConfiguration()
-            for input in session.inputs {
-                session.removeInput(input)
-            }
+            for input in session.inputs { session.removeInput(input) }
             let newFront = await !self.isFrontCamera
             await MainActor.run { self.isFrontCamera = newFront }
             let position: AVCaptureDevice.Position = newFront ? .front : .back
@@ -87,11 +105,22 @@ final class CameraModel: ObservableObject {
                 session.commitConfiguration()
                 return
             }
-            if session.canAddInput(input) {
-                session.addInput(input)
-            }
+            if session.canAddInput(input) { session.addInput(input) }
             session.commitConfiguration()
         }
+    }
+
+    func capturePhoto() {
+        let processor = PhotoCaptureProcessor()
+        captureProcessor = processor
+        processor.onCapture = { [weak self] image in
+            Task { @MainActor [weak self] in
+                self?.capturedImage = image
+                self?.captureProcessor = nil
+            }
+        }
+        let settings = AVCapturePhotoSettings()
+        photoOutput.capturePhoto(with: settings, delegate: processor)
     }
 }
 
@@ -102,37 +131,48 @@ struct CameraViewfinderView: View {
 
     var body: some View {
         ZStack {
-            if model.isAuthorized {
-                // Live camera feed fills screen
-                CameraPreviewView(session: model.session)
-                    .ignoresSafeArea()
+            Color.black.ignoresSafeArea()
 
-                // Overlay controls
-                VStack {
-                    topBar
-                    Spacer()
-                    bottomBar
-                }
+            if model.isAuthorized {
+                viewfinderLayer
             } else {
                 permissionCard
+            }
+
+            if let image = model.capturedImage {
+                capturePreview(image: image)
+                    .transition(.opacity)
             }
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .ignoresSafeArea(edges: .bottom)
+        .ignoresSafeArea()
+        .toolbar(.hidden, for: .tabBar)
         .onAppear {
             model.checkAuthorization()
-            if model.isAuthorized {
-                model.setupSession()
-            }
+            if model.isAuthorized { model.setupSession() }
         }
         .onChange(of: model.isAuthorized) { _, authorized in
-            if authorized {
-                model.setupSession()
-            }
+            if authorized { model.setupSession() }
         }
         .onDisappear {
             model.session.stopRunning()
+        }
+        .animation(.easeInOut(duration: 0.25), value: model.capturedImage != nil)
+    }
+
+    // MARK: - Viewfinder Layer
+
+    private var viewfinderLayer: some View {
+        ZStack {
+            CameraPreviewView(session: model.session)
+                .ignoresSafeArea()
+
+            VStack {
+                topBar
+                Spacer()
+                bottomBar
+            }
         }
     }
 
@@ -144,7 +184,6 @@ struct CameraViewfinderView: View {
                 .font(.headline)
                 .foregroundStyle(.white)
                 .shadow(radius: 4)
-
             Text("LIVE")
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(.white)
@@ -152,7 +191,7 @@ struct CameraViewfinderView: View {
                 .padding(.vertical, 3)
                 .background(Capsule().fill(Color.red))
         }
-        .padding(.top, 16)
+        .padding(.top, 60)
         .padding(.horizontal, 20)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -161,10 +200,7 @@ struct CameraViewfinderView: View {
 
     private var bottomBar: some View {
         HStack {
-            // Flip camera
-            Button {
-                model.flipCamera()
-            } label: {
+            Button { model.flipCamera() } label: {
                 Image(systemName: "arrow.triangle.2.circlepath.camera")
                     .font(.system(size: 28))
                     .foregroundStyle(.white)
@@ -172,10 +208,8 @@ struct CameraViewfinderView: View {
             }
             .frame(maxWidth: .infinity)
 
-            // Shutter button
             shutterButton
 
-            // Placeholder — gallery thumbnail chrome
             Button {} label: {
                 Image(systemName: "photo.on.rectangle")
                     .font(.system(size: 28))
@@ -185,20 +219,62 @@ struct CameraViewfinderView: View {
             .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 32)
-        .padding(.bottom, 48)
+        .padding(.bottom, 60)
     }
 
     private var shutterButton: some View {
-        ZStack {
-            Circle()
-                .stroke(.white, lineWidth: 4)
-                .frame(width: 70, height: 70)
-            Circle()
-                .fill(.white)
-                .frame(width: 58, height: 58)
+        Button { model.capturePhoto() } label: {
+            ZStack {
+                Circle()
+                    .stroke(.white, lineWidth: 4)
+                    .frame(width: 70, height: 70)
+                Circle()
+                    .fill(.white)
+                    .frame(width: 58, height: 58)
+            }
+            .shadow(radius: 6)
         }
-        .shadow(radius: 6)
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Captured Photo Preview
+
+    @ViewBuilder
+    private func capturePreview(image: UIImage) -> some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .ignoresSafeArea()
+
+            VStack {
+                Spacer()
+                HStack(spacing: 24) {
+                    Button {
+                        withAnimation { model.capturedImage = nil }
+                    } label: {
+                        Label("Retake", systemImage: "arrow.counterclockwise")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 14)
+                            .background(.ultraThinMaterial, in: Capsule())
+                    }
+
+                    ShareLink(item: Image(uiImage: image), preview: SharePreview("Captured Photo", image: Image(uiImage: image))) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 14)
+                            .background(Color.blue, in: Capsule())
+                    }
+                }
+                .padding(.bottom, 60)
+            }
+        }
     }
 
     // MARK: - Permission Card

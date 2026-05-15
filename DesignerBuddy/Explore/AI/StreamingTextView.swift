@@ -23,6 +23,7 @@ struct StreamingTextView: View {
     @State private var thinkingTimer: Timer?
     @State private var shimmerOffset: CGFloat = -1
     @State private var speed: StreamSpeed = .normal
+    @State private var skeletonPhase: CGFloat = -0.4
 
     private let sampleResponse = """
     SwiftUI makes it remarkably easy to build streaming text interfaces. \
@@ -39,6 +40,7 @@ struct StreamingTextView: View {
             VStack(spacing: 24) {
                 streamingCard
                 speedCard
+                skeletonShimmerCard
                 implementationCard
             }
             .padding(16)
@@ -156,6 +158,60 @@ struct StreamingTextView: View {
             }
         }
         .animation(.spring(response: 0.3), value: streamingState)
+    }
+
+    // MARK: Skeleton Shimmer Card
+
+    private var skeletonShimmerCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Label("Skeleton Shimmer", systemImage: "rays").font(.headline)
+                Spacer()
+            }
+
+            Text("Looping greyscale gradient used by AI agents to indicate pending content. A highlight sweeps left-to-right across placeholder lines in a continuous loop.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            GeometryReader { geo in
+                VStack(alignment: .leading, spacing: 10) {
+                    skeletonLine(width: geo.size.width * 0.92)
+                    skeletonLine(width: geo.size.width * 0.78)
+                    skeletonLine(width: geo.size.width * 0.85)
+                    skeletonLine(width: geo.size.width * 0.55)
+                    skeletonLine(width: geo.size.width * 0.70)
+                }
+            }
+            .frame(height: 5 * 14 + 4 * 10)
+            .onAppear {
+                skeletonPhase = -0.4
+                withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
+                    skeletonPhase = 1.4
+                }
+            }
+
+            Text(".fill(LinearGradient) with animated UnitPoint(x: phase ± 0.4)")
+                .font(.caption2.monospaced())
+                .foregroundStyle(.secondary)
+        }
+        .padding(16)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func skeletonLine(width: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 4)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color(uiColor: .systemGray5),
+                        Color(uiColor: .systemGray3),
+                        Color(uiColor: .systemGray5),
+                    ],
+                    startPoint: UnitPoint(x: skeletonPhase - 0.4, y: 0.5),
+                    endPoint: UnitPoint(x: skeletonPhase + 0.4, y: 0.5)
+                )
+            )
+            .frame(width: width, height: 14)
     }
 
     // MARK: Speed Card
