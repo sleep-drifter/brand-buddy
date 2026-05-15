@@ -15,7 +15,10 @@ struct ContentView: View {
             Tab("Native", systemImage: "cpu") {
                 NativeTab()
             }
-Tab(role: .search) {
+            Tab("Explore", systemImage: "safari") {
+                ExploreTab()
+            }
+            Tab(role: .search) {
                 ComponentSearchView()
             }
         }
