@@ -179,6 +179,10 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Clipboard":              ClipboardView()
     case "Quick Look":             QuickLookView()
     case "Document Picker":        DocumentPickerView()
+    case "Streaming Text":             StreamingTextView()
+    case "Writing Tools Integration":  WritingToolsView()
+    case "Image Generation":           ImageGenerationView()
+    case "Prompt Input Patterns":      PromptInputView()
     default:                       SheetDetentsView()
     }
 }

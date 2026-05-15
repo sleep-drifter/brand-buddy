@@ -23,7 +23,7 @@ struct AppEntry: Identifiable, Hashable {
     }
 
     // Keep ComponentEntry as a typealias for backwards compat with ComponentSearchView
-    static let all: [AppEntry] = components + materials + patterns + native + more + exploreA + exploreB
+    static let all: [AppEntry] = components + materials + patterns + native + more + exploreA + exploreB + exploreC
 
     static let components: [AppEntry] = [
         .init(name: "Color",                 section: "Visual",      tab: "Components", keywords: ["colour", "palette", "dark mode", "light mode", "semantic", "tint"]),
@@ -133,6 +133,13 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Clipboard",          section: "System Integrations", tab: "Explore", keywords: ["clipboard", "pasteboard", "UIPasteboard", "copy", "paste"]),
         .init(name: "Quick Look",         section: "System Integrations", tab: "Explore", keywords: ["quick look", "preview", "QuickLookPreviewController", "document"]),
         .init(name: "Document Picker",    section: "System Integrations", tab: "Explore", keywords: ["document", "picker", "UIDocumentPicker", "file", "importer"]),
+    ]
+
+    static let exploreC: [AppEntry] = [
+        .init(name: "Streaming Text",             section: "AI & Generation", tab: "Explore", keywords: ["streaming", "typewriter", "token", "cursor", "chat", "LLM"]),
+        .init(name: "Writing Tools Integration",  section: "AI & Generation", tab: "Explore", keywords: ["writing tools", "iOS 18", "writingToolsBehavior", "text editor", "AI"]),
+        .init(name: "Image Generation",           section: "AI & Generation", tab: "Explore", keywords: ["image generation", "skeleton", "shimmer", "loading", "AI", "placeholder"]),
+        .init(name: "Prompt Input Patterns",      section: "AI & Generation", tab: "Explore", keywords: ["prompt", "input", "chat", "multi-line", "grow", "attachment", "send button"]),
     ]
 }
 
