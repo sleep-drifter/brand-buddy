@@ -116,27 +116,19 @@ struct WritingToolsView: View {
 
     @available(iOS 18, *)
     private var writingToolsEditor: some View {
-        Group {
-            switch selectedBehavior {
-            case .automatic:
-                TextEditor(text: $sampleText)
-                    .writingToolsBehavior(.automatic)
-                    .frame(minHeight: 100)
-                    .padding(8)
-                    .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 8))
-            case .limited:
-                TextEditor(text: $sampleText)
-                    .writingToolsBehavior(.limited)
-                    .frame(minHeight: 100)
-                    .padding(8)
-                    .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 8))
-            case .none:
-                TextEditor(text: $sampleText)
-                    .writingToolsBehavior(.none)
-                    .frame(minHeight: 100)
-                    .padding(8)
-                    .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 8))
-            }
+        TextEditor(text: $sampleText)
+            .writingToolsBehavior(currentBehavior)
+            .frame(minHeight: 100)
+            .padding(8)
+            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    @available(iOS 18, *)
+    private var currentBehavior: WritingToolsBehavior {
+        switch selectedBehavior {
+        case .automatic: return .automatic
+        case .limited:   return .limited
+        case .none:      return .none
         }
     }
 
