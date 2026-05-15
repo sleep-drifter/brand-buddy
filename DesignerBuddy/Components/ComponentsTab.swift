@@ -23,7 +23,7 @@ struct AppEntry: Identifiable, Hashable {
     }
 
     // Keep ComponentEntry as a typealias for backwards compat with ComponentSearchView
-    static let all: [AppEntry] = components + patterns + materials + native + more
+    static let all: [AppEntry] = components + materials + patterns + native + more + exploreD
 
     static let components: [AppEntry] = [
         .init(name: "Color",                 section: "Visual",      tab: "Components", keywords: ["colour", "palette", "dark mode", "light mode", "semantic", "tint"]),
@@ -109,6 +109,14 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Blur Stack",            section: "Playgrounds", tab: "More"),
         .init(name: "Safe Areas",            section: "Reference",   tab: "More", keywords: ["insets", "home indicator", "notch", "status bar"]),
         .init(name: "Sheet Detents",         section: "Reference",   tab: "More"),
+    ]
+
+    static let exploreD: [AppEntry] = [
+        .init(name: "Custom Haptics",            section: "Device & Sensors", tab: "Explore", keywords: ["haptics", "CHHapticEngine", "taptic", "vibration", "pattern", "transient", "continuous"]),
+        .init(name: "Accelerometer & Gyroscope", section: "Device & Sensors", tab: "Explore", keywords: ["accelerometer", "gyroscope", "CMMotionManager", "CoreMotion", "tilt", "motion"]),
+        .init(name: "Barometer",                 section: "Device & Sensors", tab: "Explore", keywords: ["barometer", "CMAltimeter", "altitude", "pressure", "sensor"]),
+        .init(name: "Proximity & Ambient Light", section: "Device & Sensors", tab: "Explore", keywords: ["proximity", "ambient light", "brightness", "UIScreen", "sensor"]),
+        .init(name: "Battery State",             section: "Device & Sensors", tab: "Explore", keywords: ["battery", "batteryLevel", "batteryState", "low power mode", "UIDevice"]),
     ]
 }
 
