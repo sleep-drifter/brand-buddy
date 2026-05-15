@@ -23,7 +23,7 @@ struct AppEntry: Identifiable, Hashable {
     }
 
     // Keep ComponentEntry as a typealias for backwards compat with ComponentSearchView
-    static let all: [AppEntry] = components + patterns + materials + native + more
+    static let all: [AppEntry] = components + materials + patterns + native + more + exploreC
 
     static let components: [AppEntry] = [
         .init(name: "Color",                 section: "Visual",      tab: "Components", keywords: ["colour", "palette", "dark mode", "light mode", "semantic", "tint"]),
@@ -78,10 +78,10 @@ struct AppEntry: Identifiable, Hashable {
     ]
 
     static let materials: [AppEntry] = [
-        .init(name: "iOS 26 Glass",          section: "Glass",       tab: "Materials"),
-        .init(name: "Material (blur)",       section: "Glass",       tab: "Materials"),
-        .init(name: "Surfaces",              section: "Surfaces",    tab: "Materials"),
-        .init(name: "Vibrancy",              section: "Vibrancy",    tab: "Materials"),
+        .init(name: "iOS 26 Glass",          section: "Glass",       tab: "Components"),
+        .init(name: "Material (blur)",       section: "Glass",       tab: "Components"),
+        .init(name: "Surfaces",             section: "Surfaces",    tab: "Components"),
+        .init(name: "Vibrancy",              section: "Vibrancy",    tab: "Components"),
     ]
 
     static let native: [AppEntry] = [
@@ -109,6 +109,13 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Blur Stack",            section: "Playgrounds", tab: "More"),
         .init(name: "Safe Areas",            section: "Reference",   tab: "More", keywords: ["insets", "home indicator", "notch", "status bar"]),
         .init(name: "Sheet Detents",         section: "Reference",   tab: "More"),
+    ]
+
+    static let exploreC: [AppEntry] = [
+        .init(name: "Streaming Text",             section: "AI & Generation", tab: "Explore", keywords: ["streaming", "typewriter", "token", "cursor", "chat", "LLM"]),
+        .init(name: "Writing Tools Integration",  section: "AI & Generation", tab: "Explore", keywords: ["writing tools", "iOS 18", "writingToolsBehavior", "text editor", "AI"]),
+        .init(name: "Image Generation",           section: "AI & Generation", tab: "Explore", keywords: ["image generation", "skeleton", "shimmer", "loading", "AI", "placeholder"]),
+        .init(name: "Prompt Input Patterns",      section: "AI & Generation", tab: "Explore", keywords: ["prompt", "input", "chat", "multi-line", "grow", "attachment", "send button"]),
     ]
 }
 
@@ -238,6 +245,20 @@ struct ComponentsTab: View {
                     }
                     NavigationLink { ToastsView() } label: {
                         Label("Toasts & Banners", systemImage: "bell")
+                    }
+                }
+                Section("Materials") {
+                    NavigationLink { GlassEffectPlayground() } label: {
+                        Label("iOS 26 Glass", systemImage: "bubbles.and.sparkles")
+                    }
+                    NavigationLink { GlassPlayground() } label: {
+                        Label("Material (blur)", systemImage: "camera.filters")
+                    }
+                    NavigationLink { SurfacesPlayground() } label: {
+                        Label("Surfaces", systemImage: "square.stack")
+                    }
+                    NavigationLink { VibrancyPlayground() } label: {
+                        Label("Vibrancy", systemImage: "sparkles")
                     }
                 }
                 Section("Playgrounds") {
