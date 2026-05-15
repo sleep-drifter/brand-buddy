@@ -11,7 +11,7 @@ struct ComponentSearchView: View {
             // SwiftUI only diffs row content, not the entire view tree.
             List {
                 if searchText.isEmpty {
-                    ForEach(["Components", "Patterns", "Materials", "Native", "More"], id: \.self) { tab in
+                    ForEach(["Components", "Patterns", "Native", "More", "Explore"], id: \.self) { tab in
                         Section(tab) {
                             ForEach(AppEntry.all.filter { $0.tab == tab }) { entry in
                                 NavigationLink(value: entry) {
@@ -68,9 +68,9 @@ private extension String {
         switch self {
         case "Components": return .blue
         case "Patterns":   return .purple
-        case "Materials":  return .teal
-        case "More":       return .orange
         case "Native":     return .mint
+        case "More":       return .orange
+        case "Explore":    return .indigo
         default:           return .secondary
         }
     }
@@ -161,6 +161,19 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Map Basics":                 MapBasicsView()
     case "Map Annotations":            MapAnnotationsView()
     case "Map Overlays":               MapOverlaysView()
+    case "Tap & Long Press":       TapLongPressView()
+    case "Swipe & Drag":           SwipeDragView()
+    case "Pinch & Zoom":           PinchZoomView()
+    case "Rotation":               GestureRotationView()
+    case "Transitions":            TransitionsView()
+    case "Keyframe Animations":    KeyframeAnimationsView()
+    case "Phase Animations":       PhaseAnimationsView()
+    case "Symbol Effects":         SymbolEffectsView()
+    case "Matched Geometry":       MatchedGeometryView()
+    case "VoiceOver Labels":       VoiceOverLabelsView()
+    case "Dynamic Type":           DynamicTypeExploreView()
+    case "Reduce Motion":          ReduceMotionView()
+    case "High Contrast":          HighContrastView()
     default:                       SheetDetentsView()
     }
 }

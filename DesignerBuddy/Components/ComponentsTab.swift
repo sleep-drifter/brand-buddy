@@ -23,7 +23,7 @@ struct AppEntry: Identifiable, Hashable {
     }
 
     // Keep ComponentEntry as a typealias for backwards compat with ComponentSearchView
-    static let all: [AppEntry] = components + patterns + materials + native + more
+    static let all: [AppEntry] = components + materials + patterns + native + more + exploreA
 
     static let components: [AppEntry] = [
         .init(name: "Color",                 section: "Visual",      tab: "Components", keywords: ["colour", "palette", "dark mode", "light mode", "semantic", "tint"]),
@@ -78,10 +78,26 @@ struct AppEntry: Identifiable, Hashable {
     ]
 
     static let materials: [AppEntry] = [
-        .init(name: "iOS 26 Glass",          section: "Glass",       tab: "Materials"),
-        .init(name: "Material (blur)",       section: "Glass",       tab: "Materials"),
-        .init(name: "Surfaces",              section: "Surfaces",    tab: "Materials"),
-        .init(name: "Vibrancy",              section: "Vibrancy",    tab: "Materials"),
+        .init(name: "iOS 26 Glass",          section: "Glass",       tab: "Components"),
+        .init(name: "Material (blur)",       section: "Glass",       tab: "Components"),
+        .init(name: "Surfaces",              section: "Surfaces",    tab: "Components"),
+        .init(name: "Vibrancy",              section: "Vibrancy",    tab: "Components"),
+    ]
+
+    static let native: [AppEntry] = [
+        .init(name: "Permission Requests",        section: "Permissions",   tab: "Native"),
+        .init(name: "Permission Denied Recovery", section: "Permissions",   tab: "Native"),
+        .init(name: "Push Notifications",         section: "Permissions",   tab: "Native"),
+        .init(name: "Camera Viewfinder",          section: "Camera",        tab: "Native"),
+        .init(name: "Capture UI Patterns",        section: "Camera",        tab: "Native"),
+        .init(name: "Photo Picker",               section: "Photo Library", tab: "Native"),
+        .init(name: "Photo Library Patterns",     section: "Photo Library", tab: "Native"),
+        .init(name: "Audio Recording",            section: "Audio",         tab: "Native"),
+        .init(name: "Waveform Visualization",     section: "Audio",         tab: "Native"),
+        .init(name: "Playback UI Patterns",       section: "Audio",         tab: "Native"),
+        .init(name: "Map Basics",                 section: "Maps",          tab: "Native"),
+        .init(name: "Map Annotations",            section: "Maps",          tab: "Native"),
+        .init(name: "Map Overlays",               section: "Maps",          tab: "Native"),
     ]
 
     static let native: [AppEntry] = [
@@ -109,6 +125,22 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Blur Stack",            section: "Playgrounds", tab: "More"),
         .init(name: "Safe Areas",            section: "Reference",   tab: "More", keywords: ["insets", "home indicator", "notch", "status bar"]),
         .init(name: "Sheet Detents",         section: "Reference",   tab: "More"),
+    ]
+
+    static let exploreA: [AppEntry] = [
+        .init(name: "Tap & Long Press",    section: "Gestures",      tab: "Explore"),
+        .init(name: "Swipe & Drag",        section: "Gestures",      tab: "Explore"),
+        .init(name: "Pinch & Zoom",        section: "Gestures",      tab: "Explore"),
+        .init(name: "Rotation",            section: "Gestures",      tab: "Explore"),
+        .init(name: "Transitions",         section: "Animations",    tab: "Explore"),
+        .init(name: "Keyframe Animations", section: "Animations",    tab: "Explore"),
+        .init(name: "Phase Animations",    section: "Animations",    tab: "Explore"),
+        .init(name: "Symbol Effects",      section: "Animations",    tab: "Explore"),
+        .init(name: "Matched Geometry",    section: "Animations",    tab: "Explore"),
+        .init(name: "VoiceOver Labels",    section: "Accessibility", tab: "Explore"),
+        .init(name: "Dynamic Type",        section: "Accessibility", tab: "Explore"),
+        .init(name: "Reduce Motion",       section: "Accessibility", tab: "Explore"),
+        .init(name: "High Contrast",       section: "Accessibility", tab: "Explore"),
     ]
 }
 
