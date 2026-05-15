@@ -1,11 +1,12 @@
 import SwiftUI
 import UIKit
+import Combine
 
 // MARK: - Proximity & Ambient Light View
 
 struct ProximityLightView: View {
     @StateObject private var proximityMonitor = ProximityMonitor()
-    @State private var screenBrightness: Double = Double(UIScreen.main.brightness)
+    @State private var screenBrightness: Double = Double(UIScreen.currentScreen?.brightness ?? 0.5)
 
     var body: some View {
         ScrollView {
@@ -78,7 +79,7 @@ struct ProximityLightView: View {
             HStack(spacing: 10) {
                 Image(systemName: "sun.min").foregroundStyle(.secondary)
                 Slider(value: $screenBrightness, in: 0.01...1.0) { _ in
-                    UIScreen.main.brightness = screenBrightness
+                    UIScreen.currentScreen?.brightness = screenBrightness
                 }
                 Image(systemName: "sun.max").foregroundStyle(.secondary)
             }
@@ -86,12 +87,12 @@ struct ProximityLightView: View {
             Button("Reset to System Default") {
                 // Can't read system's preferred brightness, but 0.5 is a safe reset
                 screenBrightness = 0.5
-                UIScreen.main.brightness = 0.5
+                UIScreen.currentScreen?.brightness = 0.5
             }
             .font(.subheadline)
             .foregroundStyle(.blue)
 
-            Text("UIScreen.main.brightness accepts 0.0–1.0. Changes persist until the user adjusts Control Center. Use sparingly.")
+            Text("UIScreen.currentScreen?.brightness ?? 0.5 accepts 0.0–1.0. Changes persist until the user adjusts Control Center. Use sparingly.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .padding(16)
@@ -113,7 +114,7 @@ struct ProximityLightView: View {
                 Divider()
                 RefRow(api: "UIDevice.current.proximityState", detail: "Bool — true when object is near")
                 Divider()
-                RefRow(api: "UIScreen.main.brightness", detail: "Read or write current display brightness")
+                RefRow(api: "UIScreen.currentScreen?.brightness ?? 0.5", detail: "Read or write current display brightness")
             }
         }
         .padding(16)
@@ -163,6 +164,14 @@ class ProximityMonitor: ObservableObject {
             NotificationCenter.default.removeObserver(token)
             notificationToken = nil
         }
+    }
+}
+
+private extension UIScreen {
+    static var currentScreen: UIScreen? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.screen
     }
 }
 

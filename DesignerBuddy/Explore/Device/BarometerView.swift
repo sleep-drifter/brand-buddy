@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreMotion
+import Combine
 
 // MARK: - Barometer View
 
@@ -211,13 +212,11 @@ class AltimeterManager: ObservableObject {
     private func simulateAltitude() {
         Task {
             var t: Double = 0
-            while await isRunning {
+            while isRunning {
                 try? await Task.sleep(nanoseconds: 500_000_000)
                 t += 0.5
-                await MainActor.run {
-                    self.relativeAltitude = sin(t * 0.3) * 3.0
-                    self.pressure = 101.3 - self.relativeAltitude * 0.012
-                }
+                relativeAltitude = sin(t * 0.3) * 3.0
+                pressure = 101.3 - relativeAltitude * 0.012
             }
         }
     }
