@@ -1,6 +1,13 @@
 import SwiftUI
 
 struct ModalPatternsView: View {
+    @State private var showMediumSheet = false
+    @State private var showLargeSheet = false
+    @State private var showSwitchableSheet = false
+    @State private var showFullScreen = false
+    @State private var showConfirmation = false
+    @State private var showAlert = false
+
     var body: some View {
         List {
             Section("When to Use Modals") {
@@ -19,31 +26,101 @@ struct ModalPatternsView: View {
                 }
             }
 
-            Section("Modal Types Comparison") {
-                ForEach(ModalTypeItem.all) { item in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(item.name).font(.subheadline).fontWeight(.semibold)
-                        HStack(alignment: .top, spacing: 8) {
-                            Text("Use when:")
-                                .font(.caption).fontWeight(.medium)
-                                .foregroundStyle(.secondary)
-                            Text(item.useWhen)
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                        HStack(alignment: .top, spacing: 8) {
-                            Text("Avoid when:")
-                                .font(.caption).fontWeight(.medium)
-                                .foregroundStyle(.secondary)
-                            Text(item.avoidWhen)
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
+            Section("Modal Types — Live Demos") {
+                ModalDemoRow(
+                    name: "Sheet (.medium)",
+                    useWhen: "Quick action or short form. Content is secondary to what's behind.",
+                    buttonLabel: ".sheet + .medium",
+                    action: { showMediumSheet = true }
+                )
+                ModalDemoRow(
+                    name: "Sheet (.large)",
+                    useWhen: "Multi-step flow or rich content that needs space but can be dismissed.",
+                    buttonLabel: ".sheet + .large",
+                    action: { showLargeSheet = true }
+                )
+                ModalDemoRow(
+                    name: "Sheet (switchable)",
+                    useWhen: "When user needs to expand for more detail — medium and large detents.",
+                    buttonLabel: ".medium + .large",
+                    action: { showSwitchableSheet = true }
+                )
+                ModalDemoRow(
+                    name: "Full Screen Cover",
+                    useWhen: "Onboarding, immersive flows where going back should not be trivial.",
+                    buttonLabel: ".fullScreenCover",
+                    action: { showFullScreen = true }
+                )
+                ModalDemoRow(
+                    name: "Confirmation Dialog",
+                    useWhen: "Destructive or irreversible actions with 2–3 choices.",
+                    buttonLabel: ".confirmationDialog",
+                    action: { showConfirmation = true }
+                )
+                ModalDemoRow(
+                    name: "Alert",
+                    useWhen: "Critical decisions or errors with 1–2 choices.",
+                    buttonLabel: ".alert",
+                    action: { showAlert = true }
+                )
             }
         }
         .navigationTitle("Modal Patterns")
         .navigationBarTitleDisplayMode(.large)
+        .sheet(isPresented: $showMediumSheet) {
+            Text("Medium sheet content").presentationDetents([.medium])
+        }
+        .sheet(isPresented: $showLargeSheet) {
+            Text("Large sheet content").presentationDetents([.large])
+        }
+        .sheet(isPresented: $showSwitchableSheet) {
+            VStack {
+                Text("Switchable sheet").font(.headline).padding()
+                Text("Drag up to expand").foregroundStyle(.secondary)
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .fullScreenCover(isPresented: $showFullScreen) {
+            VStack(spacing: 24) {
+                Text("Full Screen Cover").font(.title2).fontWeight(.semibold)
+                Text("No swipe to dismiss.").foregroundStyle(.secondary)
+                Button("Dismiss") { showFullScreen = false }
+                    .buttonStyle(.borderedProminent)
+            }
+        }
+        .confirmationDialog("Confirm Action", isPresented: $showConfirmation) {
+            Button("Delete", role: .destructive) {}
+            Button("Archive") {}
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Choose what to do with this item.")
+        }
+        .alert("Alert Title", isPresented: $showAlert) {
+            Button("OK") {}
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This is an alert message with OK and Cancel.")
+        }
+    }
+}
+
+private struct ModalDemoRow: View {
+    let name: String
+    let useWhen: String
+    let buttonLabel: String
+    let action: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(name).font(.subheadline).fontWeight(.semibold)
+            Text(useWhen).font(.caption).foregroundStyle(.secondary)
+            Button(buttonLabel, action: action)
+                .font(.caption)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+        }
+        .padding(.vertical, 4)
     }
 }
 
@@ -225,6 +302,14 @@ struct FormPatternView: View {
     @State private var agree = false
     @State private var submitted = false
 
+    // Validation on Submit state
+    @State private var name2 = ""
+    @State private var email2 = ""
+    @State private var agree2 = false
+    @State private var nameError: String? = nil
+    @State private var emailError: String? = nil
+    @State private var agreeError: String? = nil
+
     var canSubmit: Bool { !name.isEmpty && !email.isEmpty && agree }
 
     var body: some View {
@@ -247,6 +332,69 @@ struct FormPatternView: View {
                     .frame(maxWidth: .infinity)
                     .disabled(!canSubmit)
             }
+
+            Section {
+                Text("Validation on Submit")
+                    .font(.headline)
+                    .listRowBackground(Color.clear)
+                    .padding(.top, 8)
+            } header: {
+                Text("Validation on Submit")
+            }
+
+            Section("Details") {
+                VStack(alignment: .leading, spacing: 4) {
+                    TextField("Full name", text: $name2)
+                        .textContentType(.name)
+                        .onChange(of: name2) { _, _ in nameError = nil }
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(nameError != nil ? Color.red : Color.clear, lineWidth: 1.5)
+                        )
+                    if let err = nameError {
+                        Text(err).font(.caption).foregroundStyle(.red)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    TextField("Email", text: $email2)
+                        .keyboardType(.emailAddress)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .onChange(of: email2) { _, _ in emailError = nil }
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(emailError != nil ? Color.red : Color.clear, lineWidth: 1.5)
+                        )
+                    if let err = emailError {
+                        Text(err).font(.caption).foregroundStyle(.red)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                }
+            }
+
+            Section {
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("I agree to the terms", isOn: $agree2)
+                        .onChange(of: agree2) { _, _ in agreeError = nil }
+                    if let err = agreeError {
+                        Text(err).font(.caption).foregroundStyle(.red)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                }
+            }
+
+            Section {
+                Button("Submit") {
+                    withAnimation {
+                        nameError = name2.isEmpty ? "Name is required" : nil
+                        emailError = email2.isEmpty ? "Email is required" : (email2.contains("@") ? nil : "Enter a valid email")
+                        agreeError = agree2 ? nil : "You must agree to the terms"
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .buttonStyle(.borderedProminent)
+            }
         }
         .navigationTitle("Form Patterns")
         .navigationBarTitleDisplayMode(.large)
@@ -259,6 +407,9 @@ struct FormPatternView: View {
 }
 
 struct EmptyStatesView: View {
+    enum RetryState { case error, loading, success }
+    @State private var retryState: RetryState = .error
+
     var body: some View {
         List {
             Section("No Content") {
@@ -278,12 +429,50 @@ struct EmptyStatesView: View {
                 )
             }
             Section("Error State") {
-                EmptyStateExample(
-                    icon: "exclamationmark.triangle",
-                    title: "Something went wrong",
-                    subtitle: "Check your connection and try again.",
-                    action: "Retry"
-                )
+                ZStack {
+                    switch retryState {
+                    case .error:
+                        VStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 36))
+                                .foregroundStyle(.secondary)
+                            Text("Something went wrong")
+                                .font(.headline)
+                            Text("Check your connection and try again.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                            Button("Retry") {
+                                withAnimation(.easeInOut(duration: 0.3)) { retryState = .loading }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    withAnimation(.easeInOut(duration: 0.3)) { retryState = .success }
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                        withAnimation(.easeInOut(duration: 0.3)) { retryState = .error }
+                                    }
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    case .loading:
+                        VStack(spacing: 8) {
+                            ProgressView()
+                            Text("Retrying…")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    case .success:
+                        VStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 36))
+                                .foregroundStyle(.green)
+                            Text("Connected")
+                                .font(.headline)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 160)
+                .padding(.vertical, 8)
             }
         }
         .navigationTitle("Empty States")
@@ -376,19 +565,36 @@ struct SkeletonRow: View {
 }
 
 struct ErrorStatesView: View {
+    @State private var email = "bad-email"
+    @FocusState private var emailFocused: Bool
+    @State private var hasError = true
+
     var body: some View {
         List {
             Section("Inline Error") {
                 VStack(alignment: .leading, spacing: 4) {
-                    TextField("Email", text: .constant("bad-email"))
+                    TextField("Email", text: $email)
+                        .focused($emailFocused)
                         .textFieldStyle(.roundedBorder)
-                    HStack(spacing: 4) {
-                        Image(systemName: "exclamationmark.circle.fill")
-                            .foregroundStyle(.red)
-                            .font(.caption)
-                        Text("Enter a valid email address")
-                            .font(.caption)
-                            .foregroundStyle(.red)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(hasError ? Color.red : Color.clear, lineWidth: 1.5)
+                        )
+                        .background(hasError ? Color.red.opacity(0.04) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
+                        .onChange(of: emailFocused) { _, focused in
+                            if !focused {
+                                hasError = !email.contains("@") || email.isEmpty
+                            }
+                        }
+                    if hasError {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .foregroundStyle(.red)
+                                .font(.caption)
+                            Text("Enter a valid email address")
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
                     }
                 }
                 .padding(.vertical, 4)

@@ -6,9 +6,18 @@ struct DesignerBuddyApp: App {
     @State private var isReady = false
 
     init() {
-        registerFonts()
-        warmFontCache()
+        // Run on main synchronously — UIAppearance must be set before first render.
         applyGlobalAppearance()
+        // Font registration and AppEntry warm-up can happen off the main thread.
+        // SplashView uses system fonts only; the 0.6s delay gives ample time for
+        // fonts to be registered before ContentView fades in.
+        DispatchQueue.global(qos: .userInitiated).async {
+            registerFonts()
+            // Force AppEntry.all static-let initialization: generates UUIDs,
+            // runs all lowercased() calls, and warms ICU Unicode tables —
+            // so the first search keystroke is instant.
+            _ = AppEntry.all
+        }
     }
 
     var body: some Scene {
@@ -24,6 +33,13 @@ struct DesignerBuddyApp: App {
                 }
             }
             .onAppear {
+                // Pre-warm the keyboard during the splash so the first search tap
+                // doesn't hitch 5-10s loading iOS keyboard ML/layout resources.
+                // becomeFirstResponder + immediate resign loads resources without
+                // animating the keyboard on screen.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    prewarmKeyboard()
+                }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                     withAnimation(.easeOut(duration: 0.4)) {
                         isReady = true
@@ -43,9 +59,10 @@ struct SplashView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 16) {
-                Image(systemName: "paintbrush.pointed.fill")
-                    .font(.system(size: 52, weight: .medium))
-                    .foregroundStyle(.tint)
+                Image("LaunchIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 100, height: 100)
                     .scaleEffect(pulse ? 1.06 : 1.0)
                     .animation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true), value: pulse)
 
@@ -59,40 +76,50 @@ struct SplashView: View {
     }
 }
 
-// Pre-populate the font cache on a background thread during the splash delay
-// so all Text views get cached Font objects on first render.
-private func warmFontCache() {
-    DispatchQueue.global(qos: .userInitiated).async {
-        let styles: [Font.TextStyle] = [
-            .largeTitle, .title, .title2, .title3,
-            .headline, .body, .callout, .subheadline,
-            .footnote, .caption, .caption2
-        ]
-        for style in styles {
-            _ = Font.noi(style, weight: .regular)
-            _ = Font.noi(style, weight: .medium)
-        }
-    }
-}
-
 private func applyGlobalAppearance() {
-    // Apply NoiGrotesk to UIKit nav bar button items (plain text buttons in .toolbar)
-    if let regular = UIFont(name: "NoiGrotesk-Regular", size: 17) {
-        let attrs: [NSAttributedString.Key: Any] = [.font: regular]
+    // UIFontMetrics.scaledFont(for:) produces a font that is correctly sized for
+    // the current Dynamic Type category. UIAppearance is set once at launch, so
+    // we read the current category here; the font size is correct on first render.
+    // (Nav bar appearance is reset by the OS on content-size-category change anyway.)
+    let metrics17 = UIFontMetrics(forTextStyle: .body)
+    let metrics34 = UIFontMetrics(forTextStyle: .largeTitle)
+
+    // Bar button items
+    if let base17 = UIFont(name: "NoiGrotesk-Medium", size: 17) {
+        let scaled = metrics17.scaledFont(for: base17)
+        let attrs: [NSAttributedString.Key: Any] = [.font: scaled]
         UIBarButtonItem.appearance().setTitleTextAttributes(attrs, for: .normal)
         UIBarButtonItem.appearance().setTitleTextAttributes(attrs, for: .highlighted)
     }
-    // Nav bar large + inline title
-    if let medium = UIFont(name: "NoiGrotesk-Medium", size: 17),
-       let large  = UIFont(name: "NoiGrotesk-Medium", size: 34) {
+    // Nav bar inline + large title
+    if let base17 = UIFont(name: "NoiGrotesk-Medium", size: 17),
+       let base34 = UIFont(name: "NoiGrotesk-Medium", size: 34) {
+        let scaled17 = metrics17.scaledFont(for: base17)
+        let scaled34 = metrics34.scaledFont(for: base34)
         let navAppearance = UINavigationBarAppearance()
         navAppearance.configureWithDefaultBackground()
-        navAppearance.titleTextAttributes      = [.font: medium]
-        navAppearance.largeTitleTextAttributes = [.font: large]
+        navAppearance.titleTextAttributes      = [.font: scaled17]
+        navAppearance.largeTitleTextAttributes = [.font: scaled34]
         UINavigationBar.appearance().standardAppearance   = navAppearance
         UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
         UINavigationBar.appearance().compactAppearance    = navAppearance
     }
+}
+
+// Force the iOS keyboard stack to load its ML models and layout data during
+// the splash, before the user can tap a search field. Call-and-resign pattern
+// loads resources without animating the keyboard onscreen.
+private func prewarmKeyboard() {
+    guard let scene = UIApplication.shared.connectedScenes
+        .compactMap({ $0 as? UIWindowScene }).first,
+          let window = scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first
+    else { return }
+    let field = UITextField(frame: .zero)
+    field.isHidden = true
+    window.addSubview(field)
+    field.becomeFirstResponder()
+    field.resignFirstResponder()
+    field.removeFromSuperview()
 }
 
 private func registerFonts() {

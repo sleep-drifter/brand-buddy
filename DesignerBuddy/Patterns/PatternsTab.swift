@@ -5,27 +5,49 @@ struct PatternsTab: View {
         NavigationStack {
             List {
                 Section("Navigation") {
-                    NavigationLink("Navigation Patterns") { NavigationPatternsView() }
-                    NavigationLink("Tab Bar Patterns") { TabPatternView() }
+                    NavigationLink { NavigationPatternsView() } label: {
+                        Label("Navigation Patterns", systemImage: "arrow.triangle.turn.up.right.diamond")
+                    }
+                    NavigationLink { TabPatternView() } label: {
+                        Label("Tab Bar Patterns", systemImage: "rectangle.bottomthird.inset.filled")
+                    }
                 }
                 Section("Presentation") {
-                    NavigationLink("Modal Patterns") { ModalPatternsView() }
-                    NavigationLink("Sheet Flows") { SheetFlowsView() }
+                    NavigationLink { ModalPatternsView() } label: {
+                        Label("Modal Patterns", systemImage: "rectangle.topthird.inset.filled")
+                    }
+                    NavigationLink { SheetFlowsView() } label: {
+                        Label("Sheet Flows", systemImage: "arrow.up.and.down.square")
+                    }
                 }
                 Section("Input & Search") {
-                    NavigationLink("Search Patterns") { SearchPatternView() }
-                    NavigationLink("Form Patterns") { FormPatternView() }
+                    NavigationLink { SearchPatternView() } label: {
+                        Label("Search Patterns", systemImage: "magnifyingglass")
+                    }
+                    NavigationLink { FormPatternView() } label: {
+                        Label("Form Patterns", systemImage: "list.clipboard")
+                    }
                 }
                 Section("Content") {
-                    NavigationLink("Empty States") { EmptyStatesView() }
-                    NavigationLink("Loading States") { LoadingStatesView() }
-                    NavigationLink("Error States") { ErrorStatesView() }
+                    NavigationLink { EmptyStatesView() } label: {
+                        Label("Empty States", systemImage: "tray")
+                    }
+                    NavigationLink { LoadingStatesView() } label: {
+                        Label("Loading States", systemImage: "progress.indicator")
+                    }
+                    NavigationLink { ErrorStatesView() } label: {
+                        Label("Error States", systemImage: "exclamationmark.triangle")
+                    }
                 }
                 Section("Settings") {
-                    NavigationLink("Settings Patterns") { SettingsPatternView() }
+                    NavigationLink { SettingsPatternView() } label: {
+                        Label("Settings Patterns", systemImage: "gear")
+                    }
                 }
                 Section("Onboarding") {
-                    NavigationLink("Onboarding Flows") { OnboardingView() }
+                    NavigationLink { OnboardingView() } label: {
+                        Label("Onboarding Flows", systemImage: "hand.wave")
+                    }
                 }
             }
             .navigationTitle("Patterns")

@@ -7,6 +7,7 @@ struct PickersView: View {
     @State private var selection4 = "Option A"
 
     private let options = ["Option A", "Option B", "Option C", "Option D"]
+    private let selectionFeedback = UISelectionFeedbackGenerator()
 
     var body: some View {
         List {
@@ -47,6 +48,11 @@ struct PickersView: View {
         }
         .navigationTitle("Pickers")
         .navigationBarTitleDisplayMode(.large)
+        .onAppear { selectionFeedback.prepare() }
+        .onChange(of: selection1) { _, _ in selectionFeedback.selectionChanged() }
+        .onChange(of: selection2) { _, _ in selectionFeedback.selectionChanged() }
+        .onChange(of: selection3) { _, _ in selectionFeedback.selectionChanged() }
+        .onChange(of: selection4) { _, _ in selectionFeedback.selectionChanged() }
     }
 }
 

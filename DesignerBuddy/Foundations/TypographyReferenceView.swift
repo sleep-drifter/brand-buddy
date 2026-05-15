@@ -2,7 +2,9 @@ import SwiftUI
 
 struct TypographyReferenceView: View {
     @State private var showSizeInfo = true
-    @State private var selectedCategory: ContentSizeCategory = .large
+    @State private var selectedSizeIndex: Int = 3
+
+    private var selectedCategory: ContentSizeCategory { ContentSizeCategory.allAccessibilitySizes[selectedSizeIndex] }
 
     private let styles: [(name: String, style: Font.TextStyle, uiStyle: UIFont.TextStyle)] = [
         ("Large Title", .largeTitle, .largeTitle),
@@ -46,28 +48,39 @@ struct TypographyReferenceView: View {
             }
 
             Section("Dynamic Type Scale") {
-                Picker("Size category", selection: $selectedCategory) {
-                    ForEach(ContentSizeCategory.allAccessibilitySizes, id: \.self) { cat in
-                        Text(cat.label).tag(cat)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(selectedCategory.label)
+                            .font(.subheadline)
+                        Spacer()
+                        Text("\(selectedSizeIndex + 1) of \(ContentSizeCategory.allAccessibilitySizes.count)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
+                    Slider(
+                        value: Binding(get: { Double(selectedSizeIndex) }, set: { selectedSizeIndex = Int($0.rounded()) }),
+                        in: 0...Double(ContentSizeCategory.allAccessibilitySizes.count - 1),
+                        step: 1
+                    )
                 }
-                .pickerStyle(.wheel)
-                .frame(height: 100)
+                .padding(.vertical, 4)
             }
 
             Section("Scale at \(selectedCategory.label)") {
                 ForEach(styles, id: \.name) { entry in
-                    HStack {
-                        Text("Ag")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("The quick brown fox")
                             .font(Font.system(entry.style))
                             .environment(\.sizeCategory, selectedCategory)
-                            .frame(width: 60, alignment: .leading)
-                        Text(entry.name)
-                            .font(.subheadline)
-                        Spacer()
-                        Text("\(dynamicPointSize(for: entry.style, category: selectedCategory))pt")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                        HStack(spacing: 8) {
+                            Text(entry.name)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("\(dynamicPointSize(for: entry.style, category: selectedCategory))pt")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
                     }
                     .padding(.vertical, 2)
                 }

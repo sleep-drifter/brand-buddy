@@ -240,8 +240,39 @@ struct GridsView: View {
 // MARK: - ScrollViewsView (#011 — inline demos for all scroll variants)
 
 struct ScrollViewsView: View {
+    @State private var indicatorIndex: Int = 0
+
+    private var indicatorVisibility: ScrollIndicatorVisibility {
+        switch indicatorIndex {
+        case 1: return .visible
+        case 2: return .hidden
+        default: return .automatic
+        }
+    }
+
+    private var indicatorCaption: String {
+        switch indicatorIndex {
+        case 1: return ".scrollIndicators(.visible)"
+        case 2: return ".scrollIndicators(.hidden)"
+        default: return ".scrollIndicators(.automatic)"
+        }
+    }
+
     var body: some View {
         List {
+
+            // 0. Scroll Indicators
+            Section("Scroll Indicators") {
+                Picker("Indicators", selection: $indicatorIndex) {
+                    Text("Automatic").tag(0)
+                    Text("Visible").tag(1)
+                    Text("Hidden").tag(2)
+                }
+                .pickerStyle(.segmented)
+                Text(indicatorCaption)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
 
             // 1. Vertical
             Section("Vertical") {
@@ -258,6 +289,7 @@ struct ScrollViewsView: View {
                     .padding(.vertical, 8)
                 }
                 .frame(height: 260)
+                .scrollIndicators(indicatorVisibility)
             }
 
             // 2. Horizontal — basic
@@ -274,10 +306,11 @@ struct ScrollViewsView: View {
                     .padding(.horizontal, 4)
                     .padding(.vertical, 4)
                 }
+                .scrollIndicators(indicatorVisibility)
             }
 
-            // 3. Horizontal — snapping
-            Section("Horizontal — snapping") {
+            // 3. Snapping — leading aligned
+            Section("Snapping — leading aligned") {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(0..<8) { i in
@@ -296,13 +329,96 @@ struct ScrollViewsView: View {
                     .padding(.vertical, 4)
                 }
                 .scrollTargetBehavior(.viewAligned)
+                .scrollIndicators(indicatorVisibility)
 
                 Text(".scrollTargetBehavior(.viewAligned) + .scrollTargetLayout()")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
 
-            // 4. Horizontal — edge fade
+            // 4. Snapping — paging
+            Section("Snapping — paging") {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 0) {
+                        ForEach(0..<6) { i in
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color(hue: Double(i) / 6, saturation: 0.55, brightness: 0.88))
+                                .overlay(Text("Page \(i + 1)").font(.subheadline).bold())
+                                .containerRelativeFrame(.horizontal)
+                                .padding(.horizontal, 8)
+                                .scrollTransition { content, phase in
+                                    content.opacity(phase.isIdentity ? 1 : 0.7)
+                                }
+                        }
+                    }
+                    .scrollTargetLayout()
+                }
+                .frame(height: 100)
+                .scrollTargetBehavior(.paging)
+                .scrollIndicators(indicatorVisibility)
+                Text(".scrollTargetBehavior(.paging) · .containerRelativeFrame(.horizontal)")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+
+            // 5. Snapping — depth effect
+            Section("Snapping — depth effect") {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 16) {
+                        ForEach(0..<8) { i in
+                            GeometryReader { geo in
+                                let midX = geo.frame(in: .scrollView).midX
+                                let screenMidX = geo.frame(in: .global).width / 2
+                                let distance = abs(midX - screenMidX)
+                                let scale = max(0.82, 1 - distance / 500)
+                                let opacity = max(0.5, 1 - distance / 300)
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(Color(hue: Double(i) / 8, saturation: 0.6, brightness: 0.85))
+                                    .overlay(Text("Card \(i + 1)").font(.subheadline).bold())
+                                    .scaleEffect(scale)
+                                    .opacity(opacity)
+                            }
+                            .frame(width: 160, height: 90)
+                        }
+                    }
+                    .scrollTargetLayout()
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 8)
+                }
+                .scrollTargetBehavior(.viewAligned)
+                .scrollIndicators(indicatorVisibility)
+                Text("scaleEffect + opacity via GeometryReader scroll distance")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+
+            // 6. Snapping — cover flow
+            Section("Snapping — cover flow") {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(0..<8) { i in
+                            GeometryReader { geo in
+                                let midX = geo.frame(in: .scrollView).midX
+                                let screenMidX = geo.frame(in: .global).width / 2
+                                let delta = midX - screenMidX
+                                let angle = Double(delta) / 8.0
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(Color(hue: Double(i) / 8, saturation: 0.55, brightness: 0.88))
+                                    .overlay(Text("Card \(i + 1)").font(.subheadline).bold())
+                                    .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: 0.4)
+                            }
+                            .frame(width: 160, height: 90)
+                        }
+                    }
+                    .scrollTargetLayout()
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 8)
+                }
+                .scrollTargetBehavior(.viewAligned)
+                .scrollIndicators(indicatorVisibility)
+                Text("rotation3DEffect(angle, axis: (0,1,0)) via scroll offset")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+
+            // 7. Horizontal — edge fade
             Section("Horizontal — edge fade") {
                 ZStack {
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -317,6 +433,7 @@ struct ScrollViewsView: View {
                         .padding(.horizontal, 24)
                         .padding(.vertical, 4)
                     }
+                    .scrollIndicators(indicatorVisibility)
                     // Leading fade
                     HStack {
                         LinearGradient(
@@ -342,7 +459,7 @@ struct ScrollViewsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            // 5. Carousel & pagination
+            // 8. Carousel & pagination
             Section("Carousel & pagination") {
                 TabView {
                     ForEach(0..<5) { i in
@@ -433,14 +550,14 @@ struct CardsView: View {
                 // 1. Expandable card
                 ExpandableCard()
 
-                // 2. Long press to peek
-                LongPressPeekCard()
-
-                // 3. Swipeable card
+                // 2. Swipeable card
                 SwipeableCard()
 
-                // 4. Glass card
+                // 3. Glass card
                 GlassCard()
+
+                // 4. Layered glass card
+                LayeredGlassCard()
             }
             .padding()
         }
@@ -460,85 +577,36 @@ private struct ExpandableCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Expandable card")
                         .font(.headline)
-                    Text("withAnimation(.spring()) · @State var expanded")
+                    Text("withAnimation(.spring(duration: 0.2)) · @State var expanded")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Image(systemName: expanded ? "chevron.up" : "chevron.down")
                     .foregroundStyle(.secondary)
-                    .animation(.spring(), value: expanded)
+                    .animation(.spring(duration: 0.2), value: expanded)
             }
             .padding(16)
 
             if expanded {
                 VStack(alignment: .leading, spacing: 8) {
                     Divider()
-                    Text("This body text is revealed on tap. The layout change is driven by an @State Bool toggled inside withAnimation(.spring()), giving the expand/collapse a natural feel without manual spring math.")
+                    Text("This body text is revealed on tap. The layout change is driven by an @State Bool toggled inside withAnimation(.spring(duration: 0.2)), giving the expand/collapse a natural feel without manual spring math.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 16)
                         .padding(.bottom, 16)
                 }
-                .transition(.move(edge: .top).combined(with: .opacity))
+                .transition(.opacity)
             }
         }
+        .clipped()
         .background(Color(.secondarySystemBackground),
                      in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .onTapGesture {
-            withAnimation(.spring()) { expanded.toggle() }
+            withAnimation(.spring(duration: 0.2)) { expanded.toggle() }
         }
-    }
-}
-
-// MARK: Long Press to Peek Card
-
-private struct LongPressPeekCard: View {
-    @GestureState private var isPressed = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Long press to peek")
-                        .font(.headline)
-                    Text("@GestureState · .onLongPressGesture · scaleEffect")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: "hand.point.up.left")
-                    .foregroundStyle(.secondary)
-            }
-            .padding(16)
-
-            if isPressed {
-                Divider()
-                HStack(spacing: 16) {
-                    Button {} label: {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                            .font(.subheadline)
-                    }
-                    Button {} label: {
-                        Label("Save", systemImage: "bookmark")
-                            .font(.subheadline)
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
-        .background(Color(.secondarySystemBackground),
-                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .scaleEffect(isPressed ? 0.96 : 1)
-        .animation(.easeInOut(duration: 0.15), value: isPressed)
-        .gesture(
-            LongPressGesture(minimumDuration: 0.4)
-                .updating($isPressed) { value, state, _ in state = value }
-        )
     }
 }
 
@@ -630,6 +698,55 @@ private struct GlassCard: View {
             .padding(20)
         }
         .frame(height: 120)
+        .onAppear { animateGradient = true }
+    }
+}
+
+// MARK: Layered Glass Card
+
+private struct LayeredGlassCard: View {
+    @State private var animateGradient = false
+
+    var body: some View {
+        ZStack {
+            // Layer 1: animated gradient background
+            LinearGradient(
+                colors: animateGradient
+                    ? [Color.indigo, Color.cyan, Color.mint]
+                    : [Color.blue, Color.purple, Color.indigo],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: animateGradient)
+
+            // Layer 2: frosted glass surface
+            Rectangle()
+                .fill(.ultraThinMaterial)
+
+            // Layer 3: specular edge highlight
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.3), lineWidth: 1)
+                .background(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(Color.white.opacity(0.05))
+                )
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Glass card — layered")
+                    .font(.headline)
+                Text(".ultraThinMaterial + stroke(white.opacity(0.3)) + fill(white.opacity(0.05))")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text("Gradient animates behind the material blur. Specular edge sits on top.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(20)
+        }
+        .frame(height: 130)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .onAppear { animateGradient = true }
     }
 }

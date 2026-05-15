@@ -5,14 +5,30 @@ struct AppEntry: Identifiable, Hashable {
     let name: String
     let section: String
     let tab: String
+    // Pre-lowercased so fuzzyMatch never calls lowercased() at search time.
+    // ICU Unicode tables are also warmed during AppEntry.all initialization.
+    let nameLower: String
+    let sectionLower: String
+    let tabLower: String
+    let keywordsLower: String
+
+    init(name: String, section: String, tab: String, keywords: [String] = []) {
+        self.name = name
+        self.section = section
+        self.tab = tab
+        self.nameLower = name.lowercased()
+        self.sectionLower = section.lowercased()
+        self.tabLower = tab.lowercased()
+        self.keywordsLower = keywords.joined(separator: " ").lowercased()
+    }
 
     // Keep ComponentEntry as a typealias for backwards compat with ComponentSearchView
-    static let all: [AppEntry] = components + patterns + materials + more
+    static let all: [AppEntry] = components + patterns + materials + native + more
 
     static let components: [AppEntry] = [
-        .init(name: "Color",                 section: "Visual",      tab: "Components"),
-        .init(name: "Typography",            section: "Visual",      tab: "Components"),
-        .init(name: "Spacing & Layout",      section: "Visual",      tab: "Components"),
+        .init(name: "Color",                 section: "Visual",      tab: "Components", keywords: ["colour", "palette", "dark mode", "light mode", "semantic", "tint"]),
+        .init(name: "Typography",            section: "Visual",      tab: "Components", keywords: ["dynamic type", "font size", "accessibility", "text scale", "a11y", "fonts", "type styles", "font weight"]),
+        .init(name: "Spacing & Layout",      section: "Visual",      tab: "Components", keywords: ["margin", "padding", "grid", "layout", "inset", "frame", "alignment"]),
         .init(name: "Buttons",               section: "Actions",     tab: "Components"),
         .init(name: "Menus & Context Menus", section: "Actions",     tab: "Components"),
         .init(name: "Context Menus",         section: "Actions",     tab: "Components"),
@@ -68,14 +84,30 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Vibrancy",              section: "Vibrancy",    tab: "Materials"),
     ]
 
+    static let native: [AppEntry] = [
+        .init(name: "Permission Requests",        section: "Permissions",   tab: "Native", keywords: ["auth", "authorization", "camera", "microphone", "photos", "location", "contacts", "privacy"]),
+        .init(name: "Permission Denied Recovery", section: "Permissions",   tab: "Native", keywords: ["denied", "settings", "privacy", "blocked", "restricted"]),
+        .init(name: "Push Notifications",         section: "Permissions",   tab: "Native", keywords: ["push", "notifications", "alerts", "badge", "UNUserNotificationCenter"]),
+        .init(name: "Camera Viewfinder",          section: "Camera",        tab: "Native", keywords: ["camera", "capture", "AVFoundation", "preview", "viewfinder"]),
+        .init(name: "Capture UI Patterns",        section: "Camera",        tab: "Native", keywords: ["shutter", "camera", "capture", "chrome", "flip"]),
+        .init(name: "Photo Picker",               section: "Photo Library", tab: "Native", keywords: ["photos", "picker", "PHPicker", "library", "gallery", "PhotosPicker"]),
+        .init(name: "Photo Library Patterns",     section: "Photo Library", tab: "Native", keywords: ["avatar", "crop", "thumbnail", "gallery", "photos"]),
+        .init(name: "Audio Recording",            section: "Audio",         tab: "Native", keywords: ["record", "microphone", "AVAudioRecorder", "waveform", "playback"]),
+        .init(name: "Waveform Visualization",     section: "Audio",         tab: "Native", keywords: ["waveform", "audio", "canvas", "animation", "visualizer"]),
+        .init(name: "Playback UI Patterns",       section: "Audio",         tab: "Native", keywords: ["player", "playback", "mini player", "music", "audio"]),
+        .init(name: "Map Basics",                 section: "Maps",          tab: "Native", keywords: ["map", "MapKit", "location", "region", "satellite"]),
+        .init(name: "Map Annotations",            section: "Maps",          tab: "Native", keywords: ["pin", "marker", "annotation", "map", "MapKit"]),
+        .init(name: "Map Overlays",               section: "Maps",          tab: "Native", keywords: ["polyline", "circle", "overlay", "route", "map"]),
+    ]
+
     static let more: [AppEntry] = [
-        .init(name: "Spring Physics",        section: "Playgrounds", tab: "More"),
-        .init(name: "Haptics",               section: "Playgrounds", tab: "More"),
-        .init(name: "Corner Radius",         section: "Playgrounds", tab: "More"),
+        .init(name: "Spring Physics",        section: "Playgrounds", tab: "More", keywords: ["animation", "bounce", "easing", "motion", "damping", "stiffness"]),
+        .init(name: "Haptics",               section: "Playgrounds", tab: "More", keywords: ["vibration", "feedback", "taptic", "impact", "selection"]),
+        .init(name: "Corner Radius",         section: "Playgrounds", tab: "More", keywords: ["rounded", "border radius", "roundrectangle"]),
         .init(name: "Concentric Radius",     section: "Playgrounds", tab: "More"),
         .init(name: "Shadow Explorer",       section: "Playgrounds", tab: "More"),
         .init(name: "Blur Stack",            section: "Playgrounds", tab: "More"),
-        .init(name: "Safe Areas",            section: "Reference",   tab: "More"),
+        .init(name: "Safe Areas",            section: "Reference",   tab: "More", keywords: ["insets", "home indicator", "notch", "status bar"]),
         .init(name: "Sheet Detents",         section: "Reference",   tab: "More"),
     ]
 }
@@ -88,55 +120,153 @@ struct ComponentsTab: View {
         NavigationStack {
             List {
                 Section("Visual") {
-                    NavigationLink("Color") { ColorReferenceView() }
-                    NavigationLink("Typography") { TypographyReferenceView() }
-                    NavigationLink("Spacing & Layout") { SpacingView() }
+                    NavigationLink { ColorReferenceView() } label: {
+                        Label("Color", systemImage: "paintpalette")
+                    }
+                    NavigationLink { TypographyReferenceView() } label: {
+                        Label("Typography", systemImage: "textformat")
+                    }
+                    NavigationLink { SpacingView() } label: {
+                        Label("Spacing & Layout", systemImage: "ruler")
+                    }
                 }
                 Section("Actions") {
-                    NavigationLink("Buttons") { ButtonsView() }
-                    NavigationLink("Menus & Context Menus") { MenusView() }
-                    NavigationLink("Context Menus") { ContextMenusView() }
+                    NavigationLink { ButtonsView() } label: {
+                        Label("Buttons", systemImage: "hand.tap")
+                    }
+                    NavigationLink { MenusView() } label: {
+                        Label("Menus & Context Menus", systemImage: "list.bullet.rectangle")
+                    }
+                    NavigationLink { ContextMenusView() } label: {
+                        Label("Context Menus", systemImage: "contextualmenu.and.cursorarrow")
+                    }
                 }
                 Section("Inputs") {
-                    NavigationLink("Text Fields") { TextFieldsView() }
-                    NavigationLink("Toggles & Switches") { TogglesView() }
-                    NavigationLink("Sliders") { SlidersView() }
-                    NavigationLink("Steppers") { SteppersView() }
+                    NavigationLink { TextFieldsView() } label: {
+                        Label("Text Fields", systemImage: "character.cursor.ibeam")
+                    }
+                    NavigationLink { TogglesView() } label: {
+                        Label("Toggles & Switches", systemImage: "switch.2")
+                    }
+                    NavigationLink { SlidersView() } label: {
+                        Label("Sliders", systemImage: "slider.horizontal.3")
+                    }
+                    NavigationLink { SteppersView() } label: {
+                        Label("Steppers", systemImage: "plus.forwardslash.minus")
+                    }
                 }
                 Section("Selection") {
-                    NavigationLink("Pickers") { PickersView() }
-                    NavigationLink("Segmented Controls") { SegmentedControlsView() }
-                    NavigationLink("Date & Time Pickers") { DateTimePickersView() }
-                    NavigationLink("Color Picker") { ColorPickerView() }
+                    NavigationLink { PickersView() } label: {
+                        Label("Pickers", systemImage: "checklist")
+                    }
+                    NavigationLink { SegmentedControlsView() } label: {
+                        Label("Segmented Controls", systemImage: "rectangle.split.3x1")
+                    }
+                    NavigationLink { DateTimePickersView() } label: {
+                        Label("Date & Time Pickers", systemImage: "calendar")
+                    }
+                    NavigationLink { ColorPickerView() } label: {
+                        Label("Color Picker", systemImage: "eyedropper")
+                    }
                 }
                 Section("Display") {
-                    NavigationLink("Labels & Text") { LabelsView() }
-                    NavigationLink("Images & Icons") { ImagesView() }
-                    NavigationLink("Progress Indicators") { ProgressIndicatorsView() }
-                    NavigationLink("Gauges") { GaugesView() }
-                    NavigationLink("Badges") { BadgesView() }
-                    NavigationLink("Tags") { TagsView() }
+                    NavigationLink { LabelsView() } label: {
+                        Label("Labels & Text", systemImage: "text.alignleft")
+                    }
+                    NavigationLink { ImagesView() } label: {
+                        Label("Images & Icons", systemImage: "photo")
+                    }
+                    NavigationLink { ProgressIndicatorsView() } label: {
+                        Label("Progress Indicators", systemImage: "progress.indicator")
+                    }
+                    NavigationLink { GaugesView() } label: {
+                        Label("Gauges", systemImage: "gauge.with.needle")
+                    }
+                    NavigationLink { BadgesView() } label: {
+                        Label("Badges", systemImage: "bell.badge")
+                    }
+                    NavigationLink { TagsView() } label: {
+                        Label("Tags", systemImage: "tag")
+                    }
                 }
                 Section("Layout") {
-                    NavigationLink("Lists & Tables") { ListsView() }
-                    NavigationLink("Swipeable Rows") { SwipeableRowsView() }
-                    NavigationLink("Scroll Views") { ScrollViewsView() }
-                    NavigationLink("Grids") { GridsView() }
-                    NavigationLink("Grouped Forms") { GroupedFormsView() }
-                    NavigationLink("Cards") { CardsView() }
+                    NavigationLink { ListsView() } label: {
+                        Label("Lists & Tables", systemImage: "list.bullet")
+                    }
+                    NavigationLink { SwipeableRowsView() } label: {
+                        Label("Swipeable Rows", systemImage: "arrow.left.arrow.right")
+                    }
+                    NavigationLink { ScrollViewsView() } label: {
+                        Label("Scroll Views", systemImage: "scroll")
+                    }
+                    NavigationLink { GridsView() } label: {
+                        Label("Grids", systemImage: "grid")
+                    }
+                    NavigationLink { GroupedFormsView() } label: {
+                        Label("Grouped Forms", systemImage: "rectangle.grid.1x2")
+                    }
+                    NavigationLink { CardsView() } label: {
+                        Label("Cards", systemImage: "rectangle.on.rectangle")
+                    }
                 }
                 Section("Navigation") {
-                    NavigationLink("Navigation Bars") { NavigationBarsView() }
-                    NavigationLink("Tab Bars") { TabBarsView() }
-                    NavigationLink("Toolbars") { ToolbarsView() }
-                    NavigationLink("Search") { SearchComponentView() }
+                    NavigationLink { NavigationBarsView() } label: {
+                        Label("Navigation Bars", systemImage: "chevron.left")
+                    }
+                    NavigationLink { TabBarsView() } label: {
+                        Label("Tab Bars", systemImage: "rectangle.bottomthird.inset.filled")
+                    }
+                    NavigationLink { ToolbarsView() } label: {
+                        Label("Toolbars", systemImage: "menubar.rectangle")
+                    }
+                    NavigationLink { SearchComponentView() } label: {
+                        Label("Search", systemImage: "magnifyingglass")
+                    }
                 }
                 Section("Overlays") {
-                    NavigationLink("Sheets & Modals") { SheetsModalsView() }
-                    NavigationLink("Alerts & Dialogs") { AlertsView() }
-                    NavigationLink("Action Sheets") { ActionSheetsView() }
-                    NavigationLink("Popovers") { PopoversView() }
-                    NavigationLink("Toasts & Banners") { ToastsView() }
+                    NavigationLink { SheetsModalsView() } label: {
+                        Label("Sheets & Modals", systemImage: "rectangle.topthird.inset.filled")
+                    }
+                    NavigationLink { AlertsView() } label: {
+                        Label("Alerts & Dialogs", systemImage: "exclamationmark.triangle")
+                    }
+                    NavigationLink { ActionSheetsView() } label: {
+                        Label("Action Sheets", systemImage: "filemenu.and.selection")
+                    }
+                    NavigationLink { PopoversView() } label: {
+                        Label("Popovers", systemImage: "rectangle.connected.to.line.below")
+                    }
+                    NavigationLink { ToastsView() } label: {
+                        Label("Toasts & Banners", systemImage: "bell")
+                    }
+                }
+                Section("Playgrounds") {
+                    NavigationLink { SpringPhysicsView() } label: {
+                        Label("Spring Physics", systemImage: "waveform.path.ecg")
+                    }
+                    NavigationLink { HapticsView() } label: {
+                        Label("Haptics", systemImage: "hand.tap")
+                    }
+                    NavigationLink { CornerRadiusView() } label: {
+                        Label("Corner Radius", systemImage: "square.on.square")
+                    }
+                    NavigationLink { ConcentricRadiusView() } label: {
+                        Label("Concentric Radius", systemImage: "square.inset.filled")
+                    }
+                    NavigationLink { ShadowExplorerView() } label: {
+                        Label("Shadow Explorer", systemImage: "shadow")
+                    }
+                    NavigationLink { BlurStackView() } label: {
+                        Label("Blur Stack", systemImage: "square.stack.3d.up")
+                    }
+                }
+                Section("Reference") {
+                    NavigationLink { SafeAreasView() } label: {
+                        Label("Safe Areas", systemImage: "iphone")
+                    }
+                    NavigationLink { SheetDetentsView() } label: {
+                        Label("Sheet Detents", systemImage: "rectangle.bottomhalf.inset.filled")
+                    }
                 }
             }
             .navigationTitle("Components")

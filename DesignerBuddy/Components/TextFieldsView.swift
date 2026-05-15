@@ -8,7 +8,7 @@ struct TextFieldsView: View {
     @State private var multilineText = ""
     @FocusState private var focused: Field?
 
-    enum Field: Hashable { case plain, rounded, secure }
+    enum Field: Hashable { case plain, rounded, secure, editor }
 
     var body: some View {
         List {
@@ -33,6 +33,7 @@ struct TextFieldsView: View {
 
             Section("Multiline") {
                 TextEditor(text: $multilineText)
+                    .focused($focused, equals: .editor)
                     .frame(minHeight: 80)
                     .overlay(
                         Group {
@@ -83,6 +84,17 @@ struct TextFieldsView: View {
         }
         .navigationTitle("Text Fields")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button {
+                    focused = nil
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                } label: {
+                    Image(systemName: "keyboard.chevron.compact.down")
+                }
+            }
+        }
     }
 }
 

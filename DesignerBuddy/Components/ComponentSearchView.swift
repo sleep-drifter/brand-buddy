@@ -3,22 +3,30 @@ import SwiftUI
 struct ComponentSearchView: View {
     @State private var searchText = ""
     @State private var results: [AppEntry] = []
-    @State private var searchTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
-            Group {
+            // Single persistent List — never torn down. Switching between the
+            // all-sections browse and search results happens inside the List so
+            // SwiftUI only diffs row content, not the entire view tree.
+            List {
                 if searchText.isEmpty {
-                    AllSectionsView()
-                } else if results.isEmpty {
-                    ContentUnavailableView.search(text: searchText)
+                    ForEach(["Components", "Patterns", "Materials", "Native", "More"], id: \.self) { tab in
+                        Section(tab) {
+                            ForEach(AppEntry.all.filter { $0.tab == tab }) { entry in
+                                NavigationLink(value: entry) {
+                                    Text(entry.name)
+                                }
+                            }
+                        }
+                    }
                 } else {
-                    List(results) { entry in
+                    ForEach(results) { entry in
                         NavigationLink(value: entry) {
                             HStack {
                                 Text(entry.name)
                                 Spacer()
-                                Text(entry.tab)
+                                Text(entry.section)
                                     .font(.caption2)
                                     .foregroundStyle(entry.tab.chipColor)
                                     .padding(.horizontal, 6)
@@ -29,45 +37,27 @@ struct ComponentSearchView: View {
                     }
                 }
             }
+            // Empty-state overlay — cheaper than a third conditional branch.
+            .overlay {
+                if !searchText.isEmpty && results.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
+                        .background(.background)
+                }
+            }
             .navigationTitle("Search")
             .searchable(text: $searchText, prompt: "Search for anything")
             .onChange(of: searchText) { _, newValue in
-                searchTask?.cancel()
-                guard !newValue.isEmpty else {
-                    results = []
-                    return
-                }
-                searchTask = Task {
-                    try? await Task.sleep(for: .milliseconds(100))
-                    guard !Task.isCancelled else { return }
-                    let filtered = AppEntry.all.filter {
-                        fuzzyMatch(newValue, in: $0.name) ||
-                        fuzzyMatch(newValue, in: $0.section) ||
-                        fuzzyMatch(newValue, in: $0.tab)
-                    }
-                    guard !Task.isCancelled else { return }
-                    await MainActor.run { results = filtered }
+                guard !newValue.isEmpty else { results = []; return }
+                let q = newValue.lowercased()
+                results = AppEntry.all.filter {
+                    fuzzyMatch(q, in: $0.nameLower) ||
+                    fuzzyMatch(q, in: $0.sectionLower) ||
+                    fuzzyMatch(q, in: $0.tabLower) ||
+                    (!$0.keywordsLower.isEmpty && $0.keywordsLower.contains(q))
                 }
             }
             .navigationDestination(for: AppEntry.self) { entry in
                 appDestination(for: entry)
-            }
-        }
-    }
-}
-
-// Extracted into its own struct so SwiftUI never re-renders it during search.
-private struct AllSectionsView: View {
-    var body: some View {
-        List {
-            ForEach(["Components", "Patterns", "Materials", "More"], id: \.self) { tab in
-                Section(tab) {
-                    ForEach(AppEntry.all.filter { $0.tab == tab }) { entry in
-                        NavigationLink(value: entry) {
-                            Text(entry.name)
-                        }
-                    }
-                }
             }
         }
     }
@@ -80,20 +70,21 @@ private extension String {
         case "Patterns":   return .purple
         case "Materials":  return .teal
         case "More":       return .orange
+        case "Native":     return .mint
         default:           return .secondary
         }
     }
 }
 
-private func fuzzyMatch(_ query: String, in target: String) -> Bool {
+// Both query and target must already be lowercased before calling.
+private func fuzzyMatch(_ query: String, in lowerTarget: String) -> Bool {
     guard !query.isEmpty else { return true }
-    let q = query.lowercased(), t = target.lowercased()
-    var qi = q.startIndex
-    for ch in t {
-        if qi == q.endIndex { break }
-        if ch == q[qi] { qi = q.index(after: qi) }
+    var qi = query.startIndex
+    for ch in lowerTarget {
+        if qi == query.endIndex { break }
+        if ch == query[qi] { qi = query.index(after: qi) }
     }
-    return qi == q.endIndex
+    return qi == query.endIndex
 }
 
 @ViewBuilder
@@ -157,6 +148,19 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Blur Stack":             BlurStackView()
     case "Safe Areas":             SafeAreasView()
     case "Dynamic Type Scale":     DynamicTypeScaleView()
+    case "Permission Requests":        PermissionRequestView()
+    case "Permission Denied Recovery": PermissionDeniedRecoveryView()
+    case "Push Notifications":         PushPermissionView()
+    case "Camera Viewfinder":          CameraViewfinderView()
+    case "Capture UI Patterns":        CaptureUIPatternView()
+    case "Photo Picker":               PhotoPickerView()
+    case "Photo Library Patterns":     PhotoLibraryPatternsView()
+    case "Audio Recording":            AudioRecordingView()
+    case "Waveform Visualization":     AudioWaveformView()
+    case "Playback UI Patterns":       AudioPlaybackPatternsView()
+    case "Map Basics":                 MapBasicsView()
+    case "Map Annotations":            MapAnnotationsView()
+    case "Map Overlays":               MapOverlaysView()
     default:                       SheetDetentsView()
     }
 }

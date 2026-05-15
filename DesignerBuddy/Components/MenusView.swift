@@ -68,21 +68,6 @@ struct MenusView: View {
                 Text("Use contextMenu(menuItems:preview:) to show a custom preview — it can reveal content not visible in the list.")
             }
 
-            Section("Menu with Selection") {
-                MenuWithSelectionExample()
-            }
-
-            Section("Primary Action + Menu") {
-                Menu {
-                    Button("Option A") {}
-                    Button("Option B") {}
-                } label: {
-                    Label("Tap or hold", systemImage: "plus")
-                } primaryAction: {
-                    // tap
-                }
-                .buttonStyle(.borderedProminent)
-            }
         }
         .navigationTitle("Menus & Context Menus")
         .navigationBarTitleDisplayMode(.large)
@@ -183,26 +168,6 @@ private struct TrackContextRow: View {
     }
 }
 
-struct MenuWithSelectionExample: View {
-    @State private var sort = "Name"
-
-    var body: some View {
-        Menu {
-            Picker("Sort by", selection: $sort) {
-                Text("Name").tag("Name")
-                Text("Date").tag("Date")
-                Text("Size").tag("Size")
-            }
-        } label: {
-            HStack {
-                Text("Sort: \(sort)")
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-}
 
 struct ProgressIndicatorsView: View {
     @State private var progress = 0.6

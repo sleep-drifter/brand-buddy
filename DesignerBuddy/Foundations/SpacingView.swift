@@ -118,18 +118,18 @@ private struct iOSMarginsCard: View {
             GeometryReader { geo in
                 let m: CGFloat = 16
                 HStack(spacing: 0) {
-                    Rectangle().fill(Color.tint.opacity(0.15)).frame(width: m)
+                    Rectangle().fill(Color.accentColor.opacity(0.15)).frame(width: m)
                     Spacer()
-                    Rectangle().fill(Color.tint.opacity(0.15)).frame(width: m)
+                    Rectangle().fill(Color.accentColor.opacity(0.15)).frame(width: m)
                 }
                 // margin labels
                 Text("16pt")
                     .font(.system(size: 8, weight: .medium))
-                    .foregroundStyle(Color.tint)
+                    .foregroundStyle(Color.accentColor)
                     .position(x: m / 2, y: geo.size.height / 2)
                 Text("16pt")
                     .font(.system(size: 8, weight: .medium))
-                    .foregroundStyle(Color.tint)
+                    .foregroundStyle(Color.accentColor)
                     .position(x: geo.size.width - m / 2, y: geo.size.height / 2)
             }
             // content inset at 16pt margin

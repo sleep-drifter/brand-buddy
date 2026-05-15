@@ -4,6 +4,10 @@ struct TogglesView: View {
     @State private var toggle1 = true
     @State private var toggle2 = false
     @State private var toggle3 = true
+    @State private var tintedBlue = true
+    @State private var tintedGreen = true
+    @State private var tintedOrange = true
+    @State private var tintedRed = true
 
     var body: some View {
         List {
@@ -17,12 +21,12 @@ struct TogglesView: View {
             }
 
             Section("Tinted Toggles") {
-                Toggle("Blue (default tint)", isOn: $toggle1)
-                Toggle("Green tint", isOn: $toggle2)
+                Toggle("Blue (default tint)", isOn: $tintedBlue)
+                Toggle("Green", isOn: $tintedGreen)
                     .tint(.green)
-                Toggle("Orange tint", isOn: $toggle3)
+                Toggle("Orange", isOn: $tintedOrange)
                     .tint(.orange)
-                Toggle("Red tint", isOn: $toggle1)
+                Toggle("Red", isOn: $tintedRed)
                     .tint(.red)
             }
         }

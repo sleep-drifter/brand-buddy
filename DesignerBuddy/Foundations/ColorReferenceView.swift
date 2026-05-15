@@ -2,9 +2,19 @@ import SwiftUI
 
 struct ColorReferenceView: View {
     @Environment(\.colorScheme) var colorScheme
+    @State private var colorSchemeOverride: ColorScheme? = nil
 
     var body: some View {
         List {
+            Section {
+                Picker("Appearance", selection: $colorSchemeOverride) {
+                    Text("System").tag(Optional<ColorScheme>.none)
+                    Text("Light").tag(Optional<ColorScheme>(.light))
+                    Text("Dark").tag(Optional<ColorScheme>(.dark))
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
             ForEach(ColorGroup.all) { group in
                 Section(group.name) {
                     ForEach(group.colors) { item in
@@ -13,6 +23,7 @@ struct ColorReferenceView: View {
                 }
             }
         }
+        .preferredColorScheme(colorSchemeOverride)
         .navigationTitle("Color")
         .navigationBarTitleDisplayMode(.large)
     }
@@ -34,12 +45,17 @@ struct ColorRow: View {
                 Text(item.name)
                     .font(.subheadline)
                     .fontWeight(.medium)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
                 Text(item.token)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
             }
+            .layoutPriority(1)
             Spacer()
-            HStack(spacing: 4) {
+            HStack(spacing: 6) {
                 ColorSwatch(color: item.color, scheme: .dark)
                 ColorSwatch(color: item.color, scheme: .light)
             }
@@ -61,13 +77,6 @@ private struct ColorSwatch: View {
                     .strokeBorder(.separator, lineWidth: 0.5)
             )
             .environment(\.colorScheme, scheme)
-            .overlay(alignment: .bottom) {
-                Text(scheme == .dark ? "D" : "L")
-                    .font(.system(size: 7, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .shadow(radius: 1)
-                    .padding(.bottom, 2)
-            }
     }
 }
 

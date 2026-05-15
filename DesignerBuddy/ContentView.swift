@@ -12,10 +12,10 @@ struct ContentView: View {
             Tab("Materials", systemImage: "bubbles.and.sparkles") {
                 MaterialsTab()
             }
-            Tab("More", systemImage: "ellipsis.circle") {
-                MoreTab()
+            Tab("Native", systemImage: "cpu") {
+                NativeTab()
             }
-            Tab(role: .search) {
+Tab(role: .search) {
                 ComponentSearchView()
             }
         }
