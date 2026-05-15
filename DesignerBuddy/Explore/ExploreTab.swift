@@ -55,18 +55,36 @@ struct ExploreTab: View {
                 }
 
                 Section("System Integrations") {
-                    ExploreComingSoonRow(name: "Share Sheet", icon: "square.and.arrow.up")
-                    ExploreComingSoonRow(name: "Face ID / Touch ID", icon: "faceid")
-                    ExploreComingSoonRow(name: "Clipboard", icon: "doc.on.clipboard")
-                    ExploreComingSoonRow(name: "Quick Look", icon: "eye")
-                    ExploreComingSoonRow(name: "Document Picker", icon: "folder")
+                    NavigationLink { ShareSheetView() } label: {
+                        Label("Share Sheet", systemImage: "square.and.arrow.up")
+                    }
+                    NavigationLink { FaceIDView() } label: {
+                        Label("Face ID / Touch ID", systemImage: "faceid")
+                    }
+                    NavigationLink { ClipboardView() } label: {
+                        Label("Clipboard", systemImage: "doc.on.clipboard")
+                    }
+                    NavigationLink { QuickLookView() } label: {
+                        Label("Quick Look", systemImage: "eye")
+                    }
+                    NavigationLink { DocumentPickerView() } label: {
+                        Label("Document Picker", systemImage: "folder")
+                    }
                 }
 
                 Section("AI & Generation") {
-                    ExploreComingSoonRow(name: "Streaming Text", icon: "ellipsis.message")
-                    ExploreComingSoonRow(name: "Writing Tools Integration", icon: "pencil.and.sparkles")
-                    ExploreComingSoonRow(name: "Image Generation", icon: "photo.badge.plus")
-                    ExploreComingSoonRow(name: "Prompt Input Patterns", icon: "text.bubble")
+                    NavigationLink { StreamingTextView() } label: {
+                        Label("Streaming Text", systemImage: "ellipsis.message")
+                    }
+                    NavigationLink { WritingToolsView() } label: {
+                        Label("Writing Tools Integration", systemImage: "pencil.and.sparkles")
+                    }
+                    NavigationLink { ImageGenerationView() } label: {
+                        Label("Image Generation", systemImage: "photo.badge.plus")
+                    }
+                    NavigationLink { PromptInputView() } label: {
+                        Label("Prompt Input Patterns", systemImage: "text.bubble")
+                    }
                 }
 
                 Section("Device & Sensors") {

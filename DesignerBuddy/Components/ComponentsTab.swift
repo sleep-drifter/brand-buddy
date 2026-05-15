@@ -23,7 +23,7 @@ struct AppEntry: Identifiable, Hashable {
     }
 
     // Keep ComponentEntry as a typealias for backwards compat with ComponentSearchView
-    static let all: [AppEntry] = components + materials + patterns + native + more + exploreA
+    static let all: [AppEntry] = components + materials + patterns + native + more + exploreA + exploreB
 
     static let components: [AppEntry] = [
         .init(name: "Color",                 section: "Visual",      tab: "Components", keywords: ["colour", "palette", "dark mode", "light mode", "semantic", "tint"]),
@@ -80,24 +80,8 @@ struct AppEntry: Identifiable, Hashable {
     static let materials: [AppEntry] = [
         .init(name: "iOS 26 Glass",          section: "Glass",       tab: "Components"),
         .init(name: "Material (blur)",       section: "Glass",       tab: "Components"),
-        .init(name: "Surfaces",              section: "Surfaces",    tab: "Components"),
+        .init(name: "Surfaces",             section: "Surfaces",    tab: "Components"),
         .init(name: "Vibrancy",              section: "Vibrancy",    tab: "Components"),
-    ]
-
-    static let native: [AppEntry] = [
-        .init(name: "Permission Requests",        section: "Permissions",   tab: "Native"),
-        .init(name: "Permission Denied Recovery", section: "Permissions",   tab: "Native"),
-        .init(name: "Push Notifications",         section: "Permissions",   tab: "Native"),
-        .init(name: "Camera Viewfinder",          section: "Camera",        tab: "Native"),
-        .init(name: "Capture UI Patterns",        section: "Camera",        tab: "Native"),
-        .init(name: "Photo Picker",               section: "Photo Library", tab: "Native"),
-        .init(name: "Photo Library Patterns",     section: "Photo Library", tab: "Native"),
-        .init(name: "Audio Recording",            section: "Audio",         tab: "Native"),
-        .init(name: "Waveform Visualization",     section: "Audio",         tab: "Native"),
-        .init(name: "Playback UI Patterns",       section: "Audio",         tab: "Native"),
-        .init(name: "Map Basics",                 section: "Maps",          tab: "Native"),
-        .init(name: "Map Annotations",            section: "Maps",          tab: "Native"),
-        .init(name: "Map Overlays",               section: "Maps",          tab: "Native"),
     ]
 
     static let native: [AppEntry] = [
@@ -141,6 +125,14 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Dynamic Type",        section: "Accessibility", tab: "Explore"),
         .init(name: "Reduce Motion",       section: "Accessibility", tab: "Explore"),
         .init(name: "High Contrast",       section: "Accessibility", tab: "Explore"),
+    ]
+
+    static let exploreB: [AppEntry] = [
+        .init(name: "Share Sheet",        section: "System Integrations", tab: "Explore", keywords: ["share", "ShareLink", "UIActivityViewController", "send", "export"]),
+        .init(name: "Face ID / Touch ID", section: "System Integrations", tab: "Explore", keywords: ["face id", "touch id", "biometrics", "LocalAuthentication", "auth"]),
+        .init(name: "Clipboard",          section: "System Integrations", tab: "Explore", keywords: ["clipboard", "pasteboard", "UIPasteboard", "copy", "paste"]),
+        .init(name: "Quick Look",         section: "System Integrations", tab: "Explore", keywords: ["quick look", "preview", "QuickLookPreviewController", "document"]),
+        .init(name: "Document Picker",    section: "System Integrations", tab: "Explore", keywords: ["document", "picker", "UIDocumentPicker", "file", "importer"]),
     ]
 }
 
@@ -270,6 +262,20 @@ struct ComponentsTab: View {
                     }
                     NavigationLink { ToastsView() } label: {
                         Label("Toasts & Banners", systemImage: "bell")
+                    }
+                }
+                Section("Materials") {
+                    NavigationLink { GlassEffectPlayground() } label: {
+                        Label("iOS 26 Glass", systemImage: "bubbles.and.sparkles")
+                    }
+                    NavigationLink { GlassPlayground() } label: {
+                        Label("Material (blur)", systemImage: "camera.filters")
+                    }
+                    NavigationLink { SurfacesPlayground() } label: {
+                        Label("Surfaces", systemImage: "square.stack")
+                    }
+                    NavigationLink { VibrancyPlayground() } label: {
+                        Label("Vibrancy", systemImage: "sparkles")
                     }
                 }
                 Section("Playgrounds") {
