@@ -1,6 +1,5 @@
 import SwiftUI
 import UIKit
-import UniformTypeIdentifiers
 
 // MARK: - ClipboardView
 
@@ -104,39 +103,39 @@ struct ClipboardView: View {
                         }
                     }
 
-                    infoRow(icon: "exclamationmark.triangle", text: "Reading UIPasteboard.general outside a paste user gesture triggers iOS 16+ privacy banner. Use .onPasteCommand or TextField paste actions when possible.")
+                    infoRow(icon: "exclamationmark.triangle", text: "Reading UIPasteboard.general outside a paste user gesture triggers iOS 16+ privacy banner. Use PasteButton or TextField paste actions when possible.")
                 }
                 .padding(16)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
 
-                // MARK: SwiftUI .onPasteCommand
+                // MARK: SwiftUI PasteButton
                 VStack(spacing: 12) {
                     HStack {
-                        Label(".onPasteCommand (SwiftUI)", systemImage: "doc.on.clipboard.fill")
+                        Label("PasteButton (iOS 16+)", systemImage: "doc.on.clipboard.fill")
                             .font(.headline)
                         Spacer()
                     }
 
-                    Text("Attach `.onPasteCommand` to a view to handle paste from the Edit menu or Cmd+V. No privacy banner because it's user-initiated.")
+                    Text("PasteButton is user-triggered — no privacy banner. The system may show a one-time paste confirmation on first use.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                    Text(pastedText.isEmpty ? "Paste something here using Cmd+V or Edit > Paste" : pastedText)
-                        .font(.subheadline)
-                        .foregroundStyle(pastedText.isEmpty ? .tertiary : .primary)
-                        .frame(maxWidth: .infinity, minHeight: 60, alignment: .topLeading)
-                        .padding(12)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
-                        .onPasteCommand(of: [.plainText]) { providers in
-                            Task {
-                                for provider in providers {
-                                    if let text = try? await provider.loadItem(forTypeIdentifier: "public.plain-text") as? String {
-                                        await MainActor.run { pastedText = text }
-                                        break
-                                    }
-                                }
-                            }
+                    HStack {
+                        PasteButton(payloadType: String.self) { strings in
+                            pastedText = strings.first ?? ""
                         }
+                        Spacer()
+                    }
+
+                    if !pastedText.isEmpty {
+                        Text(pastedText)
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .topLeading)
+                            .padding(12)
+                            .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+                    }
+
+                    infoRow(icon: "info.circle", text: "PasteButton replaces .onPasteCommand on iOS. It's user-initiated, so it never triggers the privacy banner.")
                 }
                 .padding(16)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))

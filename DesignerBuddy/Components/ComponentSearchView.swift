@@ -11,11 +11,7 @@ struct ComponentSearchView: View {
             // SwiftUI only diffs row content, not the entire view tree.
             List {
                 if searchText.isEmpty {
-<<<<<<< HEAD
                     ForEach(["Components", "Patterns", "Native", "More", "Explore"], id: \.self) { tab in
-=======
-                    ForEach(["Components", "Patterns", "Materials", "Native", "More", "Explore"], id: \.self) { tab in
->>>>>>> feature/explore-batch-d
                         Section(tab) {
                             ForEach(AppEntry.all.filter { $0.tab == tab }) { entry in
                                 NavigationLink(value: entry) {

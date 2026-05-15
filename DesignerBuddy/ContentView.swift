@@ -9,15 +9,13 @@ struct ContentView: View {
             Tab("Patterns", systemImage: "arrow.triangle.2.circlepath") {
                 PatternsTab()
             }
-            Tab("Materials", systemImage: "bubbles.and.sparkles") {
-                MaterialsTab()
-            }
             Tab("Native", systemImage: "cpu") {
                 NativeTab()
             }
             Tab("Explore", systemImage: "safari") {
                 ExploreTab()
             }
+
             Tab(role: .search) {
                 ComponentSearchView()
             }

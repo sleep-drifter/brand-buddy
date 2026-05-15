@@ -6,6 +6,14 @@ struct GestureRotationView: View {
     @State private var rotation: Angle = .zero
     @State private var lastRotation: Angle = .zero
 
+    // MARK: - Scale (pinch) state
+    @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
+
+    // MARK: - Pan (translate) state
+    @State private var offset: CGSize = .zero
+    @State private var lastOffset: CGSize = .zero
+
     // MARK: - Combined pinch + rotation state
     @State private var comboScale: CGFloat = 1.0
     @State private var lastComboScale: CGFloat = 1.0
@@ -62,6 +70,113 @@ struct GestureRotationView: View {
                         .controlSize(.small)
                     }
                     Text("Use two fingers to rotate. Accumulate lastRotation + current angle to persist rotation across gesture sessions.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+
+                // MARK: - MagnificationGesture (Pinch / Scale)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Label("MagnificationGesture", systemImage: "arrow.up.left.and.arrow.down.right")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.teal.opacity(0.08))
+                            .frame(height: 200)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.teal.gradient)
+                            .frame(width: 90, height: 90)
+                            .overlay(
+                                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                    .font(.title2)
+                                    .foregroundStyle(.white)
+                            )
+                            .scaleEffect(scale)
+                            .gesture(
+                                MagnificationGesture()
+                                    .onChanged { value in
+                                        scale = (lastScale * value).clamped(to: 0.3...4.0)
+                                    }
+                                    .onEnded { _ in
+                                        lastScale = scale
+                                    }
+                            )
+                    }
+                    HStack {
+                        Text("Scale: \(scale, specifier: "%.2f")×")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Reset") {
+                            withAnimation(.spring(duration: 0.4, bounce: 0.3)) {
+                                scale = 1.0
+                                lastScale = 1.0
+                            }
+                        }
+                        .font(.caption)
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                    Text("Multiply lastScale × gesture value each session. Clamp to avoid runaway scale.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+
+                // MARK: - DragGesture (Pan / Translate)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Label("DragGesture — Pan", systemImage: "arrow.up.and.down.and.arrow.left.and.right")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.orange.opacity(0.08))
+                            .frame(height: 200)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.orange.gradient)
+                            .frame(width: 80, height: 80)
+                            .overlay(
+                                Image(systemName: "hand.draw")
+                                    .font(.title2)
+                                    .foregroundStyle(.white)
+                            )
+                            .offset(offset)
+                            .gesture(
+                                DragGesture()
+                                    .onChanged { value in
+                                        offset = CGSize(
+                                            width: lastOffset.width + value.translation.width,
+                                            height: lastOffset.height + value.translation.height
+                                        )
+                                    }
+                                    .onEnded { _ in
+                                        lastOffset = offset
+                                    }
+                            )
+                    }
+                    HStack {
+                        Text("x: \(offset.width, specifier: "%.1f")  y: \(offset.height, specifier: "%.1f")")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Reset") {
+                            withAnimation(.spring(duration: 0.4, bounce: 0.3)) {
+                                offset = .zero
+                                lastOffset = .zero
+                            }
+                        }
+                        .font(.caption)
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                    Text("Accumulate lastOffset + translation each session so position persists between drags.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

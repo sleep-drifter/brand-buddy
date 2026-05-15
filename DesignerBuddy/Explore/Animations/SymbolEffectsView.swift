@@ -13,7 +13,7 @@ struct SymbolEffectsView: View {
             VStack(spacing: 24) {
 
                 // MARK: - Bounce
-                effectCard(title: ".bounce", icon: "sparkle", color: .yellow) {
+                effectCard(title: ".bounce", icon: "sparkle", color: .yellow, code: ".symbolEffect(.bounce, value: trigger)") {
                     VStack(spacing: 12) {
                         Image(systemName: "bell.fill")
                             .font(.system(size: 44))
@@ -23,10 +23,10 @@ struct SymbolEffectsView: View {
                             .buttonStyle(.bordered)
                             .controlSize(.small)
                     }
-                } code: ".symbolEffect(.bounce, value: trigger)"
+                }
 
                 // MARK: - Pulse
-                effectCard(title: ".pulse", icon: "dot.radiowaves.left.and.right", color: .pink) {
+                effectCard(title: ".pulse", icon: "dot.radiowaves.left.and.right", color: .pink, code: ".symbolEffect(.pulse, value: trigger)") {
                     VStack(spacing: 12) {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 44))
@@ -36,10 +36,10 @@ struct SymbolEffectsView: View {
                             .buttonStyle(.bordered)
                             .controlSize(.small)
                     }
-                } code: ".symbolEffect(.pulse, value: trigger)"
+                }
 
                 // MARK: - Variable Color
-                effectCard(title: ".variableColor", icon: "chart.bar.fill", color: .blue) {
+                effectCard(title: ".variableColor", icon: "chart.bar.fill", color: .blue, code: ".symbolEffect(.variableColor)") {
                     VStack(spacing: 12) {
                         Image(systemName: "speaker.wave.3.fill")
                             .font(.system(size: 44))
@@ -49,10 +49,10 @@ struct SymbolEffectsView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                } code: ".symbolEffect(.variableColor)"
+                }
 
                 // MARK: - Breathe (iOS 18+)
-                effectCard(title: ".breathe", icon: "lungs.fill", color: .teal) {
+                effectCard(title: ".breathe", icon: "lungs.fill", color: .teal, code: ".symbolEffect(.breathe, isActive: isActive)") {
                     VStack(spacing: 12) {
                         Image(systemName: "lungs.fill")
                             .font(.system(size: 44))
@@ -62,10 +62,10 @@ struct SymbolEffectsView: View {
                             .toggleStyle(.button)
                             .controlSize(.small)
                     }
-                } code: ".symbolEffect(.breathe, isActive: isActive)"
+                }
 
                 // MARK: - Rotate
-                effectCard(title: ".rotate", icon: "gear", color: .gray) {
+                effectCard(title: ".rotate", icon: "gear", color: .gray, code: ".symbolEffect(.rotate, value: trigger)") {
                     VStack(spacing: 12) {
                         Image(systemName: "gear")
                             .font(.system(size: 44))
@@ -75,10 +75,10 @@ struct SymbolEffectsView: View {
                             .buttonStyle(.bordered)
                             .controlSize(.small)
                     }
-                } code: ".symbolEffect(.rotate, value: trigger)"
+                }
 
                 // MARK: - Appear
-                effectCard(title: ".appear / .disappear", icon: "eye", color: .indigo) {
+                effectCard(title: ".appear / .disappear", icon: "eye", color: .indigo, code: ".symbolEffect(.appear, isActive: isActive)") {
                     VStack(spacing: 12) {
                         Image(systemName: "star.fill")
                             .font(.system(size: 44))
@@ -88,7 +88,7 @@ struct SymbolEffectsView: View {
                             .toggleStyle(.button)
                             .controlSize(.small)
                     }
-                } code: ".symbolEffect(.appear, isActive: isActive)"
+                }
             }
             .padding(16)
         }
@@ -101,8 +101,8 @@ struct SymbolEffectsView: View {
         title: String,
         icon: String,
         color: Color,
-        @ViewBuilder content: () -> Content,
-        code: String
+        code: String,
+        @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {

@@ -33,7 +33,7 @@ struct VoiceOverLabelsView: View {
                         .tint(.red)
                         .accessibilityLabel("Delete item")
                     }
-                    Text("Without a label, VoiceOver reads "trash" (the symbol name). With .accessibilityLabel(\"Delete item\") it reads the intent, not the icon.")
+                    Text("Without a label, VoiceOver reads \"trash\" (the symbol name). With .accessibilityLabel(\"Delete item\") it reads the intent, not the icon.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
