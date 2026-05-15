@@ -12,6 +12,9 @@ struct ContentView: View {
             Tab("Materials", systemImage: "bubbles.and.sparkles") {
                 MaterialsTab()
             }
+            Tab("Explore", systemImage: "sparkles") {
+                ExploreTab()
+            }
             Tab("More", systemImage: "ellipsis.circle") {
                 MoreTab()
             }

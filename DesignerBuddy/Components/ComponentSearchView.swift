@@ -60,7 +60,7 @@ struct ComponentSearchView: View {
 private struct AllSectionsView: View {
     var body: some View {
         List {
-            ForEach(["Components", "Patterns", "Materials", "More"], id: \.self) { tab in
+            ForEach(["Components", "Patterns", "Native", "More", "Explore"], id: \.self) { tab in
                 Section(tab) {
                     ForEach(AppEntry.all.filter { $0.tab == tab }) { entry in
                         NavigationLink(value: entry) {
@@ -78,8 +78,9 @@ private extension String {
         switch self {
         case "Components": return .blue
         case "Patterns":   return .purple
-        case "Materials":  return .teal
+        case "Native":     return .mint
         case "More":       return .orange
+        case "Explore":    return .indigo
         default:           return .secondary
         }
     }
@@ -157,6 +158,19 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Blur Stack":             BlurStackView()
     case "Safe Areas":             SafeAreasView()
     case "Dynamic Type Scale":     DynamicTypeScaleView()
+    case "Tap & Long Press":       TapLongPressView()
+    case "Swipe & Drag":           SwipeDragView()
+    case "Pinch & Zoom":           PinchZoomView()
+    case "Rotation":               GestureRotationView()
+    case "Transitions":            TransitionsView()
+    case "Keyframe Animations":    KeyframeAnimationsView()
+    case "Phase Animations":       PhaseAnimationsView()
+    case "Symbol Effects":         SymbolEffectsView()
+    case "Matched Geometry":       MatchedGeometryView()
+    case "VoiceOver Labels":       VoiceOverLabelsView()
+    case "Dynamic Type":           DynamicTypeExploreView()
+    case "Reduce Motion":          ReduceMotionView()
+    case "High Contrast":          HighContrastView()
     default:                       SheetDetentsView()
     }
 }
