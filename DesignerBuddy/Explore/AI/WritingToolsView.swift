@@ -9,14 +9,12 @@ struct WritingToolsView: View {
     enum BehaviorOption: String, CaseIterable, Identifiable {
         case automatic = "automatic"
         case limited = "limited"
-        case none = "none"
         var id: Self { self }
 
         var title: String {
             switch self {
             case .automatic: return "Automatic"
-            case .limited: return "Limited"
-            case .none: return "None"
+            case .limited:   return "Limited"
             }
         }
 
@@ -26,8 +24,6 @@ struct WritingToolsView: View {
                 return "System determines when Writing Tools appear. Shows the full toolbar with rewrite, proofread, and summarize options."
             case .limited:
                 return "Only inline predictions appear. No full Writing Tools panel. Useful for short inputs like search bars."
-            case .none:
-                return "Writing Tools are completely disabled for this field. Use for fields where AI assistance is inappropriate (passwords, code, etc.)."
             }
         }
 
@@ -35,7 +31,6 @@ struct WritingToolsView: View {
             switch self {
             case .automatic: return "sparkles"
             case .limited:   return "text.cursor"
-            case .none:      return "nosign"
             }
         }
     }
@@ -128,7 +123,6 @@ struct WritingToolsView: View {
         switch selectedBehavior {
         case .automatic: return .automatic
         case .limited:   return .limited
-        case .none:      return .none
         }
     }
 
@@ -156,10 +150,12 @@ struct WritingToolsView: View {
             VStack(spacing: 8) {
                 BehaviorRow(title: ".automatic", subtitle: "Long-form text", detail: "Notes, emails, documents — let the system decide")
                 Divider()
-                BehaviorRow(title: ".limited", subtitle: "Short inputs", detail: "Search bars, title fields, one-liners")
-                Divider()
-                BehaviorRow(title: ".none", subtitle: "Sensitive fields", detail: "Passwords, code editors, structured data")
+                BehaviorRow(title: ".limited", subtitle: "Short inputs / sensitive fields", detail: "Search bars, code editors, passwords — most restrictive SwiftUI option")
             }
+
+            Text("UIKit exposes UIWritingToolsBehavior.none for full opt-out; SwiftUI's WritingToolsBehavior only has .automatic and .limited.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .padding(16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
