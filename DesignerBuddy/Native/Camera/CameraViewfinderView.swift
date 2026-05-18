@@ -68,7 +68,7 @@ final class CameraModel: ObservableObject {
     }
 
     func setupSession() {
-        guard isAuthorized else { return }
+        guard isAuthorized, !session.isRunning else { return }
         Task.detached { [weak self] in
             guard let self else { return }
             let session = await self.session
@@ -87,6 +87,18 @@ final class CameraModel: ObservableObject {
             session.commitConfiguration()
             session.startRunning()
             await MainActor.run { self.isRunning = true }
+        }
+    }
+
+    func tearDownSession() {
+        Task.detached { [weak self] in
+            guard let self else { return }
+            let session = await self.session
+            session.stopRunning()
+            session.beginConfiguration()
+            for input in session.inputs { session.removeInput(input) }
+            session.commitConfiguration()
+            await MainActor.run { self.isRunning = false }
         }
     }
 
@@ -151,13 +163,13 @@ struct CameraViewfinderView: View {
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
             model.checkAuthorization()
-            if model.isAuthorized { model.setupSession() }
+            model.setupSession()
         }
         .onChange(of: model.isAuthorized) { _, authorized in
             if authorized { model.setupSession() }
         }
         .onDisappear {
-            model.session.stopRunning()
+            model.tearDownSession()
         }
         .animation(.easeInOut(duration: 0.25), value: model.capturedImage != nil)
     }
