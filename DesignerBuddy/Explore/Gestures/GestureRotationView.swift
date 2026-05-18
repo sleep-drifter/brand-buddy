@@ -20,6 +20,14 @@ struct GestureRotationView: View {
     @State private var comboRotation: Angle = .zero
     @State private var lastComboRotation: Angle = .zero
 
+    // MARK: - Free transform state (pinch + rotate + drag simultaneously)
+    @State private var freeScale: CGFloat = 1.0
+    @State private var lastFreeScale: CGFloat = 1.0
+    @State private var freeAngle: Angle = .zero
+    @State private var lastFreeAngle: Angle = .zero
+    @State private var freeOffset: CGSize = .zero
+    @State private var lastFreeOffset: CGSize = .zero
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -255,6 +263,95 @@ struct GestureRotationView: View {
                         .controlSize(.small)
                     }
                     Text("SimultaneousGesture wraps MagnificationGesture and RotationGesture. Each value comes from a tuple — value.first for scale, value.second for rotation.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+
+                // MARK: - Free Transform (Pinch + Rotate + Drag)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Label("Free Transform", systemImage: "move.3d")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.purple.opacity(0.08))
+                            .frame(height: 440)
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [.purple, .indigo],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 110, height: 110)
+                            .overlay(
+                                Image(systemName: "square.and.arrow.up.on.square")
+                                    .font(.largeTitle)
+                                    .foregroundStyle(.white)
+                            )
+                            .scaleEffect(freeScale)
+                            .rotationEffect(freeAngle)
+                            .offset(freeOffset)
+                            .gesture(
+                                SimultaneousGesture(
+                                    SimultaneousGesture(
+                                        DragGesture(),
+                                        MagnificationGesture()
+                                    ),
+                                    RotationGesture()
+                                )
+                                .onChanged { value in
+                                    let dragAndPinch = value.first
+                                    if let drag = dragAndPinch?.first {
+                                        freeOffset = CGSize(
+                                            width: lastFreeOffset.width + drag.translation.width,
+                                            height: lastFreeOffset.height + drag.translation.height
+                                        )
+                                    }
+                                    if let magnification = dragAndPinch?.second {
+                                        freeScale = (lastFreeScale * magnification).clamped(to: 0.3...4.0)
+                                    }
+                                    if let rotation = value.second {
+                                        freeAngle = lastFreeAngle + rotation
+                                    }
+                                }
+                                .onEnded { _ in
+                                    lastFreeOffset = freeOffset
+                                    lastFreeScale = freeScale
+                                    lastFreeAngle = freeAngle
+                                }
+                            )
+                    }
+                    Text("x: \(freeOffset.width, specifier: "%.1f")  y: \(freeOffset.height, specifier: "%.1f")  scale: \(freeScale, specifier: "%.2f")×  angle: \(freeAngle.degrees, specifier: "%.1f")°")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                    Button("Reset") {
+                        withAnimation(.spring()) {
+                            freeScale = 1.0
+                            lastFreeScale = 1.0
+                            freeAngle = .zero
+                            lastFreeAngle = .zero
+                            freeOffset = .zero
+                            lastFreeOffset = .zero
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity)
+                    HStack(spacing: 6) {
+                        ForEach(["SimultaneousGesture", "MagnificationGesture", "RotationGesture", "DragGesture"], id: \.self) { token in
+                            Text(token)
+                                .font(.system(size: 10, design: .monospaced))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(Color.purple.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+                        }
+                    }
+                    Text("Nest three SimultaneousGestures to combine drag, pinch, and rotation in one interaction. Each gesture runs independently without blocking the others.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
