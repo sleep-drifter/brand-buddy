@@ -101,7 +101,7 @@ struct CardsView: View {
                     Text("Aa")
                         .font(.title3)
                         .fontWeight(.medium)
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                 )
             Text("Colored")
                 .font(.caption)
