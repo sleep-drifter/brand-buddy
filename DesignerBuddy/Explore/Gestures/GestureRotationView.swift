@@ -61,6 +61,7 @@ struct GestureRotationView: View {
                                     }
                             )
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     HStack {
                         Text("Angle: \(rotation.degrees, specifier: "%.1f")°")
                             .font(.caption.monospacedDigit())
@@ -113,6 +114,7 @@ struct GestureRotationView: View {
                                     }
                             )
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     HStack {
                         Text("Scale: \(scale, specifier: "%.2f")×")
                             .font(.caption.monospacedDigit())
@@ -168,6 +170,7 @@ struct GestureRotationView: View {
                                     }
                             )
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     HStack {
                         Text("x: \(offset.width, specifier: "%.1f")  y: \(offset.height, specifier: "%.1f")")
                             .font(.caption.monospacedDigit())
@@ -244,6 +247,7 @@ struct GestureRotationView: View {
                                 .padding(.bottom, 6)
                         }
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     HStack {
                         Text("Scale: \(comboScale, specifier: "%.2f")×  Angle: \(comboRotation.degrees, specifier: "%.1f")°")
                             .font(.caption.monospacedDigit())
@@ -314,6 +318,7 @@ struct GestureRotationView: View {
                             }
                         )
                     )
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     Text("x: \(freeOffset.width, specifier: "%.1f")  y: \(freeOffset.height, specifier: "%.1f")  scale: \(freeScale, specifier: "%.2f")×  angle: \(freeAngle.degrees, specifier: "%.1f")°")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
