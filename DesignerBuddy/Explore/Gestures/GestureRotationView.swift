@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // Named GestureRotationView to avoid collision with SwiftUI internals.
 struct GestureRotationView: View {
@@ -20,13 +21,10 @@ struct GestureRotationView: View {
     @State private var comboRotation: Angle = .zero
     @State private var lastComboRotation: Angle = .zero
 
-    // MARK: - Free transform state (pinch + rotate + drag simultaneously)
+    // MARK: - Free transform state (UIKit-backed, delta-based)
     @State private var freeScale: CGFloat = 1.0
-    @State private var lastFreeScale: CGFloat = 1.0
     @State private var freeAngle: Angle = .zero
-    @State private var lastFreeAngle: Angle = .zero
     @State private var freeOffset: CGSize = .zero
-    @State private var lastFreeOffset: CGSize = .zero
 
     var body: some View {
         ScrollView {
@@ -297,53 +295,37 @@ struct GestureRotationView: View {
                             .scaleEffect(freeScale)
                             .rotationEffect(freeAngle)
                             .offset(freeOffset)
-                            .gesture(
-                                SimultaneousGesture(
-                                    SimultaneousGesture(
-                                        DragGesture(),
-                                        MagnificationGesture()
-                                    ),
-                                    RotationGesture()
-                                )
-                                .onChanged { value in
-                                    let dragAndPinch = value.first
-                                    if let drag = dragAndPinch?.first {
-                                        freeOffset = CGSize(
-                                            width: lastFreeOffset.width + drag.translation.width,
-                                            height: lastFreeOffset.height + drag.translation.height
-                                        )
-                                    }
-                                    if let magnification = dragAndPinch?.second {
-                                        freeScale = (lastFreeScale * magnification).clamped(to: 0.3...4.0)
-                                    }
-                                    if let rotation = value.second {
-                                        freeAngle = lastFreeAngle + rotation
-                                    }
-                                }
-                                .onEnded { _ in
-                                    lastFreeOffset = freeOffset
-                                    lastFreeScale = freeScale
-                                    lastFreeAngle = freeAngle
-                                }
-                            )
                     }
+                    .overlay(
+                        FreeTransformGestureOverlay(
+                            onTranslate: { delta in
+                                freeOffset = CGSize(
+                                    width: freeOffset.width + delta.width,
+                                    height: freeOffset.height + delta.height
+                                )
+                            },
+                            onScale: { delta in
+                                freeScale = (freeScale * delta).clamped(to: 0.3...4.0)
+                            },
+                            onRotate: { delta in
+                                freeAngle += delta
+                            }
+                        )
+                    )
                     Text("x: \(freeOffset.width, specifier: "%.1f")  y: \(freeOffset.height, specifier: "%.1f")  scale: \(freeScale, specifier: "%.2f")×  angle: \(freeAngle.degrees, specifier: "%.1f")°")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                     Button("Reset") {
                         withAnimation(.spring()) {
                             freeScale = 1.0
-                            lastFreeScale = 1.0
                             freeAngle = .zero
-                            lastFreeAngle = .zero
                             freeOffset = .zero
-                            lastFreeOffset = .zero
                         }
                     }
                     .buttonStyle(.bordered)
                     .frame(maxWidth: .infinity)
                     HStack(spacing: 6) {
-                        ForEach(["SimultaneousGesture", "MagnificationGesture", "RotationGesture", "DragGesture"], id: \.self) { token in
+                        ForEach(["UIPanGestureRecognizer", "UIPinchGestureRecognizer", "UIRotationGestureRecognizer"], id: \.self) { token in
                             Text(token)
                                 .font(.system(size: 10, design: .monospaced))
                                 .padding(.horizontal, 6)
@@ -351,7 +333,7 @@ struct GestureRotationView: View {
                                 .background(Color.purple.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
                         }
                     }
-                    Text("Nest three SimultaneousGestures to combine drag, pinch, and rotation in one interaction. Each gesture runs independently without blocking the others.")
+                    Text("UIKit gesture recognizers enable true two-finger free transform. UIPanGestureRecognizer (min 2 touches) tracks the centroid translation. All three recognizers fire simultaneously via UIGestureRecognizerDelegate. Each handler resets its value to zero after reading so the SwiftUI state accumulates deltas.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -362,6 +344,83 @@ struct GestureRotationView: View {
         }
         .navigationTitle("Rotation")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - UIKit-backed free transform overlay
+
+private struct FreeTransformGestureOverlay: UIViewRepresentable {
+    var onTranslate: (CGSize) -> Void
+    var onScale: (CGFloat) -> Void
+    var onRotate: (Angle) -> Void
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.backgroundColor = .clear
+
+        let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
+        pan.minimumNumberOfTouches = 2
+        pan.maximumNumberOfTouches = 2
+        pan.delegate = context.coordinator
+
+        let pinch = UIPinchGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePinch(_:)))
+        pinch.delegate = context.coordinator
+
+        let rotation = UIRotationGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleRotation(_:)))
+        rotation.delegate = context.coordinator
+
+        [pan, pinch, rotation].forEach { view.addGestureRecognizer($0) }
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        context.coordinator.onTranslate = onTranslate
+        context.coordinator.onScale = onScale
+        context.coordinator.onRotate = onRotate
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onTranslate: onTranslate, onScale: onScale, onRotate: onRotate)
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        var onTranslate: (CGSize) -> Void
+        var onScale: (CGFloat) -> Void
+        var onRotate: (Angle) -> Void
+
+        init(onTranslate: @escaping (CGSize) -> Void,
+             onScale: @escaping (CGFloat) -> Void,
+             onRotate: @escaping (Angle) -> Void) {
+            self.onTranslate = onTranslate
+            self.onScale = onScale
+            self.onRotate = onRotate
+        }
+
+        @objc func handlePan(_ g: UIPanGestureRecognizer) {
+            guard g.state == .changed else { return }
+            let t = g.translation(in: g.view)
+            g.setTranslation(.zero, in: g.view)
+            onTranslate(CGSize(width: t.x, height: t.y))
+        }
+
+        @objc func handlePinch(_ g: UIPinchGestureRecognizer) {
+            guard g.state == .changed else { return }
+            let s = g.scale
+            g.scale = 1.0
+            onScale(s)
+        }
+
+        @objc func handleRotation(_ g: UIRotationGestureRecognizer) {
+            guard g.state == .changed else { return }
+            let r = g.rotation
+            g.rotation = 0
+            onRotate(Angle(radians: Double(r)))
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            true
+        }
     }
 }
 
