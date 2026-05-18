@@ -25,6 +25,7 @@ struct GestureRotationView: View {
     @State private var freeScale: CGFloat = 1.0
     @State private var freeAngle: Angle = .zero
     @State private var freeOffset: CGSize = .zero
+    @State private var isFreeTransforming = false
 
     var body: some View {
         ScrollView {
@@ -298,6 +299,7 @@ struct GestureRotationView: View {
                     }
                     .overlay(
                         FreeTransformGestureOverlay(
+                            isActive: $isFreeTransforming,
                             onTranslate: { delta in
                                 freeOffset = CGSize(
                                     width: freeOffset.width + delta.width,
@@ -342,6 +344,7 @@ struct GestureRotationView: View {
             }
             .padding(16)
         }
+        .scrollDisabled(isFreeTransforming)
         .navigationTitle("Rotation")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -350,6 +353,7 @@ struct GestureRotationView: View {
 // MARK: - UIKit-backed free transform overlay
 
 private struct FreeTransformGestureOverlay: UIViewRepresentable {
+    @Binding var isActive: Bool
     var onTranslate: (CGSize) -> Void
     var onScale: (CGFloat) -> Void
     var onRotate: (Angle) -> Void
@@ -377,44 +381,69 @@ private struct FreeTransformGestureOverlay: UIViewRepresentable {
         context.coordinator.onTranslate = onTranslate
         context.coordinator.onScale = onScale
         context.coordinator.onRotate = onRotate
+        context.coordinator.setIsActive = { [isActive = $isActive] active in
+            isActive.wrappedValue = active
+        }
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onTranslate: onTranslate, onScale: onScale, onRotate: onRotate)
+        Coordinator(isActive: $isActive, onTranslate: onTranslate, onScale: onScale, onRotate: onRotate)
     }
 
     final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        var setIsActive: (Bool) -> Void
         var onTranslate: (CGSize) -> Void
         var onScale: (CGFloat) -> Void
         var onRotate: (Angle) -> Void
 
-        init(onTranslate: @escaping (CGSize) -> Void,
+        private var activeCount = 0 {
+            didSet { setIsActive(activeCount > 0) }
+        }
+
+        init(isActive: Binding<Bool>,
+             onTranslate: @escaping (CGSize) -> Void,
              onScale: @escaping (CGFloat) -> Void,
              onRotate: @escaping (Angle) -> Void) {
+            self.setIsActive = { isActive.wrappedValue = $0 }
             self.onTranslate = onTranslate
             self.onScale = onScale
             self.onRotate = onRotate
         }
 
         @objc func handlePan(_ g: UIPanGestureRecognizer) {
-            guard g.state == .changed else { return }
-            let t = g.translation(in: g.view)
-            g.setTranslation(.zero, in: g.view)
-            onTranslate(CGSize(width: t.x, height: t.y))
+            switch g.state {
+            case .began: activeCount += 1
+            case .ended, .cancelled, .failed: activeCount -= 1
+            case .changed:
+                let t = g.translation(in: g.view)
+                g.setTranslation(.zero, in: g.view)
+                onTranslate(CGSize(width: t.x, height: t.y))
+            default: break
+            }
         }
 
         @objc func handlePinch(_ g: UIPinchGestureRecognizer) {
-            guard g.state == .changed else { return }
-            let s = g.scale
-            g.scale = 1.0
-            onScale(s)
+            switch g.state {
+            case .began: activeCount += 1
+            case .ended, .cancelled, .failed: activeCount -= 1
+            case .changed:
+                let s = g.scale
+                g.scale = 1.0
+                onScale(s)
+            default: break
+            }
         }
 
         @objc func handleRotation(_ g: UIRotationGestureRecognizer) {
-            guard g.state == .changed else { return }
-            let r = g.rotation
-            g.rotation = 0
-            onRotate(Angle(radians: Double(r)))
+            switch g.state {
+            case .began: activeCount += 1
+            case .ended, .cancelled, .failed: activeCount -= 1
+            case .changed:
+                let r = g.rotation
+                g.rotation = 0
+                onRotate(Angle(radians: Double(r)))
+            default: break
+            }
         }
 
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
