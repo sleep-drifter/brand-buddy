@@ -24,14 +24,9 @@ struct NativeTab: View {
 
                 Section("Camera") {
                     NavigationLink {
-                        CameraViewfinderView()
+                        CameraConfigListView()
                     } label: {
-                        Label("Camera Viewfinder", systemImage: "camera.viewfinder")
-                    }
-                    NavigationLink {
-                        CaptureUIPatternView()
-                    } label: {
-                        Label("Capture UI Patterns", systemImage: "camera.on.rectangle")
+                        Label("Camera", systemImage: "camera")
                     }
                 }
 
