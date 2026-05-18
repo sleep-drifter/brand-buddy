@@ -20,9 +20,7 @@ enum CameraConfig: String, CaseIterable, Identifiable {
 
     // UI Layout Patterns
     case standardCentered    = "standard-centered"
-    case bottomControlStrip  = "bottom-control-strip"
     case minimalScan         = "minimal-scan"
-    case sideRail            = "side-rail"
     case floatingSocial      = "floating-social"
 
     // Capture Modes
@@ -49,9 +47,7 @@ enum CameraConfig: String, CaseIterable, Identifiable {
         case .backWide:            return "Back — Wide (1×)"
         case .frontSelfie:         return "Front (Selfie)"
         case .standardCentered:    return "Standard Centered"
-        case .bottomControlStrip:  return "Bottom Control Strip"
         case .minimalScan:         return "Minimal / Scan"
-        case .sideRail:            return "Side Rail"
         case .floatingSocial:      return "Floating / Social"
         case .photo:               return "Photo"
         case .video:               return "Video"
@@ -70,9 +66,7 @@ enum CameraConfig: String, CaseIterable, Identifiable {
         case .backWide:            return "Back camera, wide angle, standard centered UI"
         case .frontSelfie:         return "Front-facing camera, standard centered UI"
         case .standardCentered:    return "Shutter center, flip + thumbnail on sides"
-        case .bottomControlStrip:  return "Mode selector row (Photo/Video/Portrait…) above shutter"
         case .minimalScan:         return "Full-bleed viewfinder, corner brackets, shutter bottom-center"
-        case .sideRail:            return "Controls pinned to trailing edge in a vertical stack"
         case .floatingSocial:      return "Semi-transparent pill shutter, no chrome, no top bar"
         case .photo:               return "Standard UI highlighting photo output"
         case .video:               return "Red record button, live recording duration"
@@ -91,9 +85,7 @@ enum CameraConfig: String, CaseIterable, Identifiable {
         case .backWide:            return "camera"
         case .frontSelfie:         return "camera.on.rectangle"
         case .standardCentered:    return "camera.viewfinder"
-        case .bottomControlStrip:  return "dock.rectangle"
         case .minimalScan:         return "viewfinder"
-        case .sideRail:            return "sidebar.right"
         case .floatingSocial:      return "bubbles.and.sparkles"
         case .photo:               return "photo"
         case .video:               return "video"
@@ -111,7 +103,7 @@ enum CameraConfig: String, CaseIterable, Identifiable {
         switch self {
         case .backWide, .frontSelfie:
             return .positionsAndLenses
-        case .standardCentered, .bottomControlStrip, .minimalScan, .sideRail, .floatingSocial:
+        case .standardCentered, .minimalScan, .floatingSocial:
             return .uiLayoutPatterns
         case .photo, .video, .squareFormat:
             return .captureModes

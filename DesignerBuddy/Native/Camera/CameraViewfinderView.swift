@@ -81,6 +81,7 @@ final class CameraModel: NSObject, ObservableObject {
     // MARK: Published state
     @Published var isAuthorized = false
     @Published var isRunning = false
+    @Published var isFrontCamera = false
     @Published var capturedImage: UIImage? = nil
     @Published var isRecording = false
     @Published var recordingDuration: TimeInterval = 0
@@ -276,6 +277,29 @@ final class CameraModel: NSObject, ObservableObject {
     private func stopRecordingTimer() {
         recordingTimer?.invalidate()
         recordingTimer = nil
+    }
+
+    // MARK: - Flip Camera
+
+    func flipCamera() {
+        Task.detached { [weak self] in
+            guard let self else { return }
+            let session = await self.session
+            session.beginConfiguration()
+            for input in session.inputs { session.removeInput(input) }
+            let currentlyFront = await self.isFrontCamera
+            let newPosition: AVCaptureDevice.Position = currentlyFront ? .back : .front
+            guard
+                let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: newPosition),
+                let input = try? AVCaptureDeviceInput(device: device)
+            else {
+                session.commitConfiguration()
+                return
+            }
+            if session.canAddInput(input) { session.addInput(input) }
+            session.commitConfiguration()
+            await MainActor.run { self.isFrontCamera = !currentlyFront }
+        }
     }
 
     // MARK: - Torch

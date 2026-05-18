@@ -85,12 +85,8 @@ struct LiveCameraView: View {
         case .standardCentered, .backWide, .frontSelfie, .photo, .squareFormat, .gridOverlay,
              .faceDetection, .liveOCR:
             StandardControlsOverlay(model: model)
-        case .bottomControlStrip:
-            BottomControlStripOverlay(model: model)
         case .minimalScan, .qrBarcodeScanner:
             MinimalScanOverlay(model: model)
-        case .sideRail:
-            SideRailOverlay(model: model)
         case .floatingSocial:
             FloatingSocialOverlay(model: model)
         case .video:
@@ -204,9 +200,7 @@ struct StandardControlsOverlay: View {
             // Bottom bar
             HStack {
                 // Flip
-                Button {
-                    // flip not needed for most configs; here for completeness
-                } label: {
+                Button { model.flipCamera() } label: {
                     Image(systemName: "arrow.triangle.2.circlepath.camera")
                         .font(.system(size: 28))
                         .foregroundStyle(.white)
@@ -247,72 +241,6 @@ struct StandardControlsOverlay: View {
             .shadow(radius: 6)
         }
         .frame(maxWidth: .infinity)
-    }
-}
-
-// MARK: - Bottom Control Strip Overlay
-
-struct BottomControlStripOverlay: View {
-    @ObservedObject var model: CameraModel
-
-    private let modes = ["Slo-Mo", "Video", "Photo", "Portrait", "Pano"]
-
-    var body: some View {
-        VStack {
-            // Minimal top bar
-            HStack {
-                Image(systemName: "xmark")
-                Spacer()
-                Image(systemName: "bolt.slash")
-            }
-            .font(.system(size: 18))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 28)
-            .padding(.top, 60)
-            .padding(.bottom, 12)
-
-            Spacer()
-
-            // Docked strip
-            VStack(spacing: 14) {
-                // Mode selector
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 24) {
-                        ForEach(modes, id: \.self) { mode in
-                            Text(mode)
-                                .font(.caption.weight(mode == "Photo" ? .bold : .regular))
-                                .foregroundStyle(mode == "Photo" ? Color.yellow : .white)
-                        }
-                    }
-                    .padding(.horizontal, 28)
-                }
-
-                // Controls row
-                HStack {
-                    Image(systemName: "rectangle.portrait.rotate")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.white)
-
-                    Spacer()
-
-                    Button { model.capturePhoto() } label: {
-                        ZStack {
-                            Circle().stroke(.white, lineWidth: 3).frame(width: 66, height: 66)
-                            Circle().fill(.white).frame(width: 54, height: 54)
-                        }
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "arrow.triangle.2.circlepath.camera")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.white)
-                }
-                .padding(.horizontal, 28)
-            }
-            .padding(.vertical, 14)
-            .background(Color(white: 0.08))
-        }
     }
 }
 
@@ -368,56 +296,6 @@ struct MinimalScanOverlay: View {
     }
 }
 
-// MARK: - Side Rail Overlay
-
-struct SideRailOverlay: View {
-    @ObservedObject var model: CameraModel
-
-    var body: some View {
-        HStack {
-            Spacer()
-
-            VStack(spacing: 28) {
-                // Flip icon top
-                Image(systemName: "arrow.triangle.2.circlepath.camera")
-                    .font(.system(size: 22))
-                    .foregroundStyle(.white)
-                    .shadow(radius: 3)
-
-                Spacer()
-
-                // Shutter middle
-                Button { model.capturePhoto() } label: {
-                    ZStack {
-                        Circle().stroke(.white, lineWidth: 4).frame(width: 64, height: 64)
-                        Circle().fill(.white).frame(width: 52, height: 52)
-                    }
-                    .shadow(radius: 6)
-                }
-
-                Spacer()
-
-                // Thumbnail bottom
-                Group {
-                    if let img = model.capturedImage {
-                        Image(uiImage: img)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 40, height: 40)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                    } else {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.white.opacity(0.15))
-                            .frame(width: 40, height: 40)
-                    }
-                }
-            }
-            .padding(.vertical, 80)
-            .padding(.trailing, 20)
-        }
-    }
-}
-
 // MARK: - Floating Social Overlay
 
 struct FloatingSocialOverlay: View {
@@ -444,7 +322,7 @@ struct FloatingSocialOverlay: View {
                 }
 
                 // Flip icon
-                Button {} label: {
+                Button { model.flipCamera() } label: {
                     Image(systemName: "arrow.triangle.2.circlepath.camera")
                         .font(.system(size: 22))
                         .foregroundStyle(.white)
@@ -492,11 +370,13 @@ struct VideoControlsOverlay: View {
 
             // Bottom bar
             HStack {
-                Image(systemName: "arrow.triangle.2.circlepath.camera")
-                    .font(.system(size: 28))
-                    .foregroundStyle(.white)
-                    .shadow(radius: 4)
-                    .frame(maxWidth: .infinity)
+                Button { model.flipCamera() } label: {
+                    Image(systemName: "arrow.triangle.2.circlepath.camera")
+                        .font(.system(size: 28))
+                        .foregroundStyle(.white)
+                        .shadow(radius: 4)
+                }
+                .frame(maxWidth: .infinity)
 
                 // Record button
                 Button {
@@ -609,11 +489,13 @@ struct FlashControlsOverlay: View {
 
             // Bottom bar
             HStack {
-                Image(systemName: "arrow.triangle.2.circlepath.camera")
-                    .font(.system(size: 28))
-                    .foregroundStyle(.white)
-                    .shadow(radius: 4)
-                    .frame(maxWidth: .infinity)
+                Button { model.flipCamera() } label: {
+                    Image(systemName: "arrow.triangle.2.circlepath.camera")
+                        .font(.system(size: 28))
+                        .foregroundStyle(.white)
+                        .shadow(radius: 4)
+                }
+                .frame(maxWidth: .infinity)
 
                 Button { model.capturePhoto() } label: {
                     ZStack {
