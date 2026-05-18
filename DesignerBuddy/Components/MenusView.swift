@@ -363,31 +363,6 @@ struct GaugesView: View {
     }
 }
 
-struct LabelsView: View {
-    var body: some View {
-        List {
-            Section("Label Styles") {
-                Label("Title and Icon", systemImage: "star")
-                    .labelStyle(.titleAndIcon)
-                Label("Title Only", systemImage: "star")
-                    .labelStyle(.titleOnly)
-                Label("Icon Only", systemImage: "star")
-                    .labelStyle(.iconOnly)
-            }
-            Section("Text Roles") {
-                Text("Primary text — .primary").foregroundStyle(.primary)
-                Text("Secondary text — .secondary").foregroundStyle(.secondary)
-                Text("Tertiary text — .tertiary").foregroundStyle(.tertiary)
-                Text("Quaternary text — .quaternary").foregroundStyle(.quaternary)
-                Text("Tint colored text").foregroundStyle(.tint)
-                Text("Destructive/red text").foregroundStyle(.red)
-            }
-        }
-        .navigationTitle("Labels & Text")
-        .navigationBarTitleDisplayMode(.large)
-    }
-}
-
 struct ImagesView: View {
     var body: some View {
         List {

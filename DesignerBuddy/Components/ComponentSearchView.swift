@@ -104,7 +104,6 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Segmented Controls":     SegmentedControlsView()
     case "Date & Time Pickers":    DateTimePickersView()
     case "Color Picker":           ColorPickerView()
-    case "Labels & Text":          LabelsView()
     case "Images & Icons":         ImagesView()
     case "Progress Indicators":    ProgressIndicatorsView()
     case "Gauges":                 GaugesView()

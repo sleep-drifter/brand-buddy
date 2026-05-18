@@ -40,7 +40,6 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Segmented Controls",    section: "Selection",   tab: "Components"),
         .init(name: "Date & Time Pickers",   section: "Selection",   tab: "Components"),
         .init(name: "Color Picker",          section: "Selection",   tab: "Components"),
-        .init(name: "Labels & Text",         section: "Display",     tab: "Components"),
         .init(name: "Images & Icons",        section: "Display",     tab: "Components"),
         .init(name: "Progress Indicators",   section: "Display",     tab: "Components"),
         .init(name: "Gauges",                section: "Display",     tab: "Components"),
@@ -209,9 +208,6 @@ struct ComponentsTab: View {
                     }
                 }
                 Section("Display") {
-                    NavigationLink { LabelsView() } label: {
-                        Label("Labels & Text", systemImage: "text.alignleft")
-                    }
                     NavigationLink { ImagesView() } label: {
                         Label("Images & Icons", systemImage: "photo")
                     }
