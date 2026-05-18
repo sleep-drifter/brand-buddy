@@ -16,7 +16,7 @@ struct QuickLookPreview: UIViewControllerRepresentable {
         let nav = UINavigationController(rootViewController: controller)
         controller.navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: "Done",
-            style: .done,
+            style: .prominent,
             target: context.coordinator,
             action: #selector(Coordinator.dismiss)
         )
