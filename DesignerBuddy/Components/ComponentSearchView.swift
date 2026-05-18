@@ -168,6 +168,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Keyframe Animations":    KeyframeAnimationsView()
     case "Phase Animations":       PhaseAnimationsView()
     case "Symbol Effects":         SymbolEffectsView()
+    case "Symbol Playground":      SymbolPlaygroundView()
     case "Matched Geometry":       MatchedGeometryView()
     case "VoiceOver Labels":       VoiceOverLabelsView()
     case "Dynamic Type":           DynamicTypeExploreView()
