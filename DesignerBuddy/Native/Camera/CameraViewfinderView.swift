@@ -52,6 +52,7 @@ final class CameraModel: ObservableObject {
     let session = AVCaptureSession()
     private let photoOutput = AVCapturePhotoOutput()
     private var captureProcessor: PhotoCaptureProcessor?
+    private var isSettingUp = false
 
     func checkAuthorization() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -68,7 +69,8 @@ final class CameraModel: ObservableObject {
     }
 
     func setupSession() {
-        guard isAuthorized, !session.isRunning else { return }
+        guard isAuthorized, !isSettingUp, !session.isRunning else { return }
+        isSettingUp = true
         Task.detached { [weak self] in
             guard let self else { return }
             let session = await self.session
@@ -86,11 +88,15 @@ final class CameraModel: ObservableObject {
             if session.canAddOutput(photoOutput) { session.addOutput(photoOutput) }
             session.commitConfiguration()
             session.startRunning()
-            await MainActor.run { self.isRunning = true }
+            await MainActor.run {
+                self.isRunning = true
+                self.isSettingUp = false
+            }
         }
     }
 
     func tearDownSession() {
+        isSettingUp = false
         Task.detached { [weak self] in
             guard let self else { return }
             let session = await self.session
