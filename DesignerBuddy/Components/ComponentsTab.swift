@@ -119,6 +119,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Keyframe Animations", section: "Animations",    tab: "Explore"),
         .init(name: "Phase Animations",    section: "Animations",    tab: "Explore"),
         .init(name: "Symbol Effects",      section: "Animations",    tab: "Explore"),
+        .init(name: "Symbol Playground",   section: "Animations",    tab: "Explore", keywords: ["sf symbols", "animate", "symbol effect", "replace", "bounce", "wiggle", "rotate", "breathe", "pulse", "appear", "playground"]),
         .init(name: "Matched Geometry",    section: "Animations",    tab: "Explore"),
         .init(name: "VoiceOver Labels",    section: "Accessibility", tab: "Explore"),
         .init(name: "Dynamic Type",        section: "Accessibility", tab: "Explore"),

@@ -34,6 +34,9 @@ struct ExploreTab: View {
                     NavigationLink { SymbolEffectsView() } label: {
                         Label("Symbol Effects", systemImage: "sparkle")
                     }
+                    NavigationLink { SymbolPlaygroundView() } label: {
+                        Label("Symbol Playground", systemImage: "theatermask.and.paintbrush")
+                    }
                     NavigationLink { MatchedGeometryView() } label: {
                         Label("Matched Geometry", systemImage: "rectangle.on.rectangle.angled")
                     }
