@@ -31,6 +31,160 @@ struct GestureRotationView: View {
         ScrollView {
             VStack(spacing: 24) {
 
+                // MARK: - Free Transform (Pinch + Rotate + Drag)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Label("Free Transform", systemImage: "move.3d")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.purple.opacity(0.08))
+                            .frame(height: 440)
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [.purple, .indigo],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 110, height: 110)
+                            .overlay(
+                                Image(systemName: "square.and.arrow.up.on.square")
+                                    .font(.largeTitle)
+                                    .foregroundStyle(.white)
+                            )
+                            .scaleEffect(freeScale)
+                            .rotationEffect(freeAngle)
+                            .offset(freeOffset)
+                    }
+                    .overlay(
+                        FreeTransformGestureOverlay(
+                            isActive: $isFreeTransforming,
+                            onTranslate: { delta in
+                                freeOffset = CGSize(
+                                    width: freeOffset.width + delta.width,
+                                    height: freeOffset.height + delta.height
+                                )
+                            },
+                            onScale: { delta in
+                                freeScale = (freeScale * delta).clamped(to: 0.3...4.0)
+                            },
+                            onRotate: { delta in
+                                freeAngle += delta
+                            }
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    Text("x: \(freeOffset.width, specifier: "%.1f")  y: \(freeOffset.height, specifier: "%.1f")  scale: \(freeScale, specifier: "%.2f")×  angle: \(freeAngle.degrees, specifier: "%.1f")°")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                    Button("Reset") {
+                        withAnimation(.spring()) {
+                            freeScale = 1.0
+                            freeAngle = .zero
+                            freeOffset = .zero
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity)
+                    HStack(spacing: 6) {
+                        ForEach(["UIPanGestureRecognizer", "UIPinchGestureRecognizer", "UIRotationGestureRecognizer"], id: \.self) { token in
+                            Text(token)
+                                .font(.system(size: 10, design: .monospaced))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(Color.purple.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+                        }
+                    }
+                    Text("UIKit gesture recognizers enable true two-finger free transform. UIPanGestureRecognizer (min 2 touches) tracks the centroid translation. All three recognizers fire simultaneously via UIGestureRecognizerDelegate. Each handler resets its value to zero after reading so the SwiftUI state accumulates deltas.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+
+                // MARK: - Combined Pinch + Rotation
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Label("Pinch + Rotation Combined", systemImage: "rotate.3d")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.pink.opacity(0.08))
+                            .frame(height: 220)
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [.pink, .orange],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 110, height: 110)
+                            .overlay(
+                                Image(systemName: "photo.fill")
+                                    .font(.largeTitle)
+                                    .foregroundStyle(.white)
+                            )
+                            .scaleEffect(comboScale)
+                            .rotationEffect(comboRotation)
+                            .gesture(
+                                SimultaneousGesture(
+                                    MagnificationGesture(),
+                                    RotationGesture()
+                                )
+                                .onChanged { value in
+                                    if let magnification = value.first {
+                                        comboScale = (lastComboScale * magnification)
+                                            .clamped(to: 0.4...4.0)
+                                    }
+                                    if let rotationAngle = value.second {
+                                        comboRotation = lastComboRotation + rotationAngle
+                                    }
+                                }
+                                .onEnded { _ in
+                                    lastComboScale = comboScale
+                                    lastComboRotation = comboRotation
+                                }
+                            )
+                        VStack {
+                            Spacer()
+                            Text("Pinch + rotate simultaneously")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .padding(.bottom, 6)
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    HStack {
+                        Text("Scale: \(comboScale, specifier: "%.2f")×  Angle: \(comboRotation.degrees, specifier: "%.1f")°")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Reset") {
+                            withAnimation(.spring(duration: 0.4, bounce: 0.3)) {
+                                comboScale = 1.0
+                                lastComboScale = 1.0
+                                comboRotation = .zero
+                                lastComboRotation = .zero
+                            }
+                        }
+                        .font(.caption)
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                    Text("SimultaneousGesture wraps MagnificationGesture and RotationGesture. Each value comes from a tuple — value.first for scale, value.second for rotation.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+
                 // MARK: - RotationGesture
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
@@ -187,160 +341,6 @@ struct GestureRotationView: View {
                         .controlSize(.small)
                     }
                     Text("Accumulate lastOffset + translation each session so position persists between drags.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-
-                // MARK: - Combined Pinch + Rotation
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Label("Pinch + Rotation Combined", systemImage: "rotate.3d")
-                            .font(.headline)
-                        Spacer()
-                    }
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.pink.opacity(0.08))
-                            .frame(height: 220)
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [.pink, .orange],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 110, height: 110)
-                            .overlay(
-                                Image(systemName: "photo.fill")
-                                    .font(.largeTitle)
-                                    .foregroundStyle(.white)
-                            )
-                            .scaleEffect(comboScale)
-                            .rotationEffect(comboRotation)
-                            .gesture(
-                                SimultaneousGesture(
-                                    MagnificationGesture(),
-                                    RotationGesture()
-                                )
-                                .onChanged { value in
-                                    if let magnification = value.first {
-                                        comboScale = (lastComboScale * magnification)
-                                            .clamped(to: 0.4...4.0)
-                                    }
-                                    if let rotationAngle = value.second {
-                                        comboRotation = lastComboRotation + rotationAngle
-                                    }
-                                }
-                                .onEnded { _ in
-                                    lastComboScale = comboScale
-                                    lastComboRotation = comboRotation
-                                }
-                            )
-                        VStack {
-                            Spacer()
-                            Text("Pinch + rotate simultaneously")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .padding(.bottom, 6)
-                        }
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    HStack {
-                        Text("Scale: \(comboScale, specifier: "%.2f")×  Angle: \(comboRotation.degrees, specifier: "%.1f")°")
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Button("Reset") {
-                            withAnimation(.spring(duration: 0.4, bounce: 0.3)) {
-                                comboScale = 1.0
-                                lastComboScale = 1.0
-                                comboRotation = .zero
-                                lastComboRotation = .zero
-                            }
-                        }
-                        .font(.caption)
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                    }
-                    Text("SimultaneousGesture wraps MagnificationGesture and RotationGesture. Each value comes from a tuple — value.first for scale, value.second for rotation.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-
-                // MARK: - Free Transform (Pinch + Rotate + Drag)
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Label("Free Transform", systemImage: "move.3d")
-                            .font(.headline)
-                        Spacer()
-                    }
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.purple.opacity(0.08))
-                            .frame(height: 440)
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [.purple, .indigo],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 110, height: 110)
-                            .overlay(
-                                Image(systemName: "square.and.arrow.up.on.square")
-                                    .font(.largeTitle)
-                                    .foregroundStyle(.white)
-                            )
-                            .scaleEffect(freeScale)
-                            .rotationEffect(freeAngle)
-                            .offset(freeOffset)
-                    }
-                    .overlay(
-                        FreeTransformGestureOverlay(
-                            isActive: $isFreeTransforming,
-                            onTranslate: { delta in
-                                freeOffset = CGSize(
-                                    width: freeOffset.width + delta.width,
-                                    height: freeOffset.height + delta.height
-                                )
-                            },
-                            onScale: { delta in
-                                freeScale = (freeScale * delta).clamped(to: 0.3...4.0)
-                            },
-                            onRotate: { delta in
-                                freeAngle += delta
-                            }
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    Text("x: \(freeOffset.width, specifier: "%.1f")  y: \(freeOffset.height, specifier: "%.1f")  scale: \(freeScale, specifier: "%.2f")×  angle: \(freeAngle.degrees, specifier: "%.1f")°")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                    Button("Reset") {
-                        withAnimation(.spring()) {
-                            freeScale = 1.0
-                            freeAngle = .zero
-                            freeOffset = .zero
-                        }
-                    }
-                    .buttonStyle(.bordered)
-                    .frame(maxWidth: .infinity)
-                    HStack(spacing: 6) {
-                        ForEach(["UIPanGestureRecognizer", "UIPinchGestureRecognizer", "UIRotationGestureRecognizer"], id: \.self) { token in
-                            Text(token)
-                                .font(.system(size: 10, design: .monospaced))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 3)
-                                .background(Color.purple.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
-                        }
-                    }
-                    Text("UIKit gesture recognizers enable true two-finger free transform. UIPanGestureRecognizer (min 2 touches) tracks the centroid translation. All three recognizers fire simultaneously via UIGestureRecognizerDelegate. Each handler resets its value to zero after reading so the SwiftUI state accumulates deltas.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
