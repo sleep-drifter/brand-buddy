@@ -14,6 +14,7 @@ enum RecordingState {
 class AudioRecorder: NSObject, ObservableObject {
     @Published var state: RecordingState = .idle
     @Published var amplitude: Float = 0
+    @Published var amplitudeHistory: [Float] = []
     @Published var duration: TimeInterval = 0
     @Published var playbackProgress: Double = 0
     @Published var isPlaying: Bool = false
@@ -117,6 +118,7 @@ class AudioRecorder: NSObject, ObservableObject {
         recordingURL = nil
         state = .idle
         amplitude = 0
+        amplitudeHistory = []
         duration = 0
         playbackProgress = 0
     }
@@ -128,6 +130,7 @@ class AudioRecorder: NSObject, ObservableObject {
         // Map dB (-60 to 0) to 0...1
         let normalized = max(0, min(1, (power + 60) / 60))
         amplitude = normalized
+        amplitudeHistory.append(normalized)
     }
 }
 
@@ -283,46 +286,36 @@ struct AudioRecordingView: View {
     @ViewBuilder
     private var waveformCanvas: some View {
         if recorder.state == .recording {
-            TimelineView(.animation) { timeline in
-                Canvas { context, size in
-                    let time = timeline.date.timeIntervalSinceReferenceDate
-                    let barCount = 40
-                    let totalSpacing = size.width * 0.3
-                    let barWidth = (size.width - totalSpacing) / CGFloat(barCount)
-                    let gap = totalSpacing / CGFloat(barCount - 1)
-                    let midY = size.height / 2
-                    let maxHeight = size.height * 0.45
+            Canvas { context, size in
+                let barCount = 40
+                let history = recorder.amplitudeHistory
+                let totalSpacing = size.width * 0.3
+                let barWidth = (size.width - totalSpacing) / CGFloat(barCount)
+                let gap = totalSpacing / CGFloat(barCount - 1)
+                let midY = size.height / 2
+                let maxHeight = size.height * 0.45
 
-                    for i in 0..<barCount {
-                        let phase = Double(i) * 0.4
-                        let sinVal = abs(sin(time * 2.5 + phase))
-                        // Blend sin with real amplitude for center bars
-                        let centerBlend: Double = i > 10 && i < 30 ? Double(recorder.amplitude) : 0
-                        let height = CGFloat(sinVal * 0.7 + centerBlend * 0.3) * maxHeight + 2
-
-                        let x = CGFloat(i) * (barWidth + gap)
-                        let rect = CGRect(
-                            x: x,
-                            y: midY - height,
-                            width: barWidth,
-                            height: height * 2
-                        )
-                        let path = Path(roundedRect: rect, cornerRadius: barWidth / 2)
-                        context.fill(path, with: .color(.red.opacity(0.85)))
-                    }
+                for i in 0..<barCount {
+                    let historyIdx = history.count - barCount + i
+                    let amp: Float = historyIdx >= 0 ? history[historyIdx] : 0.0
+                    let height = CGFloat(amp) * maxHeight + 2
+                    let x = CGFloat(i) * (barWidth + gap)
+                    let rect = CGRect(x: x, y: midY - height, width: barWidth, height: height * 2)
+                    let path = Path(roundedRect: rect, cornerRadius: barWidth / 2)
+                    context.fill(path, with: .color(.red.opacity(historyIdx >= 0 ? 0.85 : 0.15)))
                 }
             }
         } else if recorder.state == .recorded {
             Canvas { context, size in
                 let barCount = 40
+                let samples = sampledHistory(count: barCount)
                 let totalSpacing = size.width * 0.3
                 let barWidth = (size.width - totalSpacing) / CGFloat(barCount)
                 let gap = totalSpacing / CGFloat(barCount - 1)
                 let midY = size.height / 2
 
                 for i in 0..<barCount {
-                    let phase = Double(i) * 0.4
-                    let height = CGFloat(abs(sin(phase * 1.8 + 0.5))) * size.height * 0.4 + 2
+                    let height = CGFloat(samples[i]) * size.height * 0.45 + 2
                     let x = CGFloat(i) * (barWidth + gap)
                     let rect = CGRect(x: x, y: midY - height, width: barWidth, height: height * 2)
                     let path = Path(roundedRect: rect, cornerRadius: barWidth / 2)
@@ -338,6 +331,15 @@ struct AudioRecordingView: View {
                 }
                 context.stroke(path, with: .color(.secondary.opacity(0.4)), lineWidth: 2)
             }
+        }
+    }
+
+    private func sampledHistory(count: Int) -> [Float] {
+        let h = recorder.amplitudeHistory
+        guard !h.isEmpty else { return Array(repeating: 0.02, count: count) }
+        return (0..<count).map { i in
+            let idx = Int(Double(i) / Double(count) * Double(h.count))
+            return h[min(idx, h.count - 1)]
         }
     }
 
@@ -417,14 +419,14 @@ struct AudioRecordingView: View {
     private var playbackWaveform: some View {
         Canvas { context, size in
             let barCount = 40
+            let samples = sampledHistory(count: barCount)
             let totalSpacing = size.width * 0.3
             let barWidth = (size.width - totalSpacing) / CGFloat(barCount)
             let gap = totalSpacing / CGFloat(barCount - 1)
             let midY = size.height / 2
 
             for i in 0..<barCount {
-                let phase = Double(i) * 0.4
-                let height = CGFloat(abs(sin(phase * 1.8 + 0.5))) * size.height * 0.45 + 2
+                let height = CGFloat(samples[i]) * size.height * 0.45 + 2
                 let x = CGFloat(i) * (barWidth + gap)
                 let rect = CGRect(x: x, y: midY - height, width: barWidth, height: height * 2)
                 let path = Path(roundedRect: rect, cornerRadius: barWidth / 2)
