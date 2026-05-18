@@ -233,6 +233,7 @@ final class CameraModel: NSObject, ObservableObject {
     // MARK: - Photo Capture
 
     func capturePhoto() {
+        guard photoOutput.connection(with: .video)?.isActive == true else { return }
         let processor = PhotoCaptureProcessor()
         captureProcessor = processor
         processor.onCapture = { [weak self] image in

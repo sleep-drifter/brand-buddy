@@ -85,8 +85,10 @@ struct LiveCameraView: View {
         case .standardCentered, .backWide, .frontSelfie, .photo, .squareFormat, .gridOverlay,
              .faceDetection, .liveOCR:
             StandardControlsOverlay(model: model)
-        case .minimalScan, .qrBarcodeScanner:
+        case .minimalScan:
             MinimalScanOverlay(model: model)
+        case .qrBarcodeScanner:
+            MinimalScanOverlay(model: model, showShutter: false)
         case .floatingSocial:
             FloatingSocialOverlay(model: model)
         case .video:
@@ -248,6 +250,7 @@ struct StandardControlsOverlay: View {
 
 struct MinimalScanOverlay: View {
     @ObservedObject var model: CameraModel
+    var showShutter: Bool = true
 
     var body: some View {
         ZStack {
@@ -256,7 +259,6 @@ struct MinimalScanOverlay: View {
                 let w = geo.size.width
                 let h = geo.size.height
                 let inset: CGFloat = 52
-                let arm: CGFloat = 28
 
                 ZStack {
                     bracketView().position(x: inset, y: inset)
@@ -274,15 +276,17 @@ struct MinimalScanOverlay: View {
                 .position(x: w / 2, y: h / 2)
                 .allowsHitTesting(false)
 
-                // Shutter at very bottom
-                Button { model.capturePhoto() } label: {
-                    ZStack {
-                        Circle().stroke(.white, lineWidth: 4).frame(width: 70, height: 70)
-                        Circle().fill(.white).frame(width: 58, height: 58)
+                // Shutter at very bottom (not shown for scan-only modes)
+                if showShutter {
+                    Button { model.capturePhoto() } label: {
+                        ZStack {
+                            Circle().stroke(.white, lineWidth: 4).frame(width: 70, height: 70)
+                            Circle().fill(.white).frame(width: 58, height: 58)
+                        }
+                        .shadow(radius: 6)
                     }
-                    .shadow(radius: 6)
+                    .position(x: w / 2, y: h - 80)
                 }
-                .position(x: w / 2, y: h - 80)
             }
         }
     }
