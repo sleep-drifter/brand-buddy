@@ -109,16 +109,22 @@ struct SymbolPlaygroundView: View {
     private let palette: [Color] = [.blue, .purple, .pink, .red, .orange, .yellow, .green, .teal, .cyan, .indigo, .mint]
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                previewCard
-                effectScroller
-                optionsSection
-                appearanceSection
-                colorPickerRow
-                codeCard
+        VStack(spacing: 0) {
+            previewCard
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+
+            ScrollView {
+                VStack(spacing: 20) {
+                    effectScroller
+                    optionsSection
+                    appearanceSection
+                    colorPickerRow
+                    codeCard
+                }
+                .padding(16)
             }
-            .padding(16)
         }
         .navigationTitle("Symbol Playground")
         .navigationBarTitleDisplayMode(.inline)
@@ -133,13 +139,45 @@ struct SymbolPlaygroundView: View {
     // MARK: - Preview Card
 
     private var previewCard: some View {
-        VStack(spacing: 12) {
-            ZStack {
+        VStack(spacing: 8) {
+            ZStack(alignment: .bottom) {
                 RoundedRectangle(cornerRadius: 24)
                     .fill(.regularMaterial)
-                animatedPreview
+
+                // Symbol preview
+                if selectedEffect == .replace {
+                    replaceImage
+                } else {
+                    effectAppliedImage
+                }
+
+                // Magic replace toast
+                if let status = replaceStatus {
+                    Text(status)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(.black.opacity(0.55), in: Capsule())
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .padding(.bottom, 10)
+                }
+
+                // Bottom-right control badge
+                if selectedEffect != .variableColor {
+                    HStack {
+                        Spacer()
+                        VStack {
+                            Spacer()
+                            canvasControlBadge
+                                .padding(10)
+                        }
+                    }
+                }
             }
             .frame(height: 200)
+            .contentShape(RoundedRectangle(cornerRadius: 24))
+            .onTapGesture { handleCanvasTap() }
 
             Button {
                 showingSymbolPicker = true
@@ -156,38 +194,43 @@ struct SymbolPlaygroundView: View {
         }
     }
 
-    @ViewBuilder
-    private var animatedPreview: some View {
-        if selectedEffect == .replace {
-            ZStack(alignment: .bottom) {
-                Button {
-                    showPlay.toggle()
-                    if preferMagicReplace {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            replaceStatus = "✅ Smart Replace active"
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            withAnimation(.easeInOut(duration: 0.2)) { replaceStatus = nil }
-                        }
-                    }
-                } label: {
-                    replaceImage
-                }
-                .buttonStyle(.plain)
+    private var canvasControlBadge: some View {
+        let icon: String
+        switch selectedEffect {
+        case .bounce, .pulse, .wiggle, .rotate:
+            icon = "play.fill"
+        case .breathe, .appear, .disappear, .drawOn, .drawOff:
+            icon = isActive ? "pause.fill" : "play.fill"
+        case .replace:
+            icon = "arrow.2.squarepath"
+        case .variableColor:
+            icon = "play.fill"
+        }
+        return Image(systemName: icon)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .padding(8)
+            .background(.ultraThinMaterial, in: Circle())
+    }
 
-                if let status = replaceStatus {
-                    Text(status)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(.black.opacity(0.55), in: Capsule())
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-                        .padding(.bottom, 10)
+    private func handleCanvasTap() {
+        switch selectedEffect {
+        case .bounce, .pulse, .wiggle, .rotate:
+            trigger += 1
+        case .breathe, .appear, .disappear, .drawOn, .drawOff:
+            withAnimation { isActive.toggle() }
+        case .variableColor:
+            break
+        case .replace:
+            showPlay.toggle()
+            if preferMagicReplace {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    replaceStatus = "✅ Smart Replace active"
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    withAnimation(.easeInOut(duration: 0.2)) { replaceStatus = nil }
                 }
             }
-        } else {
-            effectAppliedImage
         }
     }
 
@@ -360,25 +403,6 @@ struct SymbolPlaygroundView: View {
 
     private var generalOptions: some View {
         VStack(spacing: 8) {
-            // Control
-            GroupBox {
-                if selectedEffect.isTrigger {
-                    Button("Trigger Animation") { trigger += 1 }
-                        .buttonStyle(.borderedProminent)
-                        .frame(maxWidth: .infinity)
-                } else if selectedEffect == .variableColor {
-                    Text("Loops automatically")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                } else {
-                    Toggle("Active", isOn: $isActive)
-                }
-            } label: {
-                Text("Control").font(.subheadline.weight(.medium))
-            }
-
-            // By Layer
             if selectedEffect.supportsLayerControl {
                 GroupBox {
                     Picker("Animate", selection: $byLayer) {
@@ -395,14 +419,6 @@ struct SymbolPlaygroundView: View {
 
     private var replaceOptions: some View {
         VStack(spacing: 8) {
-            GroupBox {
-                Button("Toggle Symbol") { showPlay.toggle() }
-                    .buttonStyle(.borderedProminent)
-                    .frame(maxWidth: .infinity)
-            } label: {
-                Text("Control").font(.subheadline.weight(.medium))
-            }
-
             GroupBox {
                 Button {
                     showingReplacePicker = true
