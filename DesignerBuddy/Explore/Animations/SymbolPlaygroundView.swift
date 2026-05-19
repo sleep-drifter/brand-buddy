@@ -139,8 +139,12 @@ struct SymbolPlaygroundView: View {
                 Button {
                     showPlay.toggle()
                     if preferMagicReplace {
-                        replaceStatus = "✅ Smart Replace active"
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { replaceStatus = nil }
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            replaceStatus = "✅ Smart Replace active"
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            withAnimation(.easeInOut(duration: 0.2)) { replaceStatus = nil }
+                        }
                     }
                 } label: {
                     replaceImage
@@ -158,7 +162,6 @@ struct SymbolPlaygroundView: View {
                         .padding(.bottom, 10)
                 }
             }
-            .animation(.easeInOut(duration: 0.2), value: replaceStatus != nil)
         } else {
             effectAppliedImage
         }
