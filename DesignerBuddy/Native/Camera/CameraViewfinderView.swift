@@ -150,6 +150,7 @@ final class CameraModel: NSObject, ObservableObject {
         isSettingUp = true
 
         let cfg = config
+        let position = cfg.devicePosition
         Task.detached { [weak self] in
             guard let self else { return }
             let session     = await self.session
@@ -161,7 +162,6 @@ final class CameraModel: NSObject, ObservableObject {
             session.beginConfiguration()
 
             // Input
-            let position = cfg.devicePosition
             guard
                 let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
                 let input  = try? AVCaptureDeviceInput(device: device)
