@@ -1,5 +1,5 @@
 import SwiftUI
-import AVFoundation
+@preconcurrency import AVFoundation
 import Combine
 import Vision
 
@@ -242,7 +242,7 @@ final class CameraModel: NSObject, ObservableObject {
                 self?.captureProcessor = nil
             }
         }
-        var settings = AVCapturePhotoSettings()
+        let settings = AVCapturePhotoSettings()
         if photoOutput.supportedFlashModes.contains(flashMode) {
             settings.flashMode = flashMode
         }
