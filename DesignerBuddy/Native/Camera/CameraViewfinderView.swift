@@ -44,8 +44,8 @@ final class PhotoCaptureProcessor: NSObject, AVCapturePhotoCaptureDelegate {
 // MARK: - Delegate helpers (file-scope NSObject subclasses)
 
 private final class MetadataCaptureDelegate: NSObject, AVCaptureMetadataOutputObjectsDelegate {
-    let handler: ([AVMetadataObject]) -> Void
-    init(handler: @escaping ([AVMetadataObject]) -> Void) { self.handler = handler }
+    let handler: @Sendable ([AVMetadataObject]) -> Void
+    init(handler: @escaping @Sendable ([AVMetadataObject]) -> Void) { self.handler = handler }
 
     nonisolated func metadataOutput(_ output: AVCaptureMetadataOutput,
                                     didOutput metadataObjects: [AVMetadataObject],
@@ -55,8 +55,8 @@ private final class MetadataCaptureDelegate: NSObject, AVCaptureMetadataOutputOb
 }
 
 private final class VideoDataDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
-    let handler: (CMSampleBuffer) -> Void
-    init(handler: @escaping (CMSampleBuffer) -> Void) { self.handler = handler }
+    let handler: @Sendable (CMSampleBuffer) -> Void
+    init(handler: @escaping @Sendable (CMSampleBuffer) -> Void) { self.handler = handler }
 
     nonisolated func captureOutput(_ output: AVCaptureOutput,
                                    didOutput sampleBuffer: CMSampleBuffer,
@@ -98,8 +98,7 @@ final class CameraModel: NSObject, ObservableObject {
     }
 
     // MARK: Session
-    // nonisolated(unsafe): immutable Sendable value read from nonisolated handleVideoFrame
-    nonisolated(unsafe) let config: CameraConfig
+    let config: CameraConfig
     let session = AVCaptureSession()
 
     private let photoOutput    = AVCapturePhotoOutput()
