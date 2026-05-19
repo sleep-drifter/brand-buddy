@@ -5,10 +5,12 @@ import AVFoundation
 
 struct LiveCameraView: View {
     let config: CameraConfig
+    @Binding var captures: [UIImage]
     @StateObject private var model: CameraModel
 
-    init(config: CameraConfig) {
+    init(config: CameraConfig, captures: Binding<[UIImage]>) {
         self.config = config
+        _captures = captures
         _model = StateObject(wrappedValue: CameraModel(config: config))
     }
 
@@ -48,11 +50,26 @@ struct LiveCameraView: View {
             overlayLayer
             controlsLayer
 
-            // Captured photo preview
+            // Captured photo preview / crop view
             if let image = model.capturedImage {
-                capturePreview(image: image)
+                switch config {
+                case .freeCrop:
+                    FreeCropView(image: image, captures: $captures) {
+                        withAnimation { model.capturedImage = nil }
+                    }
                     .transition(.opacity)
                     .animation(.easeInOut(duration: 0.25), value: model.capturedImage != nil)
+                case .circularCrop:
+                    CircularCropView(image: image, captures: $captures) {
+                        withAnimation { model.capturedImage = nil }
+                    }
+                    .transition(.opacity)
+                    .animation(.easeInOut(duration: 0.25), value: model.capturedImage != nil)
+                default:
+                    capturePreview(image: image)
+                        .transition(.opacity)
+                        .animation(.easeInOut(duration: 0.25), value: model.capturedImage != nil)
+                }
             }
         }
     }
@@ -64,8 +81,6 @@ struct LiveCameraView: View {
         switch config {
         case .gridOverlay:
             GridOverlayView()
-        case .squareFormat:
-            SquareCropOverlayView()
         case .qrBarcodeScanner:
             QRBoundsOverlay(codes: model.detectedCodes)
         case .faceDetection:
@@ -82,8 +97,8 @@ struct LiveCameraView: View {
     @ViewBuilder
     private var controlsLayer: some View {
         switch config {
-        case .standardCentered, .backWide, .frontSelfie, .photo, .squareFormat, .gridOverlay,
-             .faceDetection, .liveOCR:
+        case .standardCentered, .backWide, .frontSelfie, .photo, .gridOverlay,
+             .faceDetection, .liveOCR, .freeCrop, .circularCrop:
             StandardControlsOverlay(model: model)
         case .minimalScan:
             MinimalScanOverlay(model: model)
@@ -114,30 +129,50 @@ struct LiveCameraView: View {
 
             VStack {
                 Spacer()
-                HStack(spacing: 24) {
+
+                VStack(spacing: 12) {
+                    // Primary action
                     Button {
+                        captures.append(image)
                         withAnimation { model.capturedImage = nil }
                     } label: {
-                        Label("Retake", systemImage: "arrow.counterclockwise")
+                        Text("Continue")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 24)
+                            .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(.ultraThinMaterial, in: Capsule())
+                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14))
+                            .foregroundStyle(.white)
                     }
+                    .buttonStyle(.plain)
 
-                    ShareLink(
-                        item: Image(uiImage: image),
-                        preview: SharePreview("Captured Photo", image: Image(uiImage: image))
-                    ) {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 14)
-                            .background(Color.blue, in: Capsule())
+                    // Secondary actions
+                    HStack(spacing: 16) {
+                        Button {
+                            withAnimation { model.capturedImage = nil }
+                        } label: {
+                            Label("Retake", systemImage: "arrow.counterclockwise")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                        }
+                        .buttonStyle(.plain)
+
+                        ShareLink(
+                            item: Image(uiImage: image),
+                            preview: SharePreview("Captured Photo", image: Image(uiImage: image))
+                        ) {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                        }
                     }
                 }
+                .padding(.horizontal, 24)
                 .padding(.bottom, 60)
             }
         }
@@ -558,73 +593,6 @@ struct GridOverlayView: View {
     }
 }
 
-// MARK: - Square Crop Overlay View
-
-struct SquareCropOverlayView: View {
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let h = geo.size.height
-            let side = min(w, h)
-            let yOff = (h - side) / 2
-
-            ZStack {
-                // Darken top band
-                Rectangle()
-                    .fill(Color.black.opacity(0.5))
-                    .frame(width: w, height: yOff)
-                    .position(x: w / 2, y: yOff / 2)
-
-                // Darken bottom band
-                Rectangle()
-                    .fill(Color.black.opacity(0.5))
-                    .frame(width: w, height: yOff)
-                    .position(x: w / 2, y: h - yOff / 2)
-
-                // Corner marks
-                let armLen: CGFloat = 22
-                let thickness: CGFloat = 3
-                let left = (w - side) / 2
-                let right = left + side
-                let top = yOff
-                let bottom = yOff + side
-
-                Group {
-                    // TL horizontal
-                    Rectangle().fill(Color.white).frame(width: armLen, height: thickness)
-                        .position(x: left + armLen / 2, y: top)
-                    // TL vertical
-                    Rectangle().fill(Color.white).frame(width: thickness, height: armLen)
-                        .position(x: left, y: top + armLen / 2)
-
-                    // TR horizontal
-                    Rectangle().fill(Color.white).frame(width: armLen, height: thickness)
-                        .position(x: right - armLen / 2, y: top)
-                    // TR vertical
-                    Rectangle().fill(Color.white).frame(width: thickness, height: armLen)
-                        .position(x: right, y: top + armLen / 2)
-
-                    // BL horizontal
-                    Rectangle().fill(Color.white).frame(width: armLen, height: thickness)
-                        .position(x: left + armLen / 2, y: bottom)
-                    // BL vertical
-                    Rectangle().fill(Color.white).frame(width: thickness, height: armLen)
-                        .position(x: left, y: bottom - armLen / 2)
-
-                    // BR horizontal
-                    Rectangle().fill(Color.white).frame(width: armLen, height: thickness)
-                        .position(x: right - armLen / 2, y: bottom)
-                    // BR vertical
-                    Rectangle().fill(Color.white).frame(width: thickness, height: armLen)
-                        .position(x: right, y: bottom - armLen / 2)
-                }
-            }
-        }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
-    }
-}
-
 // MARK: - QR Bounds Overlay
 
 struct QRBoundsOverlay: View {
@@ -738,6 +706,6 @@ struct OCROverlay: View {
 
 #Preview {
     NavigationStack {
-        LiveCameraView(config: .standardCentered)
+        LiveCameraView(config: .standardCentered, captures: .constant([]))
     }
 }
