@@ -24,9 +24,34 @@ struct LiveCameraView: View {
                 permissionCard
             }
         }
-        .navigationTitle(config.title)
+        .navigationTitle(model.capturedImage != nil ? "Review" : config.title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(model.capturedImage != nil ? .hidden : .visible, for: .navigationBar)
+        .navigationBarBackButtonHidden(model.capturedImage != nil)
+        .toolbar {
+            if let image = model.capturedImage {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { withAnimation { model.capturedImage = nil } } label: {
+                        Image(systemName: "xmark")
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        captures.append(image)
+                        model.capturedImage = nil
+                        dismiss()
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(Color.accentColor)
+                                .frame(width: 32, height: 32)
+                            Image(systemName: "arrow.up")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                }
+            }
+        }
         .ignoresSafeArea()
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
@@ -130,37 +155,6 @@ struct LiveCameraView: View {
                 .ignoresSafeArea()
 
             VStack {
-                // Top bar: X left, Continue circle right
-                HStack {
-                    Button {
-                        withAnimation { model.capturedImage = nil }
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
-                            .background(.ultraThinMaterial, in: Circle())
-                    }
-                    .buttonStyle(.plain)
-
-                    Spacer()
-
-                    Button {
-                        captures.append(image)
-                        model.capturedImage = nil
-                        dismiss()
-                    } label: {
-                        Image(systemName: "arrow.up")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
-                            .background(Color.accentColor, in: Circle())
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-
                 Spacer()
 
                 // Bottom button group
