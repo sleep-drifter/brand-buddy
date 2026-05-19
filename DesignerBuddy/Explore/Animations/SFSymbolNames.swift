@@ -495,11 +495,26 @@ enum SFSymbolLibrary {
         "bolt.fill", "leaf.fill", "camera.fill", "moon.stars.fill",
     ]
 
+    // Loaded once from SFSymbols.txt in the app bundle.
+    // To populate with the full 6,900-name SF Symbols 7 library, run on any Mac:
+    //
+    //   cat /System/Library/CoreServices/CoreGlyphs.bundle/Contents/Resources/symbol_order.plist \
+    //     | plutil -convert json -o - - \
+    //     | python3 -c "import json,sys; print('\n'.join(json.load(sys.stdin)))" \
+    //     > DesignerBuddy/SFSymbols.txt
+    //
+    // Then add SFSymbols.txt to the DesignerBuddy target in Xcode.
+    // Falls back to the curated category lists if the file is missing.
     static let all: [String] = {
-        var names: [String] = []
-        for cat in SFSymbolCategory.allCases {
-            names.append(contentsOf: cat.symbolNames)
+        guard
+            let url = Bundle.main.url(forResource: "SFSymbols", withExtension: "txt"),
+            let content = try? String(contentsOf: url, encoding: .utf8)
+        else {
+            return SFSymbolCategory.allCases.flatMap { $0.symbolNames }
         }
-        return names
+        return content
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
     }()
 }
