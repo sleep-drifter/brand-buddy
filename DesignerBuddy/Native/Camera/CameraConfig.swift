@@ -24,9 +24,10 @@ enum CameraConfig: String, CaseIterable, Identifiable {
     case floatingSocial      = "floating-social"
 
     // Capture Modes
-    case photo        = "photo"
-    case video        = "video"
-    case squareFormat = "square-format"
+    case photo       = "photo"
+    case video       = "video"
+    case freeCrop    = "free-crop"
+    case circularCrop = "circular-crop"
 
     // HUD / Overlay
     case gridOverlay = "grid-overlay"
@@ -51,7 +52,8 @@ enum CameraConfig: String, CaseIterable, Identifiable {
         case .floatingSocial:      return "Floating / Social"
         case .photo:               return "Photo"
         case .video:               return "Video"
-        case .squareFormat:        return "Square (1:1)"
+        case .freeCrop:            return "Free-Form Crop"
+        case .circularCrop:        return "Circular Crop"
         case .gridOverlay:         return "Grid Overlay"
         case .flashControl:        return "Flash Control"
         case .documentScanner:     return "Document Scanner"
@@ -70,7 +72,8 @@ enum CameraConfig: String, CaseIterable, Identifiable {
         case .floatingSocial:      return "Semi-transparent pill shutter, no chrome, no top bar"
         case .photo:               return "Standard UI highlighting photo output"
         case .video:               return "Red record button, live recording duration"
-        case .squareFormat:        return "Square crop guide overlay, capture + crop to 1:1"
+        case .freeCrop:            return "Capture then drag 8 handles to crop any region"
+        case .circularCrop:        return "Capture then pan/zoom image behind fixed circle mask"
         case .gridOverlay:         return "Two-thirds rule grid lines over the viewfinder"
         case .flashControl:        return "Flash mode picker: Off / Auto / On / Torch"
         case .documentScanner:     return "System document scanner (VNDocumentCameraViewController)"
@@ -89,7 +92,8 @@ enum CameraConfig: String, CaseIterable, Identifiable {
         case .floatingSocial:      return "bubbles.and.sparkles"
         case .photo:               return "photo"
         case .video:               return "video"
-        case .squareFormat:        return "square.on.square"
+        case .freeCrop:            return "crop"
+        case .circularCrop:        return "circle.dashed"
         case .gridOverlay:         return "grid"
         case .flashControl:        return "bolt"
         case .documentScanner:     return "doc.text.viewfinder"
@@ -105,7 +109,7 @@ enum CameraConfig: String, CaseIterable, Identifiable {
             return .positionsAndLenses
         case .standardCentered, .minimalScan, .floatingSocial:
             return .uiLayoutPatterns
-        case .photo, .video, .squareFormat:
+        case .photo, .video, .freeCrop, .circularCrop:
             return .captureModes
         case .gridOverlay:
             return .hudOverlay

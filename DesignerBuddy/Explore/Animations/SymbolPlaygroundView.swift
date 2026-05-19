@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 // MARK: - Effect Model
 
@@ -58,6 +59,7 @@ struct SymbolPlaygroundView: View {
     @State private var showingSymbolPicker = false
     @State private var showingReplacePicker = false
     @State private var symbolColor: Color = .blue
+    @State private var replaceStatus: String? = nil
 
     private let palette: [Color] = [.blue, .purple, .pink, .red, .orange, .yellow, .green, .teal, .cyan, .indigo, .mint]
 
@@ -111,14 +113,32 @@ struct SymbolPlaygroundView: View {
     @ViewBuilder
     private var animatedPreview: some View {
         if selectedEffect == .replace {
-            Button { showPlay.toggle() } label: {
-                Image(systemName: showPlay ? symbolName : replaceSymbol)
-                    .font(.system(size: 80))
-                    .foregroundStyle(symbolColor)
-                    .contentTransition(.symbolEffect(replaceByLayer ? .replace.byLayer : .replace))
-                    .animation(.default, value: showPlay)
+            ZStack(alignment: .bottom) {
+                Button {
+                    showPlay.toggle()
+                    replaceStatus = "✅ Smart Replace active"
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { replaceStatus = nil }
+                } label: {
+                    Image(systemName: showPlay ? symbolName : replaceSymbol)
+                        .font(.system(size: 80))
+                        .foregroundStyle(symbolColor)
+                        .contentTransition(.symbolEffect(.replace.magic(fallback: .replace.downUp)))
+                        .animation(.default, value: showPlay)
+                }
+                .buttonStyle(.plain)
+
+                if let status = replaceStatus {
+                    Text(status)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(.black.opacity(0.55), in: Capsule())
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .padding(.bottom, 10)
+                }
             }
-            .buttonStyle(.plain)
+            .animation(.easeInOut(duration: 0.2), value: replaceStatus != nil)
         } else {
             effectAppliedImage
         }
@@ -387,10 +407,10 @@ struct SymbolPlaygroundView: View {
                 ? "Image(systemName: \"\(sym)\")\n    .symbolEffect(.disappear.byLayer, isActive: isActive)"
                 : "Image(systemName: \"\(sym)\")\n    .symbolEffect(.disappear, isActive: isActive)"
         case .replace:
-            let transition = replaceByLayer ? ".replace.byLayer" : ".replace"
             return """
             Image(systemName: showState ? "\(sym)" : "\(replaceSymbol)")
-                .contentTransition(.symbolEffect(\(transition)))
+                .contentTransition(.symbolEffect(
+                    .replace.magic(fallback: .replace.downUp)))
                 .animation(.default, value: showState)
             """
         }
@@ -402,120 +422,39 @@ struct SymbolPlaygroundView: View {
 struct SymbolPickerSheet: View {
     @Binding var selectedSymbol: String
     @Environment(\.dismiss) private var dismiss
-    @State private var search = ""
 
-    private static let symbols: [String] = [
-        // Communication
-        "message", "message.fill", "envelope", "envelope.fill",
-        "phone", "phone.fill", "video", "video.fill",
-        "bubble.left", "bubble.left.fill", "bubble.right.fill",
-        // Media
-        "play", "play.fill", "pause", "pause.fill",
-        "stop.fill", "forward.fill", "backward.fill",
-        "music.note", "waveform", "mic", "mic.fill",
-        "speaker.wave.3", "speaker.wave.3.fill", "speaker.slash.fill",
-        // Files
-        "doc", "doc.fill", "folder", "folder.fill",
-        "icloud", "icloud.fill", "tray", "tray.fill",
-        "archivebox", "archivebox.fill", "externaldrive", "externaldrive.fill",
-        // Favourites
-        "star", "star.fill", "heart", "heart.fill",
-        "bookmark", "bookmark.fill", "flag", "flag.fill",
-        "tag", "tag.fill", "pin", "pin.fill",
-        // Energy & Nature
-        "bolt", "bolt.fill", "flame", "flame.fill",
-        "sparkle", "sparkles", "leaf", "leaf.fill",
-        "tree", "tree.fill", "drop.fill", "wind",
-        // Alerts
-        "bell", "bell.fill", "bell.badge", "bell.badge.fill",
-        "exclamationmark.circle", "exclamationmark.triangle.fill",
-        "checkmark.circle", "checkmark.circle.fill",
-        "xmark.circle", "xmark.circle.fill",
-        "info.circle", "info.circle.fill",
-        // Arrows
-        "arrow.up", "arrow.down", "arrow.left", "arrow.right",
-        "arrow.up.circle.fill", "arrow.down.circle.fill",
-        "arrow.clockwise", "arrow.counterclockwise",
-        "arrow.triangle.2.circlepath",
-        "chevron.up", "chevron.down", "chevron.left", "chevron.right",
-        "chevron.left.forwardslash.chevron.right",
-        // UI Controls
-        "gear", "gear.circle.fill", "ellipsis", "ellipsis.circle",
-        "magnifyingglass", "magnifyingglass.circle.fill",
-        "plus", "plus.circle.fill", "minus", "minus.circle",
-        "slider.horizontal.3", "line.3.horizontal", "line.3.horizontal.decrease.circle",
-        // Weather
-        "sun.max", "sun.max.fill", "moon", "moon.fill",
-        "cloud", "cloud.fill", "cloud.rain.fill", "bolt.rain.fill",
-        "snow", "thermometer.medium", "umbrella", "umbrella.fill",
-        // Health & People
-        "heart.pulse", "heart.pulse.fill", "lungs.fill",
-        "stethoscope", "cross.fill",
-        "person", "person.fill", "person.2", "person.2.fill",
-        "figure.walk", "figure.run", "hand.raised", "hand.raised.fill",
-        "hand.thumbsup", "hand.thumbsup.fill",
-        // Transport
-        "car", "car.fill", "airplane", "airplane.circle.fill",
-        "bicycle", "bus", "tram.fill", "ferry.fill",
-        // Places
-        "house", "house.fill", "building.2", "building.2.fill",
-        "map", "map.fill", "mappin", "mappin.circle.fill",
-        "globe", "globe.americas.fill",
-        // Tech
-        "wifi", "wifi.slash", "antenna.radiowaves.left.and.right",
-        "cpu", "cpu.fill", "memorychip", "memorychip.fill",
-        "tv", "tv.fill", "iphone", "ipad", "keyboard",
-        // Time
-        "clock", "clock.fill", "calendar", "calendar.circle.fill",
-        "timer", "alarm", "alarm.fill", "stopwatch",
-        // Misc
-        "cart", "cart.fill", "creditcard", "creditcard.fill",
-        "gift", "gift.fill", "lock", "lock.fill",
-        "key", "key.fill", "shield", "shield.fill",
-        "square.grid.2x2", "square.grid.3x3.fill",
-        "pawprint", "pawprint.fill",
-        "trophy", "trophy.fill", "medal", "medal.fill"
-    ]
+    @State private var query = ""
+    @State private var debouncedQuery = ""
+    @State private var selectedCategory: SFSymbolCategory? = nil
+    @State private var displayedSymbols: [String] = SFSymbolLibrary.featured
+    @State private var isCapped = false
+    @State private var isSearchPresented = false
 
-    private var filtered: [String] {
-        search.isEmpty
-            ? Self.symbols
-            : Self.symbols.filter { $0.localizedCaseInsensitiveContains(search) }
-    }
-
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 5)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 5)
+    private let searchSubject = PassthroughSubject<String, Never>()
+    @State private var cancellable: AnyCancellable?
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                TextField("Search or type any SF Symbol name…", text: $search)
-                    .textFieldStyle(.roundedBorder)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                    .padding([.horizontal, .top], 16)
-                    .padding(.bottom, 8)
+                // Category chips
+                categoryChips
 
-                // Allow entering a custom symbol not in the list
-                if !search.isEmpty, !Self.symbols.contains(search) {
+                Divider()
+
+                // Custom-name shortcut when query is a plausible direct name
+                if query.count >= 1, !SFSymbolLibrary.all.contains(query),
+                   UIImage(systemName: query) != nil {
                     Button {
-                        selectedSymbol = search
+                        selectedSymbol = query
                         dismiss()
                     } label: {
                         HStack(spacing: 10) {
-                            Group {
-                                if let _ = UIImage(systemName: search) {
-                                    Image(systemName: search).font(.title3)
-                                } else {
-                                    Image(systemName: "questionmark.circle").font(.title3)
-                                }
-                            }
-                            .frame(width: 32, alignment: .center)
-                            Text("Use \"\(search)\"")
+                            Image(systemName: query).font(.title3).frame(width: 32)
+                            Text("Use \"\(query)\"")
                                 .font(.subheadline)
                             Spacer()
-                            Image(systemName: "return")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            Image(systemName: "return").font(.caption).foregroundStyle(.secondary)
                         }
                         .foregroundStyle(.primary)
                         .padding(.horizontal, 16)
@@ -523,21 +462,44 @@ struct SymbolPickerSheet: View {
                         .background(Color(.systemGray6))
                     }
                     .buttonStyle(.plain)
-
                     Divider()
                 }
 
-                if filtered.isEmpty {
-                    ContentUnavailableView("No matches", systemImage: "magnifyingglass", description: Text("Try a different search or use the name directly above."))
-                        .frame(maxHeight: .infinity)
-                } else {
-                    ScrollView {
-                        LazyVGrid(columns: columns, spacing: 10) {
-                            ForEach(filtered, id: \.self) { name in
-                                symbolCell(name)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Landing caption when nothing searched / filtered
+                        if query.count < 3 && selectedCategory == nil {
+                            Text("Search to explore 6,000+ symbols")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .padding(.top, 12)
+                                .padding(.bottom, 4)
+                        }
+
+                        if displayedSymbols.isEmpty {
+                            ContentUnavailableView(
+                                "No matches",
+                                systemImage: "magnifyingglass",
+                                description: Text("Try a different search term.")
+                            )
+                            .padding(.top, 40)
+                        } else {
+                            LazyVGrid(columns: columns, spacing: 8) {
+                                ForEach(displayedSymbols, id: \.self) { name in
+                                    symbolCell(name)
+                                }
+                            }
+                            .padding(12)
+
+                            if isCapped {
+                                Text("Showing top 100 results — refine your search")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.bottom, 12)
                             }
                         }
-                        .padding(16)
                     }
                 }
             }
@@ -548,8 +510,101 @@ struct SymbolPickerSheet: View {
                     Button("Cancel") { dismiss() }
                 }
             }
+            .searchable(
+                text: $query,
+                isPresented: $isSearchPresented,
+                placement: .automatic,
+                prompt: "Search or type any SF Symbol name..."
+            )
+            .onChange(of: query) { _, newValue in
+                searchSubject.send(newValue)
+            }
+            .onChange(of: selectedCategory) { _, _ in
+                applyFilter(query: debouncedQuery)
+            }
+            .onAppear {
+                cancellable = searchSubject
+                    .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
+                    .sink { q in
+                        debouncedQuery = q
+                        applyFilter(query: q)
+                    }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    isSearchPresented = true
+                }
+            }
+            .onDisappear { cancellable?.cancel() }
         }
     }
+
+    // MARK: - Category Chips
+
+    private var categoryChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                categoryChip(nil, label: "All", icon: "square.grid.2x2")
+                ForEach(SFSymbolCategory.allCases) { cat in
+                    categoryChip(cat, label: cat.rawValue, icon: cat.icon)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+        }
+    }
+
+    private func categoryChip(_ cat: SFSymbolCategory?, label: String, icon: String) -> some View {
+        let isSelected = selectedCategory == cat
+        return Button {
+            withAnimation(.spring(duration: 0.2)) { selectedCategory = cat }
+        } label: {
+            Label(label, systemImage: icon)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(isSelected ? .white : .primary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(isSelected ? Color.accentColor : Color(.systemGray5), in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Filter Logic (background thread)
+
+    private func applyFilter(query: String) {
+        let cat = selectedCategory
+        let q = query
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            let pool: [String]
+            if let cat {
+                pool = cat.symbolNames
+            } else {
+                pool = SFSymbolLibrary.all
+            }
+
+            let results: [String]
+            let capped: Bool
+            if q.count < 3 && cat == nil {
+                results = SFSymbolLibrary.featured
+                capped = false
+            } else if q.count < 3 {
+                let r = Array(pool.prefix(100))
+                results = r
+                capped = pool.count > 100
+            } else {
+                let filtered = pool.filter { $0.localizedCaseInsensitiveContains(q) }
+                let r = Array(filtered.prefix(100))
+                results = r
+                capped = filtered.count > 100
+            }
+
+            DispatchQueue.main.async {
+                displayedSymbols = results
+                isCapped = capped
+            }
+        }
+    }
+
+    // MARK: - Symbol Cell
 
     private func symbolCell(_ name: String) -> some View {
         let isSelected = selectedSymbol == name
@@ -562,19 +617,19 @@ struct SymbolPickerSheet: View {
                     .font(.title2)
                     .frame(height: 32)
                 Text(name)
-                    .font(.system(size: 8))
+                    .font(.system(size: 7, design: .monospaced))
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
             .foregroundStyle(isSelected ? Color.accentColor : .primary)
             .background(
                 isSelected ? Color.accentColor.opacity(0.12) : Color(.systemGray6),
-                in: RoundedRectangle(cornerRadius: 12)
+                in: RoundedRectangle(cornerRadius: 10)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: 10)
                     .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 1.5)
             )
         }
