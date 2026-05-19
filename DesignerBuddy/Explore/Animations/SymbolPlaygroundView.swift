@@ -99,7 +99,7 @@ struct SymbolPlaygroundView: View {
     @State private var showingSymbolPicker = false
     @State private var showingReplacePicker = false
     @State private var symbolColor: Color = .blue
-    @State private var replaceStatus: String? = nil
+
     @State private var renderingMode: RenderingModeOption = .monochrome
     @State private var variableEnabled = false
     @State private var variableValue: Double = 1.0
@@ -140,39 +140,19 @@ struct SymbolPlaygroundView: View {
 
     private var previewCard: some View {
         VStack(spacing: 8) {
-            ZStack(alignment: .bottom) {
+            ZStack {
                 RoundedRectangle(cornerRadius: 24)
                     .fill(.regularMaterial)
 
-                // Symbol preview
                 if selectedEffect == .replace {
                     replaceImage
                 } else {
                     effectAppliedImage
                 }
-
-                // Magic replace toast
-                if let status = replaceStatus {
-                    Text(status)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(.black.opacity(0.55), in: Capsule())
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-                        .padding(.bottom, 10)
-                }
-
-                // Bottom-right control badge
+            }
+            .overlay(alignment: .bottomTrailing) {
                 if selectedEffect != .variableColor {
-                    HStack {
-                        Spacer()
-                        VStack {
-                            Spacer()
-                            canvasControlBadge
-                                .padding(10)
-                        }
-                    }
+                    canvasControlBadge.padding(10)
                 }
             }
             .frame(height: 200)
@@ -223,14 +203,6 @@ struct SymbolPlaygroundView: View {
             break
         case .replace:
             showPlay.toggle()
-            if preferMagicReplace {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    replaceStatus = "✅ Smart Replace active"
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    withAnimation(.easeInOut(duration: 0.2)) { replaceStatus = nil }
-                }
-            }
         }
     }
 
