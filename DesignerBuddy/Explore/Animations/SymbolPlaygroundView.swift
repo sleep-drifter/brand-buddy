@@ -463,12 +463,16 @@ struct SymbolPlaygroundView: View {
     private var appearanceSection: some View {
         VStack(spacing: 8) {
             GroupBox {
-                Picker("Rendering Mode", selection: $renderingMode) {
+                HStack(spacing: 8) {
                     ForEach(RenderingModeOption.allCases, id: \.self) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Button {
+                            withAnimation(.spring(duration: 0.2)) { renderingMode = mode }
+                        } label: {
+                            renderingModeChip(mode)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .pickerStyle(.segmented)
             } label: {
                 Label("Rendering Mode", systemImage: "paintpalette")
                     .font(.subheadline.weight(.medium))
@@ -491,6 +495,50 @@ struct SymbolPlaygroundView: View {
                 Label("Variable", systemImage: "slider.horizontal.3")
                     .font(.subheadline.weight(.medium))
             }
+        }
+    }
+
+    @ViewBuilder
+    private func renderingModeChip(_ mode: RenderingModeOption) -> some View {
+        let isSelected = renderingMode == mode
+        VStack(spacing: 5) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? Color.accentColor : Color(.systemGray5))
+                switch mode {
+                case .monochrome:
+                    Image(systemName: symbolName)
+                        .font(.title2)
+                        .symbolRenderingMode(.monochrome)
+                        .foregroundStyle(isSelected ? .white : symbolColor)
+                case .hierarchical:
+                    Image(systemName: symbolName)
+                        .font(.title2)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(isSelected ? .white : symbolColor)
+                case .palette:
+                    Image(systemName: symbolName)
+                        .font(.title2)
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(
+                            isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(symbolColor),
+                            isSelected ? AnyShapeStyle(Color.white.opacity(0.7)) : AnyShapeStyle(paletteColor2),
+                            isSelected ? AnyShapeStyle(Color.white.opacity(0.5)) : AnyShapeStyle(paletteColor3)
+                        )
+                case .multicolor:
+                    Image(systemName: symbolName)
+                        .font(.title2)
+                        .symbolRenderingMode(.multicolor)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 60)
+
+            Text(mode.rawValue)
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(isSelected ? .primary : .secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
         }
     }
 
