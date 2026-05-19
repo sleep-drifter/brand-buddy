@@ -128,6 +128,17 @@ struct SymbolPlaygroundView: View {
         }
         .navigationTitle("Symbol Playground")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    if let random = SFSymbolLibrary.all.randomElement() {
+                        symbolName = random
+                    }
+                } label: {
+                    Image(systemName: "shuffle")
+                }
+            }
+        }
         .sheet(isPresented: $showingSymbolPicker) {
             SymbolPickerSheet(selectedSymbol: $symbolName)
         }
