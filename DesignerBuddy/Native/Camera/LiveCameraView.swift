@@ -7,6 +7,7 @@ struct LiveCameraView: View {
     let config: CameraConfig
     @Binding var captures: [UIImage]
     @StateObject private var model: CameraModel
+    @Environment(\.dismiss) private var dismiss
 
     init(config: CameraConfig, captures: Binding<[UIImage]>) {
         self.config = config
@@ -25,6 +26,7 @@ struct LiveCameraView: View {
         }
         .navigationTitle(config.title)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(model.capturedImage != nil ? .hidden : .visible, for: .navigationBar)
         .ignoresSafeArea()
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
@@ -128,52 +130,81 @@ struct LiveCameraView: View {
                 .ignoresSafeArea()
 
             VStack {
-                Spacer()
-
-                VStack(spacing: 12) {
-                    // Primary action
+                // Top bar: X left, Continue circle right
+                HStack {
                     Button {
-                        captures.append(image)
                         withAnimation { model.capturedImage = nil }
                     } label: {
-                        Text("Continue")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14))
+                        Image(systemName: "xmark")
+                            .font(.body.weight(.semibold))
                             .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .background(.ultraThinMaterial, in: Circle())
                     }
                     .buttonStyle(.plain)
 
-                    // Secondary actions
-                    HStack(spacing: 16) {
-                        Button {
-                            withAnimation { model.capturedImage = nil }
-                        } label: {
-                            Label("Retake", systemImage: "arrow.counterclockwise")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-                        }
-                        .buttonStyle(.plain)
+                    Spacer()
 
-                        ShareLink(
-                            item: Image(uiImage: image),
-                            preview: SharePreview("Captured Photo", image: Image(uiImage: image))
-                        ) {
-                            Label("Share", systemImage: "square.and.arrow.up")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-                        }
+                    Button {
+                        captures.append(image)
+                        model.capturedImage = nil
+                        dismiss()
+                    } label: {
+                        Image(systemName: "arrow.up")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .background(Color.accentColor, in: Circle())
                     }
+                    .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 60)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+
+                Spacer()
+
+                // Bottom button group
+                HStack(spacing: 10) {
+                    Button {
+                        withAnimation { model.capturedImage = nil }
+                    } label: {
+                        Text("Retake")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+
+                    ShareLink(
+                        item: Image(uiImage: image),
+                        preview: SharePreview("Captured Photo", image: Image(uiImage: image))
+                    ) {
+                        Text("Share")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 14))
+                    }
+
+                    Button {
+                        captures.append(image)
+                        model.capturedImage = nil
+                        dismiss()
+                    } label: {
+                        Text("Continue")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 50)
             }
         }
     }
