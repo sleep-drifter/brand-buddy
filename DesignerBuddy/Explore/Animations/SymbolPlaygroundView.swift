@@ -196,40 +196,39 @@ struct SymbolPlaygroundView: View {
     @ViewBuilder
     private var replaceImage: some View {
         let directional = replaceByLayer ? replaceDirection.effect.byLayer : replaceDirection.effect
-        let varVal = variableEnabled ? variableValue : nil
         if renderingMode == .palette {
             if preferMagicReplace {
                 Image(systemName: showPlay ? symbolName : replaceSymbol)
+                    .symbolVariableValue(variableEnabled ? variableValue : nil)
                     .font(.system(size: 80))
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(symbolColor, paletteColor2, paletteColor3)
-                    .symbolVariableValue(varVal)
                     .contentTransition(.symbolEffect(.replace.magic(fallback: directional)))
                     .animation(.default, value: showPlay)
             } else {
                 Image(systemName: showPlay ? symbolName : replaceSymbol)
+                    .symbolVariableValue(variableEnabled ? variableValue : nil)
                     .font(.system(size: 80))
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(symbolColor, paletteColor2, paletteColor3)
-                    .symbolVariableValue(varVal)
                     .contentTransition(.symbolEffect(directional))
                     .animation(.default, value: showPlay)
             }
         } else {
             if preferMagicReplace {
                 Image(systemName: showPlay ? symbolName : replaceSymbol)
+                    .symbolVariableValue(variableEnabled ? variableValue : nil)
                     .font(.system(size: 80))
                     .symbolRenderingMode(renderingMode.mode)
                     .foregroundStyle(symbolColor)
-                    .symbolVariableValue(varVal)
                     .contentTransition(.symbolEffect(.replace.magic(fallback: directional)))
                     .animation(.default, value: showPlay)
             } else {
                 Image(systemName: showPlay ? symbolName : replaceSymbol)
+                    .symbolVariableValue(variableEnabled ? variableValue : nil)
                     .font(.system(size: 80))
                     .symbolRenderingMode(renderingMode.mode)
                     .foregroundStyle(symbolColor)
-                    .symbolVariableValue(varVal)
                     .contentTransition(.symbolEffect(directional))
                     .animation(.default, value: showPlay)
             }
@@ -300,19 +299,18 @@ struct SymbolPlaygroundView: View {
 
     @ViewBuilder
     private var baseImage: some View {
-        let varVal = variableEnabled ? variableValue : nil
         if renderingMode == .palette {
             Image(systemName: symbolName)
+                .symbolVariableValue(variableEnabled ? variableValue : nil)
                 .font(.system(size: 80))
                 .symbolRenderingMode(.palette)
                 .foregroundStyle(symbolColor, paletteColor2, paletteColor3)
-                .symbolVariableValue(varVal)
         } else {
             Image(systemName: symbolName)
+                .symbolVariableValue(variableEnabled ? variableValue : nil)
                 .font(.system(size: 80))
                 .symbolRenderingMode(renderingMode.mode)
                 .foregroundStyle(symbolColor)
-                .symbolVariableValue(varVal)
         }
     }
 
