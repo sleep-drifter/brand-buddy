@@ -12,6 +12,8 @@ enum PlaygroundEffect: String, CaseIterable, Identifiable {
     case variableColor = "Variable Color"
     case appear = "Appear"
     case disappear = "Disappear"
+    case drawOn = "Draw On"
+    case drawOff = "Draw Off"
     case replace = "Replace"
 
     var id: String { rawValue }
@@ -26,6 +28,8 @@ enum PlaygroundEffect: String, CaseIterable, Identifiable {
         case .variableColor: "chart.bar.fill"
         case .appear:        "eye"
         case .disappear:     "eye.slash"
+        case .drawOn:        "pencil.line"
+        case .drawOff:       "eraser.line.dashed"
         case .replace:       "arrow.triangle.2.circlepath"
         }
     }
@@ -39,8 +43,24 @@ enum PlaygroundEffect: String, CaseIterable, Identifiable {
 
     var supportsLayerControl: Bool {
         switch self {
-        case .bounce, .wiggle, .rotate, .breathe, .appear, .disappear: true
+        case .bounce, .wiggle, .rotate, .breathe, .appear, .disappear, .drawOn, .drawOff: true
         default: false
+        }
+    }
+}
+
+// MARK: - Replace Direction
+
+private enum ReplaceDirection: String, CaseIterable {
+    case downUp = "Down-Up"
+    case upUp   = "Up-Up"
+    case offUp  = "Off-Up"
+
+    var effect: ReplaceSymbolEffect {
+        switch self {
+        case .downUp: .replace.downUp
+        case .upUp:   .replace.upUp
+        case .offUp:  .replace.offUp
         }
     }
 }
@@ -56,6 +76,8 @@ struct SymbolPlaygroundView: View {
     @State private var showPlay = true
     @State private var replaceSymbol = "pause.fill"
     @State private var replaceByLayer = false
+    @State private var replaceDirection: ReplaceDirection = .downUp
+    @State private var preferMagicReplace = true
     @State private var showingSymbolPicker = false
     @State private var showingReplacePicker = false
     @State private var symbolColor: Color = .blue
@@ -116,14 +138,12 @@ struct SymbolPlaygroundView: View {
             ZStack(alignment: .bottom) {
                 Button {
                     showPlay.toggle()
-                    replaceStatus = "✅ Smart Replace active"
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { replaceStatus = nil }
+                    if preferMagicReplace {
+                        replaceStatus = "✅ Smart Replace active"
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { replaceStatus = nil }
+                    }
                 } label: {
-                    Image(systemName: showPlay ? symbolName : replaceSymbol)
-                        .font(.system(size: 80))
-                        .foregroundStyle(symbolColor)
-                        .contentTransition(.symbolEffect(.replace.magic(fallback: .replace.downUp)))
-                        .animation(.default, value: showPlay)
+                    replaceImage
                 }
                 .buttonStyle(.plain)
 
@@ -141,6 +161,26 @@ struct SymbolPlaygroundView: View {
             .animation(.easeInOut(duration: 0.2), value: replaceStatus != nil)
         } else {
             effectAppliedImage
+        }
+    }
+
+    // Builds the replace image with the correct contentTransition for current options.
+    // Using @ViewBuilder + if/else avoids having to erase two different SymbolEffect types.
+    @ViewBuilder
+    private var replaceImage: some View {
+        let directional = replaceByLayer ? replaceDirection.effect.byLayer : replaceDirection.effect
+        if preferMagicReplace {
+            Image(systemName: showPlay ? symbolName : replaceSymbol)
+                .font(.system(size: 80))
+                .foregroundStyle(symbolColor)
+                .contentTransition(.symbolEffect(.replace.magic(fallback: directional)))
+                .animation(.default, value: showPlay)
+        } else {
+            Image(systemName: showPlay ? symbolName : replaceSymbol)
+                .font(.system(size: 80))
+                .foregroundStyle(symbolColor)
+                .contentTransition(.symbolEffect(directional))
+                .animation(.default, value: showPlay)
         }
     }
 
@@ -188,6 +228,18 @@ struct SymbolPlaygroundView: View {
                 baseImage.symbolEffect(.disappear.byLayer, isActive: isActive)
             } else {
                 baseImage.symbolEffect(.disappear, isActive: isActive)
+            }
+        case .drawOn:
+            if byLayer {
+                baseImage.symbolEffect(.drawOn.byLayer, isActive: isActive)
+            } else {
+                baseImage.symbolEffect(.drawOn, isActive: isActive)
+            }
+        case .drawOff:
+            if byLayer {
+                baseImage.symbolEffect(.drawOff.byLayer, isActive: isActive)
+            } else {
+                baseImage.symbolEffect(.drawOff, isActive: isActive)
             }
         case .replace:
             baseImage
@@ -324,6 +376,23 @@ struct SymbolPlaygroundView: View {
             } label: {
                 Text("Animate").font(.subheadline.weight(.medium))
             }
+
+            GroupBox {
+                Picker("Direction", selection: $replaceDirection) {
+                    ForEach(ReplaceDirection.allCases, id: \.self) { dir in
+                        Text(dir.rawValue).tag(dir)
+                    }
+                }
+                .pickerStyle(.segmented)
+            } label: {
+                Text("Direction").font(.subheadline.weight(.medium))
+            }
+
+            GroupBox {
+                Toggle("Prefer Magic Replace", isOn: $preferMagicReplace)
+            } label: {
+                Text("Magic Replace").font(.subheadline.weight(.medium))
+            }
         }
     }
 
@@ -406,11 +475,32 @@ struct SymbolPlaygroundView: View {
             return layer
                 ? "Image(systemName: \"\(sym)\")\n    .symbolEffect(.disappear.byLayer, isActive: isActive)"
                 : "Image(systemName: \"\(sym)\")\n    .symbolEffect(.disappear, isActive: isActive)"
+        case .drawOn:
+            return layer
+                ? "Image(systemName: \"\(sym)\")\n    .symbolEffect(.drawOn.byLayer, isActive: isActive)"
+                : "Image(systemName: \"\(sym)\")\n    .symbolEffect(.drawOn, isActive: isActive)"
+        case .drawOff:
+            return layer
+                ? "Image(systemName: \"\(sym)\")\n    .symbolEffect(.drawOff.byLayer, isActive: isActive)"
+                : "Image(systemName: \"\(sym)\")\n    .symbolEffect(.drawOff, isActive: isActive)"
         case .replace:
+            let rep = replaceSymbol
+            let dir = replaceDirection
+            let magic = preferMagicReplace
+            let rLayer = replaceByLayer
+            let dirStr: String
+            switch dir {
+            case .downUp: dirStr = ".replace.downUp"
+            case .upUp:   dirStr = ".replace.upUp"
+            case .offUp:  dirStr = ".replace.offUp"
+            }
+            let layeredDir = rLayer ? "\(dirStr).byLayer" : dirStr
+            let effectStr = magic
+                ? ".replace.magic(fallback: \(layeredDir))"
+                : layeredDir
             return """
-            Image(systemName: showState ? "\(sym)" : "\(replaceSymbol)")
-                .contentTransition(.symbolEffect(
-                    .replace.magic(fallback: .replace.downUp)))
+            Image(systemName: showState ? "\(sym)" : "\(rep)")
+                .contentTransition(.symbolEffect(\(effectStr)))
                 .animation(.default, value: showState)
             """
         }
