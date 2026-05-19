@@ -92,7 +92,6 @@ struct CircularCropView: View {
         let diameter = circleSize
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: diameter, height: diameter))
         return renderer.image { ctx in
-            let cgCtx = ctx.cgContext
             // Clip to circle
             let clipPath = UIBezierPath(ovalIn: CGRect(x: 0, y: 0, width: diameter, height: diameter))
             clipPath.addClip()
