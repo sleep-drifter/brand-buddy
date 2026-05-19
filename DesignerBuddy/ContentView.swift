@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var pinsStore = PinsStore()
+
     var body: some View {
         TabView {
             Tab("Components", systemImage: "rectangle.3.group") {
@@ -20,6 +22,7 @@ struct ContentView: View {
                 ComponentSearchView()
             }
         }
+        .environmentObject(pinsStore)
     }
 }
 
