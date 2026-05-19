@@ -65,6 +65,24 @@ private enum ReplaceDirection: String, CaseIterable {
     }
 }
 
+// MARK: - Rendering Mode
+
+private enum RenderingModeOption: String, CaseIterable {
+    case monochrome   = "Monochrome"
+    case hierarchical = "Hierarchical"
+    case palette      = "Palette"
+    case multicolor   = "Multicolor"
+
+    var mode: SymbolRenderingMode {
+        switch self {
+        case .monochrome:   .monochrome
+        case .hierarchical: .hierarchical
+        case .palette:      .palette
+        case .multicolor:   .multicolor
+        }
+    }
+}
+
 // MARK: - Symbol Playground View
 
 struct SymbolPlaygroundView: View {
@@ -82,6 +100,11 @@ struct SymbolPlaygroundView: View {
     @State private var showingReplacePicker = false
     @State private var symbolColor: Color = .blue
     @State private var replaceStatus: String? = nil
+    @State private var renderingMode: RenderingModeOption = .monochrome
+    @State private var variableEnabled = false
+    @State private var variableValue: Double = 1.0
+    @State private var paletteColor2: Color = .green
+    @State private var paletteColor3: Color = .red
 
     private let palette: [Color] = [.blue, .purple, .pink, .red, .orange, .yellow, .green, .teal, .cyan, .indigo, .mint]
 
@@ -91,6 +114,7 @@ struct SymbolPlaygroundView: View {
                 previewCard
                 effectScroller
                 optionsSection
+                appearanceSection
                 colorPickerRow
                 codeCard
             }
@@ -172,18 +196,43 @@ struct SymbolPlaygroundView: View {
     @ViewBuilder
     private var replaceImage: some View {
         let directional = replaceByLayer ? replaceDirection.effect.byLayer : replaceDirection.effect
-        if preferMagicReplace {
-            Image(systemName: showPlay ? symbolName : replaceSymbol)
-                .font(.system(size: 80))
-                .foregroundStyle(symbolColor)
-                .contentTransition(.symbolEffect(.replace.magic(fallback: directional)))
-                .animation(.default, value: showPlay)
+        let varVal = variableEnabled ? variableValue : nil
+        if renderingMode == .palette {
+            if preferMagicReplace {
+                Image(systemName: showPlay ? symbolName : replaceSymbol)
+                    .font(.system(size: 80))
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(symbolColor, paletteColor2, paletteColor3)
+                    .symbolVariableValue(varVal)
+                    .contentTransition(.symbolEffect(.replace.magic(fallback: directional)))
+                    .animation(.default, value: showPlay)
+            } else {
+                Image(systemName: showPlay ? symbolName : replaceSymbol)
+                    .font(.system(size: 80))
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(symbolColor, paletteColor2, paletteColor3)
+                    .symbolVariableValue(varVal)
+                    .contentTransition(.symbolEffect(directional))
+                    .animation(.default, value: showPlay)
+            }
         } else {
-            Image(systemName: showPlay ? symbolName : replaceSymbol)
-                .font(.system(size: 80))
-                .foregroundStyle(symbolColor)
-                .contentTransition(.symbolEffect(directional))
-                .animation(.default, value: showPlay)
+            if preferMagicReplace {
+                Image(systemName: showPlay ? symbolName : replaceSymbol)
+                    .font(.system(size: 80))
+                    .symbolRenderingMode(renderingMode.mode)
+                    .foregroundStyle(symbolColor)
+                    .symbolVariableValue(varVal)
+                    .contentTransition(.symbolEffect(.replace.magic(fallback: directional)))
+                    .animation(.default, value: showPlay)
+            } else {
+                Image(systemName: showPlay ? symbolName : replaceSymbol)
+                    .font(.system(size: 80))
+                    .symbolRenderingMode(renderingMode.mode)
+                    .foregroundStyle(symbolColor)
+                    .symbolVariableValue(varVal)
+                    .contentTransition(.symbolEffect(directional))
+                    .animation(.default, value: showPlay)
+            }
         }
     }
 
@@ -249,10 +298,22 @@ struct SymbolPlaygroundView: View {
         }
     }
 
+    @ViewBuilder
     private var baseImage: some View {
-        Image(systemName: symbolName)
-            .font(.system(size: 80))
-            .foregroundStyle(symbolColor)
+        let varVal = variableEnabled ? variableValue : nil
+        if renderingMode == .palette {
+            Image(systemName: symbolName)
+                .font(.system(size: 80))
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(symbolColor, paletteColor2, paletteColor3)
+                .symbolVariableValue(varVal)
+        } else {
+            Image(systemName: symbolName)
+                .font(.system(size: 80))
+                .symbolRenderingMode(renderingMode.mode)
+                .foregroundStyle(symbolColor)
+                .symbolVariableValue(varVal)
+        }
     }
 
     // MARK: - Effect Scroller
@@ -399,27 +460,74 @@ struct SymbolPlaygroundView: View {
         }
     }
 
+    // MARK: - Appearance Section
+
+    private var appearanceSection: some View {
+        VStack(spacing: 8) {
+            GroupBox {
+                Picker("Rendering Mode", selection: $renderingMode) {
+                    ForEach(RenderingModeOption.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+            } label: {
+                Label("Rendering Mode", systemImage: "paintpalette")
+                    .font(.subheadline.weight(.medium))
+            }
+
+            GroupBox {
+                VStack(spacing: 10) {
+                    Toggle("Variable Value", isOn: $variableEnabled)
+                    if variableEnabled {
+                        HStack {
+                            Slider(value: $variableValue, in: 0...1)
+                            Text("\(Int(variableValue * 100))%")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                                .frame(width: 38, alignment: .trailing)
+                        }
+                    }
+                }
+            } label: {
+                Label("Variable", systemImage: "slider.horizontal.3")
+                    .font(.subheadline.weight(.medium))
+            }
+        }
+    }
+
     // MARK: - Color Picker
 
     private var colorPickerRow: some View {
+        VStack(spacing: 8) {
+            colorSwatchRow(label: renderingMode == .palette ? "Primary" : "Color",
+                           binding: $symbolColor)
+            if renderingMode == .palette {
+                colorSwatchRow(label: "Secondary", binding: $paletteColor2)
+                colorSwatchRow(label: "Tertiary",  binding: $paletteColor3)
+            }
+        }
+    }
+
+    private func colorSwatchRow(label: String, binding: Binding<Color>) -> some View {
         GroupBox {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(palette, id: \.self) { color in
                         Button {
-                            symbolColor = color
+                            binding.wrappedValue = color
                         } label: {
                             Circle()
                                 .fill(color)
                                 .frame(width: 28, height: 28)
                                 .overlay(
                                     Circle()
-                                        .strokeBorder(.white.opacity(symbolColor == color ? 1 : 0), lineWidth: 2.5)
+                                        .strokeBorder(.white.opacity(binding.wrappedValue == color ? 1 : 0), lineWidth: 2.5)
                                         .padding(3)
                                 )
-                                .shadow(color: color.opacity(0.4), radius: symbolColor == color ? 6 : 2)
-                                .scaleEffect(symbolColor == color ? 1.15 : 1)
-                                .animation(.spring(duration: 0.2), value: symbolColor == color)
+                                .shadow(color: color.opacity(0.4), radius: binding.wrappedValue == color ? 6 : 2)
+                                .scaleEffect(binding.wrappedValue == color ? 1.15 : 1)
+                                .animation(.spring(duration: 0.2), value: binding.wrappedValue == color)
                         }
                         .buttonStyle(.plain)
                     }
@@ -427,7 +535,7 @@ struct SymbolPlaygroundView: View {
                 .padding(.vertical, 4)
             }
         } label: {
-            Text("Color").font(.subheadline.weight(.medium))
+            Text(label).font(.subheadline.weight(.medium))
         }
     }
 
@@ -449,43 +557,61 @@ struct SymbolPlaygroundView: View {
     private var generatedCode: String {
         let sym = symbolName
         let layer = byLayer
+
+        // Build shared rendering / variable prefix lines
+        var prefix = ""
+        if renderingMode != .monochrome {
+            prefix += "\n    .symbolRenderingMode(.\(renderingMode.rawValue.lowercased()))"
+        }
+        if renderingMode == .palette {
+            prefix += "\n    .foregroundStyle(primary, secondary, tertiary)"
+        }
+        if variableEnabled {
+            let pct = String(format: "%.2f", variableValue)
+            prefix += "\n    .symbolVariableValue(\(pct))"
+        }
+
+        func wrap(_ effect: String) -> String {
+            "Image(systemName: \"\(sym)\")\(prefix)\n    \(effect)"
+        }
+
         switch selectedEffect {
         case .bounce:
-            return layer
-                ? "Image(systemName: \"\(sym)\")\n    .symbolEffect(.bounce.byLayer, value: trigger)"
-                : "Image(systemName: \"\(sym)\")\n    .symbolEffect(.bounce, value: trigger)"
+            return wrap(layer
+                ? ".symbolEffect(.bounce.byLayer, value: trigger)"
+                : ".symbolEffect(.bounce, value: trigger)")
         case .pulse:
-            return "Image(systemName: \"\(sym)\")\n    .symbolEffect(.pulse, value: trigger)"
+            return wrap(".symbolEffect(.pulse, value: trigger)")
         case .wiggle:
-            return layer
-                ? "Image(systemName: \"\(sym)\")\n    .symbolEffect(.wiggle.byLayer, value: trigger)"
-                : "Image(systemName: \"\(sym)\")\n    .symbolEffect(.wiggle, value: trigger)"
+            return wrap(layer
+                ? ".symbolEffect(.wiggle.byLayer, value: trigger)"
+                : ".symbolEffect(.wiggle, value: trigger)")
         case .rotate:
-            return layer
-                ? "Image(systemName: \"\(sym)\")\n    .symbolEffect(.rotate.byLayer, value: trigger)"
-                : "Image(systemName: \"\(sym)\")\n    .symbolEffect(.rotate, value: trigger)"
+            return wrap(layer
+                ? ".symbolEffect(.rotate.byLayer, value: trigger)"
+                : ".symbolEffect(.rotate, value: trigger)")
         case .breathe:
-            return layer
-                ? "Image(systemName: \"\(sym)\")\n    .symbolEffect(.breathe.byLayer, isActive: isActive)"
-                : "Image(systemName: \"\(sym)\")\n    .symbolEffect(.breathe, isActive: isActive)"
+            return wrap(layer
+                ? ".symbolEffect(.breathe.byLayer, isActive: isActive)"
+                : ".symbolEffect(.breathe, isActive: isActive)")
         case .variableColor:
-            return "Image(systemName: \"\(sym)\")\n    .symbolEffect(.variableColor)"
+            return wrap(".symbolEffect(.variableColor)")
         case .appear:
-            return layer
-                ? "Image(systemName: \"\(sym)\")\n    .symbolEffect(.appear.byLayer, isActive: isActive)"
-                : "Image(systemName: \"\(sym)\")\n    .symbolEffect(.appear, isActive: isActive)"
+            return wrap(layer
+                ? ".symbolEffect(.appear.byLayer, isActive: isActive)"
+                : ".symbolEffect(.appear, isActive: isActive)")
         case .disappear:
-            return layer
-                ? "Image(systemName: \"\(sym)\")\n    .symbolEffect(.disappear.byLayer, isActive: isActive)"
-                : "Image(systemName: \"\(sym)\")\n    .symbolEffect(.disappear, isActive: isActive)"
+            return wrap(layer
+                ? ".symbolEffect(.disappear.byLayer, isActive: isActive)"
+                : ".symbolEffect(.disappear, isActive: isActive)")
         case .drawOn:
-            return layer
-                ? "Image(systemName: \"\(sym)\")\n    .symbolEffect(.drawOn.byLayer, isActive: isActive)"
-                : "Image(systemName: \"\(sym)\")\n    .symbolEffect(.drawOn, isActive: isActive)"
+            return wrap(layer
+                ? ".symbolEffect(.drawOn.byLayer, isActive: isActive)"
+                : ".symbolEffect(.drawOn, isActive: isActive)")
         case .drawOff:
-            return layer
-                ? "Image(systemName: \"\(sym)\")\n    .symbolEffect(.drawOff.byLayer, isActive: isActive)"
-                : "Image(systemName: \"\(sym)\")\n    .symbolEffect(.drawOff, isActive: isActive)"
+            return wrap(layer
+                ? ".symbolEffect(.drawOff.byLayer, isActive: isActive)"
+                : ".symbolEffect(.drawOff, isActive: isActive)")
         case .replace:
             let rep = replaceSymbol
             let dir = replaceDirection
@@ -502,7 +628,7 @@ struct SymbolPlaygroundView: View {
                 ? ".replace.magic(fallback: \(layeredDir))"
                 : layeredDir
             return """
-            Image(systemName: showState ? "\(sym)" : "\(rep)")
+            Image(systemName: showState ? "\(sym)" : "\(rep)")\(prefix)
                 .contentTransition(.symbolEffect(\(effectStr)))
                 .animation(.default, value: showState)
             """
