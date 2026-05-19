@@ -35,20 +35,12 @@ struct LiveCameraView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
+                    Button("Continue") {
                         captures.append(image)
                         model.capturedImage = nil
                         dismiss()
-                    } label: {
-                        ZStack {
-                            Circle()
-                                .fill(Color.accentColor)
-                                .frame(width: 32, height: 32)
-                            Image(systemName: "arrow.up")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(.white)
-                        }
                     }
+                    .fontWeight(.semibold)
                 }
             }
         }
