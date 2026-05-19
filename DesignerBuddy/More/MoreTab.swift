@@ -1,60 +1,44 @@
 import SwiftUI
 
 struct MoreTab: View {
+    @EnvironmentObject var pinsStore: PinsStore
+
+    private let tabEntries: [AppEntry] = AppEntry.more
+    private let sectionOrder = ["Playgrounds", "Reference"]
+
+    private var pinnedEntries: [AppEntry] {
+        tabEntries.filter { pinsStore.isPinned($0) }
+    }
+
     var body: some View {
         NavigationStack {
             List {
-                Section("Playgrounds") {
-                    NavigationLink {
-                        SpringPhysicsView()
-                    } label: {
-                        Label("Spring Physics", systemImage: "waveform.path.ecg")
-                    }
-                    NavigationLink {
-                        HapticsView()
-                    } label: {
-                        Label("Haptics", systemImage: "hand.tap")
-                    }
-                    NavigationLink {
-                        CornerRadiusView()
-                    } label: {
-                        Label("Corner Radius", systemImage: "square.on.square")
-                    }
-                    NavigationLink {
-                        ConcentricRadiusView()
-                    } label: {
-                        Label("Concentric Radius", systemImage: "square.inset.filled")
-                    }
-                    NavigationLink {
-                        ShadowExplorerView()
-                    } label: {
-                        Label("Shadow Explorer", systemImage: "shadow")
-                    }
-                    NavigationLink {
-                        BlurStackView()
-                    } label: {
-                        Label("Blur Stack", systemImage: "square.stack.3d.up")
+                if !pinnedEntries.isEmpty {
+                    Section("Pinned") {
+                        ForEach(pinnedEntries) { entry in
+                            pinnableRow(entry, pinsStore: pinsStore)
+                        }
                     }
                 }
 
-                Section("Reference") {
-                    NavigationLink {
-                        SafeAreasView()
-                    } label: {
-                        Label("Safe Areas", systemImage: "iphone")
-                    }
-                    NavigationLink {
-                        SheetDetentsView()
-                    } label: {
-                        Label("Sheet Detents", systemImage: "rectangle.bottomhalf.inset.filled")
+                ForEach(sectionOrder, id: \.self) { section in
+                    let entries = tabEntries.filter { $0.section == section }
+                    if !entries.isEmpty {
+                        Section(section) {
+                            ForEach(entries) { entry in
+                                pinnableRow(entry, pinsStore: pinsStore)
+                            }
+                        }
                     }
                 }
             }
             .navigationTitle("More")
+            .navigationDestination(for: AppEntry.self) { appDestination(for: $0) }
         }
     }
 }
 
 #Preview {
     MoreTab()
+        .environmentObject(PinsStore())
 }
