@@ -196,18 +196,18 @@ struct SymbolPlaygroundView: View {
     @ViewBuilder
     private var replaceImage: some View {
         let directional = replaceByLayer ? replaceDirection.effect.byLayer : replaceDirection.effect
+        let varVal: Double? = variableEnabled ? variableValue : nil
+        let sym = showPlay ? symbolName : replaceSymbol
         if renderingMode == .palette {
             if preferMagicReplace {
-                Image(systemName: showPlay ? symbolName : replaceSymbol)
-                    .symbolVariableValue(variableEnabled ? variableValue : nil)
+                Image(systemName: sym, variableValue: varVal)
                     .font(.system(size: 80))
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(symbolColor, paletteColor2, paletteColor3)
                     .contentTransition(.symbolEffect(.replace.magic(fallback: directional)))
                     .animation(.default, value: showPlay)
             } else {
-                Image(systemName: showPlay ? symbolName : replaceSymbol)
-                    .symbolVariableValue(variableEnabled ? variableValue : nil)
+                Image(systemName: sym, variableValue: varVal)
                     .font(.system(size: 80))
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(symbolColor, paletteColor2, paletteColor3)
@@ -216,16 +216,14 @@ struct SymbolPlaygroundView: View {
             }
         } else {
             if preferMagicReplace {
-                Image(systemName: showPlay ? symbolName : replaceSymbol)
-                    .symbolVariableValue(variableEnabled ? variableValue : nil)
+                Image(systemName: sym, variableValue: varVal)
                     .font(.system(size: 80))
                     .symbolRenderingMode(renderingMode.mode)
                     .foregroundStyle(symbolColor)
                     .contentTransition(.symbolEffect(.replace.magic(fallback: directional)))
                     .animation(.default, value: showPlay)
             } else {
-                Image(systemName: showPlay ? symbolName : replaceSymbol)
-                    .symbolVariableValue(variableEnabled ? variableValue : nil)
+                Image(systemName: sym, variableValue: varVal)
                     .font(.system(size: 80))
                     .symbolRenderingMode(renderingMode.mode)
                     .foregroundStyle(symbolColor)
@@ -299,15 +297,14 @@ struct SymbolPlaygroundView: View {
 
     @ViewBuilder
     private var baseImage: some View {
+        let varVal: Double? = variableEnabled ? variableValue : nil
         if renderingMode == .palette {
-            Image(systemName: symbolName)
-                .symbolVariableValue(variableEnabled ? variableValue : nil)
+            Image(systemName: symbolName, variableValue: varVal)
                 .font(.system(size: 80))
                 .symbolRenderingMode(.palette)
                 .foregroundStyle(symbolColor, paletteColor2, paletteColor3)
         } else {
-            Image(systemName: symbolName)
-                .symbolVariableValue(variableEnabled ? variableValue : nil)
+            Image(systemName: symbolName, variableValue: varVal)
                 .font(.system(size: 80))
                 .symbolRenderingMode(renderingMode.mode)
                 .foregroundStyle(symbolColor)
@@ -604,7 +601,8 @@ struct SymbolPlaygroundView: View {
         let sym = symbolName
         let layer = byLayer
 
-        // Build shared rendering / variable prefix lines
+        // Build Image init and shared modifier lines
+        let varArg = variableEnabled ? String(format: ", variableValue: %.2f", variableValue) : ""
         var prefix = ""
         if renderingMode != .monochrome {
             prefix += "\n    .symbolRenderingMode(.\(renderingMode.rawValue.lowercased()))"
@@ -612,13 +610,9 @@ struct SymbolPlaygroundView: View {
         if renderingMode == .palette {
             prefix += "\n    .foregroundStyle(primary, secondary, tertiary)"
         }
-        if variableEnabled {
-            let pct = String(format: "%.2f", variableValue)
-            prefix += "\n    .symbolVariableValue(\(pct))"
-        }
 
         func wrap(_ effect: String) -> String {
-            "Image(systemName: \"\(sym)\")\(prefix)\n    \(effect)"
+            "Image(systemName: \"\(sym)\"\(varArg))\(prefix)\n    \(effect)"
         }
 
         switch selectedEffect {
@@ -674,7 +668,7 @@ struct SymbolPlaygroundView: View {
                 ? ".replace.magic(fallback: \(layeredDir))"
                 : layeredDir
             return """
-            Image(systemName: showState ? "\(sym)" : "\(rep)")\(prefix)
+            Image(systemName: showState ? "\(sym)" : "\(rep)"\(varArg))\(prefix)
                 .contentTransition(.symbolEffect(\(effectStr)))
                 .animation(.default, value: showState)
             """
