@@ -47,9 +47,9 @@ private final class MetadataCaptureDelegate: NSObject, AVCaptureMetadataOutputOb
     let handler: ([AVMetadataObject]) -> Void
     init(handler: @escaping ([AVMetadataObject]) -> Void) { self.handler = handler }
 
-    func metadataOutput(_ output: AVCaptureMetadataOutput,
-                        didOutput metadataObjects: [AVMetadataObject],
-                        from connection: AVCaptureConnection) {
+    nonisolated func metadataOutput(_ output: AVCaptureMetadataOutput,
+                                    didOutput metadataObjects: [AVMetadataObject],
+                                    from connection: AVCaptureConnection) {
         handler(metadataObjects)
     }
 }
@@ -58,9 +58,9 @@ private final class VideoDataDelegate: NSObject, AVCaptureVideoDataOutputSampleB
     let handler: (CMSampleBuffer) -> Void
     init(handler: @escaping (CMSampleBuffer) -> Void) { self.handler = handler }
 
-    func captureOutput(_ output: AVCaptureOutput,
-                       didOutput sampleBuffer: CMSampleBuffer,
-                       from connection: AVCaptureConnection) {
+    nonisolated func captureOutput(_ output: AVCaptureOutput,
+                                   didOutput sampleBuffer: CMSampleBuffer,
+                                   from connection: AVCaptureConnection) {
         handler(sampleBuffer)
     }
 }
@@ -98,7 +98,8 @@ final class CameraModel: NSObject, ObservableObject {
     }
 
     // MARK: Session
-    let config: CameraConfig
+    // nonisolated(unsafe): immutable Sendable value read from nonisolated handleVideoFrame
+    nonisolated(unsafe) let config: CameraConfig
     let session = AVCaptureSession()
 
     private let photoOutput    = AVCapturePhotoOutput()
@@ -336,7 +337,6 @@ final class CameraModel: NSObject, ObservableObject {
                                             orientation: .right,
                                             options: [:])
 
-        // Capture config without actor hop (it's a let)
         let cfg = config
 
         if cfg == .faceDetection {
