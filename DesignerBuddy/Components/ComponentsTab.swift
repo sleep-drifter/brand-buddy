@@ -179,7 +179,7 @@ func pinnableRow(_ entry: AppEntry, pinsStore: PinsStore) -> some View {
             Label(pinsStore.isPinned(entry) ? "Unpin" : "Pin",
                   systemImage: pinsStore.isPinned(entry) ? "pin.slash" : "pin")
         }
-        .tint(.yellow)
+        .tint(.blue)
     }
 }
 
