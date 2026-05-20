@@ -132,15 +132,17 @@ struct MeshGradientPlaygroundView: View {
     private var blendMode: BlendMode { meshBlendModes[blendModeIdx].mode }
 
     var body: some View {
-        List {
-            previewSection
-            gridAndColorSection
-            animationSection
-            maskSection
-            optionsSection
+        VStack(spacing: 0) {
+            previewCard
+            List {
+                gridAndColorSection
+                animationSection
+                maskSection
+                optionsSection
+            }
         }
         .navigationTitle("Mesh Gradient")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .onChange(of: gridSize) { _, new in
             colors = palette.colors(for: new.count)
             selectedColorIdx = nil
@@ -154,20 +156,16 @@ struct MeshGradientPlaygroundView: View {
     // MARK: - Preview
 
     @ViewBuilder
-    private var previewSection: some View {
-        Section {
-            ZStack {
-                bgColor
-                gradientLayer
-                    .clipShape(currentMaskShape)
-                    .blendMode(blendMode)
-                    .opacity(gradientOpacity)
-            }
-            .frame(height: 320)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    private var previewCard: some View {
+        ZStack {
+            bgColor
+            gradientLayer
+                .clipShape(currentMaskShape)
+                .blendMode(blendMode)
+                .opacity(gradientOpacity)
         }
-        .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 4, trailing: 16))
-        .listRowBackground(Color.clear)
+        .frame(height: 224)
+        .clipShape(RoundedRectangle(cornerRadius: 0))
     }
 
     @ViewBuilder
