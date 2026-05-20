@@ -65,6 +65,16 @@ private struct ScaledCircle: Shape {
     }
 }
 
+enum MeshSymbolAnimation: String, CaseIterable {
+    case none          = "None"
+    case pulse         = "Pulse"
+    case breathe       = "Breathe"
+    case wiggle        = "Wiggle"
+    case rotate        = "Rotate"
+    case bounce        = "Bounce"
+    case variableColor = "Variable"
+}
+
 private let maskWeights: [(name: String, weight: Font.Weight)] = [
     ("Light",    .light),
     ("Regular",  .regular),
@@ -117,6 +127,7 @@ struct MeshGradientPlaygroundView: View {
     @State private var iconName           = "heart.fill"
     @State private var iconSize: Double   = 120
     @State private var iconWeightIdx      = 4          // Bold
+    @State private var iconAnimation      = MeshSymbolAnimation.none
     // text mask
     @State private var maskText           = "Hello"
     @State private var textSize: Double   = 80
@@ -190,6 +201,12 @@ struct MeshGradientPlaygroundView: View {
                 Image(systemName: iconName)
                     .font(.system(size: iconSize, weight: maskWeights[iconWeightIdx].weight))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .symbolEffect(.pulse,         options: .repeating, isActive: iconAnimation == .pulse)
+                    .symbolEffect(.breathe,       options: .repeating, isActive: iconAnimation == .breathe)
+                    .symbolEffect(.wiggle,        options: .repeating, isActive: iconAnimation == .wiggle)
+                    .symbolEffect(.rotate,        options: .repeating, isActive: iconAnimation == .rotate)
+                    .symbolEffect(.bounce,        options: .repeating, isActive: iconAnimation == .bounce)
+                    .symbolEffect(.variableColor, options: .repeating, isActive: iconAnimation == .variableColor)
             }
         case .text:
             gradientLayer.mask {
@@ -377,6 +394,9 @@ struct MeshGradientPlaygroundView: View {
                 }
                 Picker("Weight", selection: $iconWeightIdx) {
                     ForEach(maskWeights.indices, id: \.self) { Text(maskWeights[$0].name).tag($0) }
+                }
+                Picker("Animation", selection: $iconAnimation) {
+                    ForEach(MeshSymbolAnimation.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                 }
             }
 
