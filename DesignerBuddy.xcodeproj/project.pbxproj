@@ -257,6 +257,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Build Buddy";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Used to demonstrate Face ID authentication patterns.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to demonstrate camera permission and capture patterns.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Used to demonstrate contacts permission request patterns.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to demonstrate location permission request patterns.";
@@ -298,6 +299,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Build Buddy";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Used to demonstrate Face ID authentication patterns.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to demonstrate camera permission and capture patterns.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Used to demonstrate contacts permission request patterns.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to demonstrate location permission request patterns.";
