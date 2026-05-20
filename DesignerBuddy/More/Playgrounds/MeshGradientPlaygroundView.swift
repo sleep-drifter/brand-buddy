@@ -168,14 +168,10 @@ struct MeshGradientPlaygroundView: View {
         .clipShape(RoundedRectangle(cornerRadius: 0))
     }
 
-    @ViewBuilder
     private var gradientLayer: some View {
-        if isAnimating {
-            TimelineView(.animation) { tl in
-                meshGradient(at: tl.date.timeIntervalSinceReferenceDate)
-            }
-        } else {
-            meshGradient(at: 0)
+        TimelineView(.animation) { tl in
+            let t = isAnimating ? tl.date.timeIntervalSinceReferenceDate : 0
+            meshGradient(at: t)
         }
     }
 
