@@ -114,6 +114,10 @@ struct MeshGradientPlaygroundView: View {
     @State private var colors: [Color]    = MeshColorPalette.cosmic.colors(for: 9)
     @State private var selectedColorIdx: Int? = nil
 
+    // Points
+    @State private var basePoints: [SIMD2<Float>] = Self.defaultPoints(for: .three)
+    @State private var isEditingPoints    = false
+
     // Animation
     @State private var isAnimating        = true
     @State private var animSpeed: Double  = 1.0
@@ -136,6 +140,7 @@ struct MeshGradientPlaygroundView: View {
             previewCard
             List {
                 gridAndColorSection
+                pointsSection
                 animationSection
                 maskSection
                 optionsSection
@@ -145,6 +150,8 @@ struct MeshGradientPlaygroundView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: gridSize) { _, new in
             colors = palette.colors(for: new.count)
+            basePoints = Self.defaultPoints(for: new)
+            isEditingPoints = false
             selectedColorIdx = nil
         }
         .onChange(of: palette) { _, new in
@@ -163,14 +170,42 @@ struct MeshGradientPlaygroundView: View {
                 .clipShape(currentMaskShape)
                 .blendMode(blendMode)
                 .opacity(gradientOpacity)
+            if isEditingPoints {
+                GeometryReader { geo in
+                    ForEach(basePoints.indices, id: \.self) { i in
+                        pointHandle(at: i, in: geo.size)
+                    }
+                }
+            }
         }
         .frame(height: 224)
         .clipShape(RoundedRectangle(cornerRadius: 0))
     }
 
+    private func pointHandle(at i: Int, in size: CGSize) -> some View {
+        Circle()
+            .fill(.white.opacity(0.92))
+            .frame(width: 16, height: 16)
+            .overlay(Circle().strokeBorder(.black.opacity(0.2), lineWidth: 1))
+            .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 1)
+            .position(
+                x: CGFloat(basePoints[i].x) * size.width,
+                y: CGFloat(basePoints[i].y) * size.height
+            )
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        basePoints[i] = SIMD2<Float>(
+                            Float(min(1, max(0, value.location.x / size.width))),
+                            Float(min(1, max(0, value.location.y / size.height)))
+                        )
+                    }
+            )
+    }
+
     private var gradientLayer: some View {
         TimelineView(.animation) { tl in
-            let t = isAnimating ? tl.date.timeIntervalSinceReferenceDate : 0
+            let t = (isAnimating && !isEditingPoints) ? tl.date.timeIntervalSinceReferenceDate : 0
             meshGradient(at: t)
         }
     }
@@ -252,6 +287,25 @@ struct MeshGradientPlaygroundView: View {
         }
     }
 
+    // MARK: - Points
+
+    @ViewBuilder
+    private var pointsSection: some View {
+        Section("Points") {
+            Toggle("Edit Point Positions", isOn: $isEditingPoints.animation(.spring(response: 0.3)))
+            if isEditingPoints {
+                Text("Drag the white handles in the preview to reposition any control point.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button("Reset to Grid") {
+                    withAnimation(.spring(response: 0.4)) {
+                        basePoints = Self.defaultPoints(for: gridSize)
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: - Animation
 
     @ViewBuilder
@@ -327,26 +381,36 @@ struct MeshGradientPlaygroundView: View {
 
     // MARK: - Mesh Point Computation
 
-    private func meshPoints(at t: Double) -> [SIMD2<Float>] {
-        let dim = gridSize.dimension
-        var pts: [SIMD2<Float>] = []
-        pts.reserveCapacity(dim * dim)
-        for row in 0..<dim {
-            for col in 0..<dim {
-                let baseX = Float(col) / Float(max(dim - 1, 1))
-                let baseY = Float(row) / Float(max(dim - 1, 1))
-                let isCorner = (row == 0 || row == dim - 1) && (col == 0 || col == dim - 1)
-                let isEdge   = row == 0 || row == dim - 1 || col == 0 || col == dim - 1
-                let amp: Float = isCorner ? 0 : isEdge ? Float(animIntensity) * 0.5 : Float(animIntensity)
-                let idx   = Double(row * dim + col)
-                let phase = idx * 0.85
-                let freq  = (0.22 + idx * 0.06) * animSpeed
-                let x = baseX + amp * Float(sin(t * freq + phase))
-                let y = baseY + amp * Float(cos(t * freq * 1.37 + phase + 1.2))
-                pts.append(SIMD2<Float>(min(1, max(0, x)), min(1, max(0, y))))
+    static func defaultPoints(for size: MeshGridSize) -> [SIMD2<Float>] {
+        let dim = size.dimension
+        return (0..<dim).flatMap { row in
+            (0..<dim).map { col in
+                SIMD2<Float>(
+                    Float(col) / Float(max(dim - 1, 1)),
+                    Float(row) / Float(max(dim - 1, 1))
+                )
             }
         }
-        return pts
+    }
+
+    private func meshPoints(at t: Double) -> [SIMD2<Float>] {
+        guard basePoints.count == gridSize.count else { return Self.defaultPoints(for: gridSize) }
+        if isEditingPoints { return basePoints }
+        let dim = gridSize.dimension
+        return basePoints.enumerated().map { i, base in
+            let row = i / dim
+            let col = i % dim
+            let isCorner = (row == 0 || row == dim - 1) && (col == 0 || col == dim - 1)
+            let isEdge   = row == 0 || row == dim - 1 || col == 0 || col == dim - 1
+            let amp: Float = isCorner ? 0 : isEdge ? Float(animIntensity) * 0.5 : Float(animIntensity)
+            let idx   = Double(i)
+            let phase = idx * 0.85
+            let freq  = (0.22 + idx * 0.06) * animSpeed
+            return SIMD2<Float>(
+                min(1, max(0, base.x + amp * Float(sin(t * freq + phase)))),
+                min(1, max(0, base.y + amp * Float(cos(t * freq * 1.37 + phase + 1.2))))
+            )
+        }
     }
 
     // MARK: - Mask Shape
