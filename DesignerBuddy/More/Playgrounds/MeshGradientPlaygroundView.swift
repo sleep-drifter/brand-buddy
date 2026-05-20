@@ -50,43 +50,30 @@ enum MeshColorPalette: String, CaseIterable {
 }
 
 enum MeshMaskShape: String, CaseIterable {
-    case none        = "None"
-    case circle      = "Circle"
-    case roundedRect = "Rounded"
-    case capsule     = "Capsule"
-    case diamond     = "Diamond"
-    case star        = "Star"
+    case none   = "None"
+    case circle = "Circle"
+    case icon   = "Icon"
+    case text   = "Text"
 }
 
-private struct DiamondShape: Shape {
+// Circle scaled to 0.6, centered in the canvas
+private struct ScaledCircle: Shape {
     func path(in rect: CGRect) -> Path {
-        Path {
-            $0.move(to:    .init(x: rect.midX, y: rect.minY))
-            $0.addLine(to: .init(x: rect.maxX, y: rect.midY))
-            $0.addLine(to: .init(x: rect.midX, y: rect.maxY))
-            $0.addLine(to: .init(x: rect.minX, y: rect.midY))
-            $0.closeSubpath()
-        }
+        let side = min(rect.width, rect.height) * 0.6
+        let origin = CGPoint(x: rect.midX - side / 2, y: rect.midY - side / 2)
+        return Circle().path(in: CGRect(origin: origin, size: CGSize(width: side, height: side)))
     }
 }
 
-private struct StarShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        let center = CGPoint(x: rect.midX, y: rect.midY)
-        let outer  = min(rect.width, rect.height) / 2
-        let inner  = outer * 0.42
-        return Path {
-            for i in 0..<10 {
-                let angle  = Double(i) * .pi / 5 - .pi / 2
-                let radius = i.isMultiple(of: 2) ? outer : inner
-                let pt = CGPoint(x: center.x + CGFloat(cos(angle)) * radius,
-                                 y: center.y + CGFloat(sin(angle)) * radius)
-                if i == 0 { $0.move(to: pt) } else { $0.addLine(to: pt) }
-            }
-            $0.closeSubpath()
-        }
-    }
-}
+private let maskWeights: [(name: String, weight: Font.Weight)] = [
+    ("Light",    .light),
+    ("Regular",  .regular),
+    ("Medium",   .medium),
+    ("Semibold", .semibold),
+    ("Bold",     .bold),
+    ("Heavy",    .heavy),
+    ("Black",    .black),
+]
 
 private let meshBlendModes: [(name: String, mode: BlendMode)] = [
     ("Normal",      .normal),
@@ -125,7 +112,15 @@ struct MeshGradientPlaygroundView: View {
 
     // Mask
     @State private var maskShape          = MeshMaskShape.none
-    @State private var maskCornerRadius: Double = 32
+    @State private var showSymbolPicker   = false
+    // icon mask
+    @State private var iconName           = "heart.fill"
+    @State private var iconSize: Double   = 120
+    @State private var iconWeightIdx      = 4          // Bold
+    // text mask
+    @State private var maskText           = "Hello"
+    @State private var textSize: Double   = 80
+    @State private var textWeightIdx      = 5          // Heavy
 
     // Options
     @State private var smoothsColors      = true
@@ -158,6 +153,9 @@ struct MeshGradientPlaygroundView: View {
             colors = new.colors(for: gridSize.count)
             selectedColorIdx = nil
         }
+        .sheet(isPresented: $showSymbolPicker) {
+            SymbolPickerSheet(selectedSymbol: $iconName)
+        }
     }
 
     // MARK: - Preview
@@ -166,8 +164,7 @@ struct MeshGradientPlaygroundView: View {
     private var previewCard: some View {
         ZStack {
             bgColor
-            gradientLayer
-                .clipShape(currentMaskShape)
+            maskedGradient
                 .blendMode(blendMode)
                 .opacity(gradientOpacity)
             if isEditingPoints {
@@ -179,7 +176,30 @@ struct MeshGradientPlaygroundView: View {
             }
         }
         .frame(height: 224)
-        .clipShape(RoundedRectangle(cornerRadius: 0))
+    }
+
+    @ViewBuilder
+    private var maskedGradient: some View {
+        switch maskShape {
+        case .none:
+            gradientLayer
+        case .circle:
+            gradientLayer.clipShape(ScaledCircle())
+        case .icon:
+            gradientLayer.mask {
+                Image(systemName: iconName)
+                    .font(.system(size: iconSize, weight: maskWeights[iconWeightIdx].weight))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        case .text:
+            gradientLayer.mask {
+                Text(maskText.isEmpty ? " " : maskText)
+                    .font(.system(size: textSize, weight: maskWeights[textWeightIdx].weight))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
     }
 
     private func pointHandle(at i: Int, in size: CGSize) -> some View {
@@ -335,11 +355,45 @@ struct MeshGradientPlaygroundView: View {
             }
             .pickerStyle(.segmented)
 
-            if maskShape == .roundedRect {
-                LabeledContent("Corner Radius: \(Int(maskCornerRadius))") {
-                    Slider(value: $maskCornerRadius, in: 4...100)
+            if maskShape == .icon {
+                Button {
+                    showSymbolPicker = true
+                } label: {
+                    HStack {
+                        Text("Symbol")
+                        Spacer()
+                        Image(systemName: iconName)
+                            .font(.system(size: 20, weight: maskWeights[iconWeightIdx].weight))
+                            .frame(width: 28)
+                        Text(iconName)
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                    }
                 }
-                .transition(.opacity)
+                .foregroundStyle(.primary)
+
+                LabeledContent("Size: \(Int(iconSize))pt") {
+                    Slider(value: $iconSize, in: 20...220)
+                }
+                Picker("Weight", selection: $iconWeightIdx) {
+                    ForEach(maskWeights.indices, id: \.self) { Text(maskWeights[$0].name).tag($0) }
+                }
+            }
+
+            if maskShape == .text {
+                HStack {
+                    Text("Text")
+                    Spacer()
+                    TextField("Label", text: $maskText)
+                        .multilineTextAlignment(.trailing)
+                        .foregroundStyle(.secondary)
+                }
+                LabeledContent("Size: \(Int(textSize))pt") {
+                    Slider(value: $textSize, in: 20...180)
+                }
+                Picker("Weight", selection: $textWeightIdx) {
+                    ForEach(maskWeights.indices, id: \.self) { Text(maskWeights[$0].name).tag($0) }
+                }
             }
         }
     }
@@ -410,19 +464,6 @@ struct MeshGradientPlaygroundView: View {
                 min(1, max(0, base.x + amp * Float(sin(t * freq + phase)))),
                 min(1, max(0, base.y + amp * Float(cos(t * freq * 1.37 + phase + 1.2))))
             )
-        }
-    }
-
-    // MARK: - Mask Shape
-
-    private var currentMaskShape: AnyShape {
-        switch maskShape {
-        case .none:        AnyShape(Rectangle())
-        case .circle:      AnyShape(Circle())
-        case .roundedRect: AnyShape(RoundedRectangle(cornerRadius: maskCornerRadius, style: .continuous))
-        case .capsule:     AnyShape(Capsule())
-        case .diamond:     AnyShape(DiamondShape())
-        case .star:        AnyShape(StarShape())
         }
     }
 
