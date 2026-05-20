@@ -245,6 +245,8 @@ struct MeshGradientPlaygroundView: View {
             let t = (isAnimating && !isEditingPoints) ? tl.date.timeIntervalSinceReferenceDate : 0
             meshGradient(at: t)
         }
+        .scaleEffect(isAnimating ? 1.25 : 1.0)
+        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: isAnimating)
     }
 
     private func meshGradient(at t: Double) -> some View {
