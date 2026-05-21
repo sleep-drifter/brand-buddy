@@ -171,16 +171,16 @@ func pinnableRow(_ entry: AppEntry, pinsStore: PinsStore) -> some View {
         Button {
             pinsStore.toggle(entry)
         } label: {
-            Label(pinsStore.isPinned(entry) ? "Unpin" : "Pin",
-                  systemImage: pinsStore.isPinned(entry) ? "pin.slash" : "pin")
+            Label(pinsStore.isPinned(entry) ? "Remove Bookmark" : "Bookmark",
+                  systemImage: pinsStore.isPinned(entry) ? "bookmark.slash" : "bookmark")
         }
     }
     .swipeActions(edge: .leading) {
         Button {
             pinsStore.toggle(entry)
         } label: {
-            Label(pinsStore.isPinned(entry) ? "Unpin" : "Pin",
-                  systemImage: pinsStore.isPinned(entry) ? "pin.slash" : "pin")
+            Label(pinsStore.isPinned(entry) ? "Remove" : "Bookmark",
+                  systemImage: pinsStore.isPinned(entry) ? "bookmark.slash" : "bookmark")
         }
         .tint(.blue)
     }
