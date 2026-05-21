@@ -319,47 +319,365 @@ struct TagsView: View {
     }
 }
 
+// MARK: - Supporting types
+
+private enum GaugeSwatch: String, CaseIterable {
+    case blue, teal, green, yellow, orange, red, pink, purple, indigo, white
+    var color: Color {
+        switch self {
+        case .blue:   return .blue
+        case .teal:   return .teal
+        case .green:  return .green
+        case .yellow: return .yellow
+        case .orange: return .orange
+        case .red:    return .red
+        case .pink:   return .pink
+        case .purple: return .purple
+        case .indigo: return .indigo
+        case .white:  return .white
+        }
+    }
+}
+
+private enum GaugeLabelType: String, CaseIterable { case symbol, text, none }
+private enum GaugeValueFormat: String, CaseIterable { case percent, decimal }
+
+// Custom circular gauge style exposing start/end angle and stroke width
+private struct ArcGaugeStyle: GaugeStyle {
+    var startDeg: Double
+    var endDeg: Double
+    var trackWidth: CGFloat
+    var tint: Color
+    var useGradient: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        let sweep   = endDeg - startDeg
+        let filled  = sweep * configuration.value
+        let rot     = startDeg - 90
+
+        return ZStack {
+            // Track
+            Circle()
+                .trim(from: 0, to: CGFloat(sweep / 360))
+                .stroke(tint.opacity(0.18), style: StrokeStyle(lineWidth: trackWidth, lineCap: .round))
+                .rotationEffect(.degrees(rot))
+
+            // Value arc
+            Circle()
+                .trim(from: 0, to: CGFloat(filled / 360))
+                .stroke(
+                    useGradient
+                        ? AnyShapeStyle(LinearGradient(colors: [tint, tint.opacity(0.4)],
+                                                       startPoint: .leading, endPoint: .trailing))
+                        : AnyShapeStyle(tint),
+                    style: StrokeStyle(lineWidth: trackWidth, lineCap: .round)
+                )
+                .rotationEffect(.degrees(rot))
+
+            // Labels
+            VStack(spacing: 2) {
+                configuration.currentValueLabel
+                    .font(.system(.body, design: .rounded).bold())
+                configuration.label
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(trackWidth / 2)
+    }
+}
+
+// MARK: - GaugesView
+
 struct GaugesView: View {
-    @State private var value = 0.65
+    // Value & range
+    @State private var value      = 0.65
+    @State private var minValue   = 0.0
+    @State private var maxValue   = 1.0
+
+    // Appearance
+    @State private var swatch: GaugeSwatch  = .blue
+    @State private var useGradient          = false
+
+    // Label
+    @State private var labelType: GaugeLabelType = .symbol
+    @State private var selectedSymbol = "bolt.fill"
+    @State private var labelText      = "Speed"
+    @State private var valueFormat: GaugeValueFormat = .percent
+    @State private var showCurrentLabel = true
+    @State private var showMinMax       = true
+
+    // Custom arc gauge
+    @State private var startDeg:    Double  = -135
+    @State private var endDeg:      Double  =  135
+    @State private var trackWidth:  Double  = 10
+
+    private let symbols = ["bolt.fill","heart.fill","flame.fill","drop.fill",
+                           "thermometer.medium","speedometer","star.fill","moon.fill"]
+
+    private var tint: Color { swatch.color }
+    private var gradientTint: AnyShapeStyle {
+        useGradient
+            ? AnyShapeStyle(Gradient(colors: [tint, tint.opacity(0.3)]))
+            : AnyShapeStyle(tint)
+    }
+    private var formattedValue: String {
+        valueFormat == .percent
+            ? String(format: "%.0f%%", value * 100)
+            : String(format: "%.2f", value)
+    }
 
     var body: some View {
         List {
-            Section("Circular Gauge") {
-                HStack(spacing: 24) {
-                    Gauge(value: value) {}
-                        .gaugeStyle(.accessoryCircular)
-                    Gauge(value: value) {
-                        Image(systemName: "bolt.fill")
-                    } currentValueLabel: {
-                        Text("\(Int(value * 100))")
-                    }
-                    .gaugeStyle(.accessoryCircularCapacity)
+
+            // ── Color ──────────────────────────────────────────────────────
+            Section("Color") { swatchRow }
+
+            // ── Custom Arc Gauge ───────────────────────────────────────────
+            Section(header: sectionHeader("Custom Arc Gauge", tag: "Custom")) {
+                Gauge(value: value, in: minValue...maxValue) {
+                    gaugeLabel
+                } currentValueLabel: {
+                    if showCurrentLabel { Text(formattedValue) }
                 }
+                .gaugeStyle(ArcGaugeStyle(
+                    startDeg: startDeg, endDeg: endDeg,
+                    trackWidth: CGFloat(trackWidth),
+                    tint: tint, useGradient: useGradient
+                ))
+                .frame(width: 140, height: 140)
+                .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
             }
 
-            Section("Linear Gauge") {
-                Gauge(value: value) {
-                    Text("Battery")
-                } currentValueLabel: {
-                    Text("\(Int(value * 100))%")
-                } minimumValueLabel: {
-                    Text("0")
-                } maximumValueLabel: {
-                    Text("100")
+            // ── Circular (built-in) ────────────────────────────────────────
+            Section(header: sectionHeader("Circular", tag: "Native")) {
+                HStack(spacing: 32) {
+                    VStack(spacing: 8) {
+                        Gauge(value: value, in: minValue...maxValue) {
+                            gaugeLabel
+                        } currentValueLabel: {
+                            if showCurrentLabel { Text(formattedValue) }
+                        }
+                        .gaugeStyle(.accessoryCircular)
+                        .tint(gradientTint)
+                        caption(".accessoryCircular")
+                    }
+                    VStack(spacing: 8) {
+                        Gauge(value: value, in: minValue...maxValue) {
+                            gaugeLabel
+                        } currentValueLabel: {
+                            if showCurrentLabel { Text(formattedValue) }
+                        }
+                        .gaugeStyle(.accessoryCircularCapacity)
+                        .tint(gradientTint)
+                        caption(".circularCapacity")
+                    }
                 }
-                .gaugeStyle(.accessoryLinear)
-
-                Gauge(value: value) {}
-                    .gaugeStyle(.accessoryLinearCapacity)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
             }
 
-            Section("Control") {
-                Slider(value: $value, label: { Text("Value") })
+            // ── Linear (built-in) ──────────────────────────────────────────
+            Section(header: sectionHeader("Linear", tag: "Native")) {
+                VStack(alignment: .leading, spacing: 6) {
+                    caption(".accessoryLinear")
+                    Gauge(value: value, in: minValue...maxValue) {
+                        gaugeLabel
+                    } currentValueLabel: {
+                        if showCurrentLabel { Text(formattedValue) }
+                    } minimumValueLabel: {
+                        if showMinMax { Text(String(format: "%.0f", minValue * 100)) }
+                    } maximumValueLabel: {
+                        if showMinMax { Text(String(format: "%.0f", maxValue * 100)) }
+                    }
+                    .gaugeStyle(.accessoryLinear)
+                    .tint(gradientTint)
+                }
+                .padding(.vertical, 4)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    caption(".accessoryLinearCapacity")
+                    Gauge(value: value, in: minValue...maxValue) {
+                        gaugeLabel
+                    } currentValueLabel: {
+                        if showCurrentLabel { Text(formattedValue) }
+                    }
+                    .gaugeStyle(.accessoryLinearCapacity)
+                    .tint(gradientTint)
+                }
+                .padding(.vertical, 4)
+            }
+
+            // ── Progress View ──────────────────────────────────────────────
+            Section(header: sectionHeader("Progress View", tag: "Native")) {
+                VStack(alignment: .leading, spacing: 6) {
+                    caption(".linear")
+                    ProgressView(value: value, total: maxValue).tint(tint)
+                }
+                .padding(.vertical, 4)
+
+                HStack(spacing: 32) {
+                    VStack(spacing: 8) {
+                        ProgressView().tint(tint)
+                        caption("indeterminate")
+                    }
+                    VStack(spacing: 8) {
+                        ProgressView(value: value, total: maxValue)
+                            .progressViewStyle(.circular).tint(tint)
+                        caption(".circular")
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+            }
+
+            // ── Label ──────────────────────────────────────────────────────
+            Section("Label") {
+                Picker("Type", selection: $labelType) {
+                    Text("Symbol").tag(GaugeLabelType.symbol)
+                    Text("Text").tag(GaugeLabelType.text)
+                    Text("None").tag(GaugeLabelType.none)
+                }
+                .pickerStyle(.segmented)
+
+                if labelType == .symbol {
+                    symbolPicker
+                }
+                if labelType == .text {
+                    HStack {
+                        Text("Label text").foregroundStyle(.secondary).font(.caption)
+                        TextField("e.g. Speed", text: $labelText)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                }
+
+                Toggle("Current Value Label", isOn: $showCurrentLabel)
+                if showCurrentLabel {
+                    Picker("Value Format", selection: $valueFormat) {
+                        Text("Percent (65%)").tag(GaugeValueFormat.percent)
+                        Text("Decimal (0.65)").tag(GaugeValueFormat.decimal)
+                    }
+                }
+                Toggle("Min / Max Labels", isOn: $showMinMax)
+            }
+
+            // ── Value & Range ──────────────────────────────────────────────
+            Section("Value & Range") {
+                sliderRow("Value", value: $value, in: minValue...maxValue,
+                          label: formattedValue, tint: tint)
+                sliderRow("Min", value: $minValue, in: 0...0.45,
+                          label: String(format: "%.0f%%", minValue * 100), tint: .secondary)
+                    .onChange(of: minValue) { _, v in value = max(value, v) }
+                sliderRow("Max", value: $maxValue, in: 0.55...1.0,
+                          label: String(format: "%.0f%%", maxValue * 100), tint: .secondary)
+                    .onChange(of: maxValue) { _, v in value = min(value, v) }
+            }
+
+            // ── Arc Controls ───────────────────────────────────────────────
+            Section("Arc Controls") {
+                sliderRow("Start angle", value: $startDeg, in: -180...0,
+                          label: String(format: "%.0f°", startDeg), tint: .secondary)
+                sliderRow("End angle", value: $endDeg, in: 0...180,
+                          label: String(format: "%.0f°", endDeg), tint: .secondary)
+                sliderRow("Track width", value: $trackWidth, in: 4...24,
+                          label: String(format: "%.0fpt", trackWidth), tint: .secondary)
+                Toggle("Gradient Tint", isOn: $useGradient)
             }
         }
         .navigationTitle("Gauges")
         .navigationBarTitleDisplayMode(.large)
+    }
+
+    // MARK: – Sub-views
+
+    @ViewBuilder private var gaugeLabel: some View {
+        switch labelType {
+        case .symbol: Image(systemName: selectedSymbol)
+        case .text:   Text(labelText)
+        case .none:   EmptyView()
+        }
+    }
+
+    private var swatchRow: some View {
+        HStack(spacing: 8) {
+            ForEach(GaugeSwatch.allCases, id: \.self) { s in
+                Button { swatch = s } label: {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 7)
+                            .fill(s.color)
+                            .frame(width: 30, height: 30)
+                            .overlay(RoundedRectangle(cornerRadius: 7)
+                                .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1))
+                        if swatch == s {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(s == .white ? Color.black : Color.white)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var symbolPicker: some View {
+        HStack(spacing: 10) {
+            ForEach(symbols, id: \.self) { sym in
+                Button { selectedSymbol = sym } label: {
+                    Image(systemName: sym)
+                        .font(.system(size: 16))
+                        .frame(width: 34, height: 34)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(selectedSymbol == sym ? tint : Color(.tertiarySystemFill))
+                        )
+                        .foregroundStyle(selectedSymbol == sym ? .white : .primary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func sliderRow(_ label: String, value: Binding<Double>,
+                           in range: ClosedRange<Double>, label labelText: String,
+                           tint: Color) -> some View {
+        LabeledContent {
+            HStack(spacing: 8) {
+                Slider(value: value, in: range).tint(tint).frame(width: 140)
+                Text(labelText)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 52, alignment: .trailing)
+            }
+        } label: {
+            Text(label)
+        }
+    }
+
+    private func sectionHeader(_ title: String, tag: String) -> some View {
+        HStack(spacing: 6) {
+            Text(title)
+            Text(tag)
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(tag == "Native" ? Color.blue : Color.orange)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(
+                    Capsule().fill(tag == "Native"
+                                   ? Color.blue.opacity(0.12)
+                                   : Color.orange.opacity(0.12))
+                )
+        }
+    }
+
+    @ViewBuilder
+    private func caption(_ text: String) -> some View {
+        Text(text)
+            .font(.system(.caption2, design: .monospaced))
+            .foregroundStyle(.secondary)
     }
 }
 
