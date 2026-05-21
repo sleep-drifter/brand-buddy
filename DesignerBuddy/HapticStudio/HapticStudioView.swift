@@ -20,7 +20,7 @@ struct HapticStudioView: View {
 
     // Add-event menu
     @GestureState private var addMenuState: AddMenuState = .idle
-    @State private var timelineW: CGFloat = UIScreen.main.bounds.width
+    @State private var timelineW: CGFloat = 390
 
     // Timeline transform
     @State private var timeScale: CGFloat = 0           // set on first layout to viewWidth/5
@@ -219,7 +219,7 @@ struct HapticStudioView: View {
             )
         }
         .onAppear {
-            if timeScale == 0 { timeScale = UIScreen.main.bounds.width / 5 }
+            if timeScale == 0 { timeScale = timelineW / 5 }
         }
     }
 
