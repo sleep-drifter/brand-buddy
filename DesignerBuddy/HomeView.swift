@@ -1,6 +1,6 @@
 import SwiftUI
 
-private enum SectionDest: Hashable {
+enum SectionDest: Hashable {
     case components, patterns, native, explore, playgrounds
 }
 
