@@ -46,18 +46,19 @@ struct HomeView: View {
             .navigationTitle("Designer Buddy")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showSaved = true } label: {
-                        Image(systemName: "bookmark")
-                            .padding(8)
-                            .background(Color(.secondarySystemBackground), in: Circle())
+                    HStack(spacing: 0) {
+                        Button { showSaved = true } label: {
+                            Image(systemName: "bookmark")
+                                .frame(width: 44, height: 36)
+                        }
+                        Divider()
+                            .frame(height: 16)
+                        Button { showProfile = true } label: {
+                            Image(systemName: "person")
+                                .frame(width: 44, height: 36)
+                        }
                     }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showProfile = true } label: {
-                        Image(systemName: "person")
-                            .padding(8)
-                            .background(Color(.secondarySystemBackground), in: Circle())
-                    }
+                    .background(Color(.secondarySystemBackground), in: Capsule())
                 }
             }
             .navigationDestination(for: AppEntry.self) { appDestination(for: $0) }
@@ -181,8 +182,7 @@ struct EntryGridCard: View {
                 .foregroundStyle(.primary)
                 .lineLimit(2)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity, minHeight: 100)
         .padding(.horizontal, 8)
         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
