@@ -8,42 +8,66 @@ struct HomeView: View {
     @EnvironmentObject var pinsStore: PinsStore
     @State private var showSaved = false
     @State private var showProfile = false
+    @State private var searchText = ""
+
+    private var searchResults: [AppEntry] {
+        guard !searchText.isEmpty else { return [] }
+        let q = searchText.lowercased()
+        return AppEntry.all.filter {
+            fuzzyMatch(q, in: $0.nameLower) ||
+            fuzzyMatch(q, in: $0.sectionLower) ||
+            (!$0.keywordsLower.isEmpty && $0.keywordsLower.contains(q))
+        }
+    }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 32) {
-                    HomeSectionRow(
-                        title: "Components",
-                        entries: AppEntry.components + AppEntry.materials,
-                        dest: SectionDest.components
-                    )
-                    HomeSectionRow(
-                        title: "Patterns",
-                        entries: AppEntry.patterns,
-                        dest: SectionDest.patterns
-                    )
-                    HomeSectionRow(
-                        title: "Native",
-                        entries: AppEntry.native,
-                        dest: SectionDest.native
-                    )
-                    HomeSectionRow(
-                        title: "Explore",
-                        entries: AppEntry.exploreA + AppEntry.exploreB + AppEntry.exploreC + AppEntry.exploreD,
-                        dest: SectionDest.explore
-                    )
-                    HomeSectionRow(
-                        title: "Playgrounds",
-                        entries: AppEntry.more,
-                        dest: SectionDest.playgrounds
-                    )
+            Group {
+                if searchText.isEmpty {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 32) {
+                            HomeSectionRow(
+                                title: "Components",
+                                entries: AppEntry.components + AppEntry.materials,
+                                dest: SectionDest.components
+                            )
+                            HomeSectionRow(
+                                title: "Patterns",
+                                entries: AppEntry.patterns,
+                                dest: SectionDest.patterns
+                            )
+                            HomeSectionRow(
+                                title: "Native",
+                                entries: AppEntry.native,
+                                dest: SectionDest.native
+                            )
+                            HomeSectionRow(
+                                title: "Explore",
+                                entries: AppEntry.exploreA + AppEntry.exploreB + AppEntry.exploreC + AppEntry.exploreD,
+                                dest: SectionDest.explore
+                            )
+                            HomeSectionRow(
+                                title: "Playgrounds",
+                                entries: AppEntry.more,
+                                dest: SectionDest.playgrounds
+                            )
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                        .padding(.bottom, 32)
+                    }
+                } else if searchResults.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
+                } else {
+                    List(searchResults) { entry in
+                        NavigationLink(value: entry) {
+                            Label(entry.name, systemImage: entry.icon)
+                        }
+                    }
                 }
-                .padding(.horizontal)
-                .padding(.top, 8)
-                .padding(.bottom, 100)
             }
             .navigationTitle("Designer Buddy")
+            .searchable(text: $searchText, prompt: "Find something specific")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 0) {
@@ -99,25 +123,6 @@ struct HomeView: View {
                     )
                 }
             }
-            .safeAreaInset(edge: .bottom) {
-                NavigationLink {
-                    ComponentSearchView()
-                } label: {
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                        Text("Find something specific")
-                        Spacer()
-                        Image(systemName: "mic")
-                    }
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .background(.regularMaterial, in: Capsule())
-                    .padding(.horizontal, 20)
-                }
-                .buttonStyle(.plain)
-                .padding(.bottom, 4)
-            }
             .sheet(isPresented: $showSaved) {
                 SavedView()
                     .environmentObject(pinsStore)
@@ -127,6 +132,16 @@ struct HomeView: View {
             }
         }
     }
+}
+
+private func fuzzyMatch(_ query: String, in lowerTarget: String) -> Bool {
+    guard !query.isEmpty else { return true }
+    var qi = query.startIndex
+    for ch in lowerTarget {
+        if qi == query.endIndex { break }
+        if ch == query[qi] { qi = query.index(after: qi) }
+    }
+    return qi == query.endIndex
 }
 
 // MARK: - Home Section Row
