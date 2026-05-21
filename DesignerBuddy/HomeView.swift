@@ -70,19 +70,14 @@ struct HomeView: View {
             .searchable(text: $searchText, prompt: "Find something specific")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 0) {
+                    HStack(spacing: 4) {
                         Button { showSaved = true } label: {
                             Image(systemName: "bookmark")
-                                .frame(width: 44, height: 36)
                         }
-                        Divider()
-                            .frame(height: 16)
                         Button { showProfile = true } label: {
                             Image(systemName: "person")
-                                .frame(width: 44, height: 36)
                         }
                     }
-                    .background(Color(.secondarySystemBackground), in: Capsule())
                 }
             }
             .navigationDestination(for: AppEntry.self) { appDestination(for: $0) }
