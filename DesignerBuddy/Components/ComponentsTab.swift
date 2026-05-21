@@ -73,6 +73,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Sheet Flows",           section: "Presentation", tab: "Patterns", icon: "arrow.up.and.down.square"),
         .init(name: "Search Patterns",       section: "Input & Search", tab: "Patterns", icon: "magnifyingglass"),
         .init(name: "Form Patterns",         section: "Input & Search", tab: "Patterns", icon: "list.clipboard"),
+        .init(name: "Reorderable List",      section: "Lists",        tab: "Patterns", icon: "list.number"),
         .init(name: "Empty States",          section: "Content",      tab: "Patterns", icon: "tray"),
         .init(name: "Loading States",        section: "Content",      tab: "Patterns", icon: "progress.indicator"),
         .init(name: "Error States",          section: "Content",      tab: "Patterns", icon: "exclamationmark.triangle"),
@@ -109,6 +110,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Concentric Radius",     section: "Playgrounds", tab: "More", icon: "square.inset.filled"),
         .init(name: "Shadow Explorer",       section: "Playgrounds", tab: "More", icon: "shadow"),
         .init(name: "Blur Stack",            section: "Playgrounds", tab: "More", icon: "square.stack.3d.up"),
+        .init(name: "Mesh Gradient",         section: "Playgrounds", tab: "More", icon: "mosaic",                  keywords: ["mesh", "gradient", "color", "animation", "mask", "blend"]),
         .init(name: "Safe Areas",            section: "Reference",   tab: "More", icon: "iphone",                  keywords: ["insets", "home indicator", "notch", "status bar"]),
         .init(name: "Sheet Detents",         section: "Reference",   tab: "More", icon: "rectangle.bottomhalf.inset.filled"),
     ]
@@ -147,6 +149,7 @@ struct AppEntry: Identifiable, Hashable {
 
     static let exploreD: [AppEntry] = [
         .init(name: "Custom Haptics",            section: "Device & Sensors", tab: "Explore", icon: "waveform.path.ecg.rectangle", keywords: ["haptics", "CHHapticEngine", "taptic", "vibration", "pattern", "transient", "continuous"]),
+        .init(name: "Haptic Studio",             section: "Device & Sensors", tab: "Explore", icon: "slider.horizontal.below.rectangle", keywords: ["haptic", "ahap", "editor", "timeline", "pattern", "waveform", "CoreHaptics", "keyframe"]),
         .init(name: "Accelerometer & Gyroscope", section: "Device & Sensors", tab: "Explore", icon: "gyroscope",                  keywords: ["accelerometer", "gyroscope", "CMMotionManager", "CoreMotion", "tilt", "motion"]),
         .init(name: "Barometer",                 section: "Device & Sensors", tab: "Explore", icon: "thermometer.medium",          keywords: ["barometer", "CMAltimeter", "altitude", "pressure", "sensor"]),
         .init(name: "Proximity & Ambient Light", section: "Device & Sensors", tab: "Explore", icon: "light.max",                  keywords: ["proximity", "ambient light", "brightness", "UIScreen", "sensor"]),
