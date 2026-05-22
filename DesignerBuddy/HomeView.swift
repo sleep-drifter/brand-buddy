@@ -70,13 +70,13 @@ struct HomeView: View {
             .searchable(text: $searchText, prompt: "Find something specific")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showProfile = true } label: {
-                        Image(systemName: "person")
+                    Button { showSaved = true } label: {
+                        Image(systemName: "bookmark")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showSaved = true } label: {
-                        Image(systemName: "bookmark")
+                    Button { showProfile = true } label: {
+                        Image(systemName: "person")
                     }
                 }
             }
