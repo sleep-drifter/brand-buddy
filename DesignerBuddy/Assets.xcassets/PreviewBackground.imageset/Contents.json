@@ -7,7 +7,7 @@
           "value" : "light"
         }
       ],
-      "filename" : "preview-background-light.jpg",
+      "filename" : "light-paper 2.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
@@ -18,9 +18,53 @@
           "value" : "dark"
         }
       ],
-      "filename" : "preview-background-dark.jpg",
+      "filename" : "dark-paper 1.png",
       "idiom" : "universal",
       "scale" : "1x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "light"
+        }
+      ],
+      "filename" : "light-paper.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "dark-paper 2.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "light"
+        }
+      ],
+      "filename" : "light-paper 1.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "dark-paper.png",
+      "idiom" : "universal",
+      "scale" : "3x"
     }
   ],
   "info" : {

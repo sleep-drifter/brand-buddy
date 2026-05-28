@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum SectionDest: Hashable {
-    case components, patterns, native, explore, playgrounds
+    case elements, patternsAndSystem, playgrounds
 }
 
 struct HomeView: View {
@@ -27,28 +27,18 @@ struct HomeView: View {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 32) {
                             HomeSectionRow(
-                                title: "Components",
-                                entries: AppEntry.components + AppEntry.materials,
-                                dest: SectionDest.components
+                                title: "Elements",
+                                entries: AppEntry.elements,
+                                dest: SectionDest.elements
                             )
                             HomeSectionRow(
-                                title: "Patterns",
-                                entries: AppEntry.patterns,
-                                dest: SectionDest.patterns
-                            )
-                            HomeSectionRow(
-                                title: "Native",
-                                entries: AppEntry.native,
-                                dest: SectionDest.native
-                            )
-                            HomeSectionRow(
-                                title: "Explore",
-                                entries: AppEntry.exploreA + AppEntry.exploreB + AppEntry.exploreC + AppEntry.exploreD,
-                                dest: SectionDest.explore
+                                title: "Patterns & System",
+                                entries: AppEntry.patternsAndSystem,
+                                dest: SectionDest.patternsAndSystem
                             )
                             HomeSectionRow(
                                 title: "Playgrounds",
-                                entries: AppEntry.more,
+                                entries: AppEntry.playgrounds,
                                 dest: SectionDest.playgrounds
                             )
                         }
@@ -83,37 +73,26 @@ struct HomeView: View {
             .navigationDestination(for: AppEntry.self) { appDestination(for: $0) }
             .navigationDestination(for: SectionDest.self) { dest in
                 switch dest {
-                case .components:
+                case .elements:
                     CategoryListView(
-                        title: "Components",
-                        entries: AppEntry.components + AppEntry.materials,
-                        sectionOrder: ["Visual", "Actions", "Inputs", "Selection", "Display",
-                                       "Layout", "Navigation", "Overlays", "Glass", "Surfaces", "Vibrancy"]
+                        title: "Elements",
+                        entries: AppEntry.elements,
+                        sectionOrder: ["Visual", "Actions", "Inputs & Forms", "Selection",
+                                       "Indicators", "Layout", "Navigation", "Overlays", "Materials"]
                     )
-                case .patterns:
+                case .patternsAndSystem:
                     CategoryListView(
-                        title: "Patterns",
-                        entries: AppEntry.patterns,
-                        sectionOrder: ["Navigation", "Presentation", "Input & Search",
-                                       "Lists", "Content", "Settings", "Onboarding"]
-                    )
-                case .native:
-                    CategoryListView(
-                        title: "Native",
-                        entries: AppEntry.native,
-                        sectionOrder: ["Permissions", "Camera", "Photo Library", "Audio", "Maps"]
-                    )
-                case .explore:
-                    CategoryListView(
-                        title: "Explore",
-                        entries: AppEntry.exploreA + AppEntry.exploreB + AppEntry.exploreC + AppEntry.exploreD,
-                        sectionOrder: ["Gestures", "Animations", "Accessibility",
-                                       "System Integrations", "AI & Generation", "Device & Sensors"]
+                        title: "Patterns & System",
+                        entries: AppEntry.patternsAndSystem,
+                        sectionOrder: ["Navigation & Flows", "Content States", "Settings & Onboarding",
+                                       "Gestures", "Animations", "Accessibility",
+                                       "System", "Permissions", "Media", "Maps",
+                                       "AI & Generation", "Device & Sensors"]
                     )
                 case .playgrounds:
                     CategoryListView(
                         title: "Playgrounds",
-                        entries: AppEntry.more,
+                        entries: AppEntry.playgrounds,
                         sectionOrder: ["Playgrounds", "Reference"]
                     )
                 }
@@ -142,6 +121,7 @@ private func fuzzyMatch(_ query: String, in lowerTarget: String) -> Bool {
 // MARK: - Home Section Row
 
 struct HomeSectionRow: View {
+    @EnvironmentObject var pinsStore: PinsStore
     let title: String
     let entries: [AppEntry]
     let dest: SectionDest
@@ -167,9 +147,16 @@ struct HomeSectionRow: View {
             LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(previewEntries) { entry in
                     NavigationLink(value: entry) {
-                        EntryGridCard(entry: entry)
+                        EntryGridCard(entry: entry, isPinned: pinsStore.isPinned(entry))
                     }
                     .buttonStyle(.plain)
+                    .simultaneousGesture(
+                        LongPressGesture(minimumDuration: 0.4).onEnded { _ in
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
+                            pinsStore.toggle(entry)
+                        }
+                    )
                 }
             }
         }
@@ -180,21 +167,31 @@ struct HomeSectionRow: View {
 
 struct EntryGridCard: View {
     let entry: AppEntry
+    var isPinned: Bool = false
 
     var body: some View {
-        VStack(spacing: 10) {
-            Image(systemName: entry.icon)
-                .font(.title2)
-                .foregroundStyle(.primary)
-            Text(entry.name)
-                .font(.caption)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.primary)
-                .lineLimit(2)
+        ZStack(alignment: .topTrailing) {
+            VStack(spacing: 10) {
+                Image(systemName: entry.icon)
+                    .font(.title2)
+                    .foregroundStyle(.primary)
+                Text(entry.name)
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+            }
+            .frame(maxWidth: .infinity, minHeight: 100)
+            .padding(.horizontal, 8)
+            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            if isPinned {
+                Image(systemName: "bookmark.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.blue)
+                    .padding(6)
+            }
         }
-        .frame(maxWidth: .infinity, minHeight: 100)
-        .padding(.horizontal, 8)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 

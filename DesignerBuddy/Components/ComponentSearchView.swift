@@ -11,7 +11,7 @@ struct ComponentSearchView: View {
             // SwiftUI only diffs row content, not the entire view tree.
             List {
                 if searchText.isEmpty {
-                    ForEach(["Components", "Patterns", "Native", "More", "Explore"], id: \.self) { tab in
+                    ForEach(["Elements", "Patterns & System", "Playgrounds"], id: \.self) { tab in
                         Section(tab) {
                             ForEach(AppEntry.all.filter { $0.tab == tab }) { entry in
                                 NavigationLink(value: entry) {
@@ -66,12 +66,10 @@ struct ComponentSearchView: View {
 private extension String {
     var chipColor: Color {
         switch self {
-        case "Components": return .blue
-        case "Patterns":   return .purple
-        case "Native":     return .mint
-        case "More":       return .orange
-        case "Explore":    return .indigo
-        default:           return .secondary
+        case "Elements":          return .blue
+        case "Patterns & System": return .purple
+        case "Playgrounds":       return .orange
+        default:                  return .secondary
         }
     }
 }
