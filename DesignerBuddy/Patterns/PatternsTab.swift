@@ -5,7 +5,7 @@ struct PatternsTab: View {
 
     private let tabEntries: [AppEntry] = AppEntry.patterns
     private let sectionOrder = ["Navigation", "Presentation", "Input & Search",
-                                "Content", "Settings", "Onboarding"]
+                                "Lists", "Content", "Settings", "Onboarding"]
 
     private var pinnedEntries: [AppEntry] {
         tabEntries.filter { pinsStore.isPinned($0) }

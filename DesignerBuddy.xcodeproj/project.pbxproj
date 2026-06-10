@@ -78,7 +78,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2620;
-				LastUpgradeCheck = 2620;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					1C3381192FB2F5A900CE1C16 = {
 						CreatedOnToolsVersion = 26.2;
@@ -184,6 +184,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -241,6 +242,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -259,6 +261,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Build Buddy";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to demonstrate camera permission and capture patterns.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Used to demonstrate contacts permission request patterns.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Used to demonstrate Face ID authentication patterns.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to demonstrate location permission request patterns.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Used to demonstrate audio recording patterns.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Used to demonstrate accelerometer and gyroscope motion data.";
@@ -300,6 +303,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Build Buddy";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to demonstrate camera permission and capture patterns.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Used to demonstrate contacts permission request patterns.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Used to demonstrate Face ID authentication patterns.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to demonstrate location permission request patterns.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Used to demonstrate audio recording patterns.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Used to demonstrate accelerometer and gyroscope motion data.";
