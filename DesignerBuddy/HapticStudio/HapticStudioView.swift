@@ -28,6 +28,15 @@ struct HapticStudioView: View {
     @GestureState private var dragDelta: CGFloat = 0    // live pts during finger drag
     @GestureState private var pinchDelta: CGFloat = 1.0 // live scale during pinch
 
+    // Snap HUD
+    @AppStorage("showSnapHUD_haptic") private var showSnapHUD = false
+    @State private var hudVelocity: CGFloat    = 0
+    @State private var hudVelocityMin: CGFloat = 0
+    @State private var hudVelocityMax: CGFloat = 0
+    @State private var hudIsSnapping: Bool     = false
+    @State private var hudVisible: Bool        = false
+    @State private var hudHideTask: Task<Void, Never>? = nil
+
     // Playback
     @State private var isPlaying = false
     @State private var playTimer: Timer? = nil
@@ -41,6 +50,47 @@ struct HapticStudioView: View {
 
     // Current playhead time in seconds
     private var playheadTime: Double { Double(liveOffset / liveScale) }
+
+    // MARK: – Snap helpers
+
+    private var snapPoints: [Double] {
+        var pts = Set<Double>()
+        for e in pattern.events {
+            pts.insert(e.time)
+            if e.type == .continuous { pts.insert(e.time + e.duration) }
+        }
+        return pts.sorted()
+    }
+
+    private func isEventActive(_ event: HapticStudioEvent, at t: Double) -> Bool {
+        if event.type == .transient { return abs(t - event.time) < 0.05 }
+        return t >= event.time && t < event.time + event.duration
+    }
+
+    /// Instantaneous intensity of `event` at time `t`, respecting attack/release envelope.
+    private func liveIntensity(_ event: HapticStudioEvent, at t: Double) -> Double {
+        guard isEventActive(event, at: t) else { return 0 }
+        if event.type == .transient { return Double(event.intensity) }
+        let localT       = t - event.time
+        let attackSec    = Double(event.attackTime)
+        let releaseSec   = Double(event.releaseTime)
+        let releaseStart = event.duration - releaseSec
+        if localT < attackSec && attackSec > 0 {
+            return Double(event.intensity) * (localT / attackSec)
+        } else if localT >= releaseStart && releaseSec > 0 {
+            return Double(event.intensity) * max(0, 1 - (localT - releaseStart) / releaseSec)
+        }
+        return Double(event.intensity)
+    }
+
+    /// The event with highest live intensity at `t`, used for the live-values pill.
+    private func dominantEvent(at t: Double) -> HapticStudioEvent? {
+        pattern.events
+            .filter { isEventActive($0, at: t) }
+            .max { liveIntensity($0, at: t) < liveIntensity($1, at: t) }
+    }
+
+    // MARK: – Selected event binding
 
     private var selectedEvent: Binding<HapticStudioEvent>? {
         guard let id = selectedEventID,
@@ -157,7 +207,7 @@ struct HapticStudioView: View {
                         .gesture(addEventGesture(vw: vw, scale: scale, offset: offset))
 
                     // Ruler
-                    CenteredTimelineRuler(viewWidth: vw, timeScale: scale, scrollOffset: offset)
+                    TimelineRuler(timeScale: scale, scrollOffset: offset, maxDuration: kPatternDuration)
                         .frame(height: kRulerH + kTimelineH)
                         .allowsHitTesting(false)
 
@@ -167,7 +217,22 @@ struct HapticStudioView: View {
                             TimelineEventChip(
                                 event: $event,
                                 isSelected: selectedEventID == event.id,
-                                timeScale: scale
+                                isActive:   isEventActive(event, at: playheadTime),
+                                timeScale:  scale,
+                                snapPoints: snapPoints,
+                                onDragChanged: { vel, vMin, vMax, snapping in
+                                    hudVelocity    = vel
+                                    hudVelocityMin = vMin
+                                    hudVelocityMax = vMax
+                                    hudIsSnapping  = snapping
+                                    hudVisible     = true
+                                    hudHideTask?.cancel()
+                                    hudHideTask = Task {
+                                        try? await Task.sleep(for: .seconds(2))
+                                        guard !Task.isCancelled else { return }
+                                        await MainActor.run { hudVisible = false }
+                                    }
+                                }
                             )
                             .onTapGesture { selectedEventID = event.id }
                         }
@@ -193,6 +258,32 @@ struct HapticStudioView: View {
                     AddEventMenu(anchor: anchor, hovered: menuHovered(anchor: anchor, current: current))
                         .allowsHitTesting(false)
                 }
+
+                // Snap debug HUD — top-trailing corner, toggled by long-press
+                if showSnapHUD && hudVisible {
+                    SnapHUDView(
+                        velocity:    hudVelocity,
+                        velocityMin: hudVelocityMin,
+                        velocityMax: hudVelocityMax,
+                        threshold:   kHapticSnapVelocityThreshold,
+                        isSnapping:  hudIsSnapping
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(8)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+                }
+
+                // Live values pill — shows dominant intensity + sharpness at playhead while scrubbing
+                if !isPlaying, let dominant = dominantEvent(at: playheadTime) {
+                    liveValuesPill(for: dominant, at: playheadTime)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                        .padding(.leading, 12)
+                        .padding(.bottom, 8)
+                        .allowsHitTesting(false)
+                        .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                        .animation(.easeInOut(duration: 0.15), value: dominantEvent(at: playheadTime) != nil)
+                }
             }
             // Scroll — suppressed while the add-event gesture is active
             .gesture(
@@ -215,6 +306,13 @@ struct HapticStudioView: View {
                         let newScale = min(300, max(20, timeScale * val))
                         scrollOffset = CGFloat(playheadTime) * newScale
                         timeScale    = newScale
+                    }
+            )
+            // Long-press (0.5s) toggles the snap debug HUD
+            .simultaneousGesture(
+                LongPressGesture(minimumDuration: 0.5)
+                    .onEnded { _ in
+                        withAnimation(.easeInOut(duration: 0.2)) { showSnapHUD.toggle() }
                     }
             )
         }
@@ -288,6 +386,26 @@ struct HapticStudioView: View {
         engine.play(pattern: preview)
     }
 
+    // MARK: – Live Values Pill
+
+    @ViewBuilder
+    private func liveValuesPill(for event: HapticStudioEvent, at t: Double) -> some View {
+        let intensity = liveIntensity(event, at: t)
+        HStack(spacing: 8) {
+            // ◼ intensity
+            Label(String(format: "%.2f", intensity), systemImage: "square.fill")
+                .font(.caption2.monospaced())
+            // ▲ sharpness
+            Label(String(format: "%.2f", event.sharpness), systemImage: "triangle.fill")
+                .font(.caption2.monospaced())
+        }
+        .foregroundStyle(.primary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(Color.white.opacity(0.15), lineWidth: 1))
+    }
+
     // MARK: – Playback
 
     private func playFromStart() {
@@ -328,97 +446,7 @@ struct HapticStudioView: View {
     }
 }
 
-// MARK: - Centered Timeline Ruler
-
 private let kPatternDuration: Double = 5.0
-
-private struct CenteredTimelineRuler: View {
-    let viewWidth: CGFloat
-    let timeScale: CGFloat
-    let scrollOffset: CGFloat
-
-    var body: some View {
-        Canvas { ctx, size in
-            let zeroX = size.width / 2 - scrollOffset
-            let endX  = size.width / 2 + CGFloat(kPatternDuration) * timeScale - scrollOffset
-
-            // Out-of-bounds hatching (before 0s and after 5s)
-            for (from, to) in [(0.0, min(zeroX, size.width)),
-                               (max(endX, 0.0), size.width)] {
-                guard to > from + 0.5 else { continue }
-                let rect = CGRect(x: from, y: 0, width: to - from, height: size.height)
-
-                // Dim fill
-                ctx.fill(Path(rect), with: .color(.primary.opacity(0.07)))
-
-                // Diagonal \ lines, clipped to region
-                var clipped = ctx
-                clipped.clip(to: Path(rect))
-                let spacing: CGFloat = 9
-                var k = from - size.height
-                while k < to + size.height {
-                    var line = Path()
-                    line.move(to:    CGPoint(x: k,                y: 0))
-                    line.addLine(to: CGPoint(x: k + size.height,  y: size.height))
-                    clipped.stroke(line, with: .color(.primary.opacity(0.1)), lineWidth: 1)
-                    k += spacing
-                }
-            }
-
-            // Fixed 50ms tick grid — labels only at 250ms multiples
-            let step: Double = 0.05
-            let tLeft = Double((scrollOffset - size.width / 2) / timeScale)
-
-            var t = max(0.0, floor(tLeft / step) * step)
-            while t <= kPatternDuration + step * 0.01 {
-                let x = size.width / 2 + CGFloat(t) * timeScale - scrollOffset
-                guard x >= -1 && x <= size.width + 1 else { t += step; continue }
-
-                let ms      = Int((t * 1000).rounded())
-                let isWhole = ms % 1000 == 0
-                let isLabel = ms % 250 == 0
-
-                // Full-height tick
-                var path = Path()
-                path.move(to:    .init(x: x, y: 0))
-                path.addLine(to: .init(x: x, y: size.height))
-
-                if isWhole {
-                    ctx.stroke(path, with: .color(.secondary.opacity(0.35)), lineWidth: 1.5)
-                } else {
-                    ctx.stroke(path, with: .color(.secondary.opacity(0.18)),
-                               style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
-                }
-
-                // Label only at 250ms intervals
-                if isLabel {
-                    let label: String = isWhole
-                        ? (ms == 0 ? "0s" : "\(ms / 1000)s")
-                        : "\(ms)ms"
-                    ctx.draw(
-                        Text(label).font(.system(size: 9)).foregroundColor(.secondary),
-                        at: .init(x: x + 3, y: 3), anchor: .topLeading
-                    )
-                }
-
-                t += step
-            }
-
-            // Hard end marker at 5s
-            if endX >= 0 && endX <= size.width {
-                var endPath = Path()
-                endPath.move(to:    .init(x: endX, y: 0))
-                endPath.addLine(to: .init(x: endX, y: size.height))
-                ctx.stroke(endPath, with: .color(.primary.opacity(0.5)), lineWidth: 2)
-                ctx.draw(
-                    Text("5s").font(.system(size: 9, weight: .semibold)).foregroundColor(.primary.opacity(0.6)),
-                    at: .init(x: endX + 3, y: 3), anchor: .topLeading
-                )
-            }
-        }
-    }
-
-}
 
 // MARK: - Add Event Menu
 

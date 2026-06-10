@@ -8,15 +8,29 @@ let kMinChipH: CGFloat     = 8
 let kMaxChipH: CGFloat     = 130  // kTimelineH - 20
 let kTransientW: CGFloat   = 9
 
+// MARK: - Snap constants
+
+let kHapticSnapVelocityThreshold: CGFloat = 10   // pts/sec — below this, snap activates
+let kHapticSnapRadiusPt: CGFloat          = 12   // snap pull-in radius in screen pts
+
 // MARK: - Timeline Event Chip
 
 struct TimelineEventChip: View {
     @Binding var event: HapticStudioEvent
-    let isSelected: Bool
-    let timeScale: CGFloat
+    let isSelected:    Bool
+    let isActive:      Bool   // true when playhead overlaps this event
+    let timeScale:     CGFloat
+    let snapPoints:    [Double]
+    let onDragChanged: (CGFloat, CGFloat, CGFloat, Bool) -> Void  // vel, vMin, vMax, isSnapping
 
-    @GestureState private var moveDelta: CGFloat = .zero
-    @GestureState private var resizeDelta: CGFloat = .zero
+    @State private var moveDelta:   CGFloat = 0
+    @State private var resizeDelta: CGFloat = 0
+    @State private var moveTracker     = VelocityTracker()
+    @State private var resizeTracker   = VelocityTracker()
+    @State private var moveWasSnapped  = false
+    @State private var resizeWasSnapped = false
+    @State private var moveActive      = false
+    @State private var resizeActive    = false
 
     private var chipW: CGFloat {
         event.type == .continuous
@@ -30,6 +44,7 @@ struct TimelineEventChip: View {
                 chipShape(ctx: ctx, size: size)
             }
             .frame(width: chipW, height: kTimelineH)
+            .shadow(color: isActive ? sharpnessColor(event.sharpness).opacity(0.55) : .clear, radius: 10)
 
             // Resize handle (continuous only)
             if event.type == .continuous {
@@ -40,12 +55,37 @@ struct TimelineEventChip: View {
                     .contentShape(Rectangle().size(width: 28, height: kTimelineH))
                     .gesture(
                         DragGesture(minimumDistance: 2)
-                            .updating($resizeDelta) { val, state, _ in
-                                state = max(-CGFloat(event.duration) * timeScale + 16, val.translation.width)
+                            .onChanged { val in
+                                if !resizeActive {
+                                    resizeActive = true
+                                    resizeTracker.reset()
+                                    resizeWasSnapped = false
+                                }
+                                let raw        = val.translation.width
+                                let vel        = resizeTracker.update(rawDelta: raw)
+                                let clampedRaw = max(-CGFloat(event.duration) * timeScale + 16, raw)
+                                let (engineDelta, snapping) = TimelineSnapEngine.snappedDelta(
+                                    rawDelta:     clampedRaw,
+                                    baseTime:     event.time + event.duration,
+                                    snapPoints:   snapPoints,
+                                    timeScale:    timeScale,
+                                    snapRadiusPt: kHapticSnapRadiusPt,
+                                    velocity:     vel,
+                                    threshold:    kHapticSnapVelocityThreshold
+                                )
+                                resizeDelta = max(-CGFloat(event.duration) * timeScale + 16, engineDelta)
+                                if snapping && !resizeWasSnapped {
+                                    UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+                                    resizeWasSnapped = true
+                                } else if !snapping {
+                                    resizeWasSnapped = false
+                                }
+                                onDragChanged(vel, resizeTracker.velocityMin, resizeTracker.velocityMax, snapping)
                             }
-                            .onEnded { val in
-                                let dt = Double(val.translation.width / timeScale)
-                                event.duration = max(0.05, event.duration + dt)
+                            .onEnded { _ in
+                                event.duration = max(0.05, event.duration + Double(resizeDelta / timeScale))
+                                resizeDelta  = 0
+                                resizeActive = false
                             }
                     )
             }
@@ -54,10 +94,36 @@ struct TimelineEventChip: View {
         .offset(x: CGFloat(event.time) * timeScale + moveDelta)
         .gesture(
             DragGesture(minimumDistance: 4)
-                .updating($moveDelta) { val, state, _ in state = val.translation.width }
-                .onEnded { val in
-                    let dt = Double(val.translation.width / timeScale)
-                    event.time = max(0, event.time + dt)
+                .onChanged { val in
+                    if !moveActive {
+                        moveActive = true
+                        moveTracker.reset()
+                        moveWasSnapped = false
+                    }
+                    let raw = val.translation.width
+                    let vel = moveTracker.update(rawDelta: raw)
+                    let (snapped, snapping) = TimelineSnapEngine.snappedDelta(
+                        rawDelta:     raw,
+                        baseTime:     event.time,
+                        snapPoints:   snapPoints,
+                        timeScale:    timeScale,
+                        snapRadiusPt: kHapticSnapRadiusPt,
+                        velocity:     vel,
+                        threshold:    kHapticSnapVelocityThreshold
+                    )
+                    moveDelta = snapped
+                    if snapping && !moveWasSnapped {
+                        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+                        moveWasSnapped = true
+                    } else if !snapping {
+                        moveWasSnapped = false
+                    }
+                    onDragChanged(vel, moveTracker.velocityMin, moveTracker.velocityMax, snapping)
+                }
+                .onEnded { _ in
+                    event.time = max(0, event.time + Double(moveDelta / timeScale))
+                    moveDelta  = 0
+                    moveActive = false
                 }
         )
         .animation(.interactiveSpring, value: isSelected)
@@ -92,8 +158,8 @@ struct TimelineEventChip: View {
             path = p
         }
 
-        // 1. Subtle base fill so the shape reads against dark backgrounds
-        ctx.fill(path, with: .color(col.opacity(0.18)))
+        // 1. Subtle base fill — brighter when the event is active at the playhead
+        ctx.fill(path, with: .color(col.opacity(isActive ? 0.36 : 0.18)))
 
         // 2. Diagonal hatch lines (clipped to shape) encode sharpness via density
         var hCtx = ctx
@@ -107,9 +173,9 @@ struct TimelineEventChip: View {
             x += hSpacing
         }
 
-        // 3. Outline — brighter when selected
-        ctx.stroke(path, with: .color(col.opacity(isSelected ? 1.0 : 0.72)),
-                   style: StrokeStyle(lineWidth: isSelected ? 2 : 1))
+        // 3. Outline — brighter when selected or active at the playhead
+        ctx.stroke(path, with: .color(col.opacity(isSelected ? 1.0 : isActive ? 0.9 : 0.72)),
+                   style: StrokeStyle(lineWidth: isSelected ? 2 : isActive ? 1.5 : 1))
     }
 }
 
@@ -272,7 +338,7 @@ struct InspectorPanel: View {
                 .frame(width: 64, alignment: .leading)
             Slider(value: $event.duration, in: 0.02...5)
                 .tint(.secondary)
-            Text(String(format: "%.2fs", event.duration))
+            Text("\(Int((event.duration * 1000).rounded()))ms")
                 .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 .frame(width: 46, alignment: .trailing)
         }

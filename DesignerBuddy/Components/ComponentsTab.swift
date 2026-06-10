@@ -111,6 +111,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Symbol Effects",        section: "Animations",         tab: "Patterns & System", icon: "sparkle"),
         .init(name: "Symbol Playground",     section: "Animations",         tab: "Patterns & System", icon: "theatermask.and.paintbrush", keywords: ["sf symbols", "animate", "symbol effect", "replace", "bounce", "wiggle", "rotate", "breathe", "pulse", "appear", "playground"]),
         .init(name: "Matched Geometry",      section: "Animations",         tab: "Patterns & System", icon: "rectangle.on.rectangle.angled"),
+        .init(name: "Content Transition",    section: "Animations",         tab: "Patterns & System", icon: "textformat.abc.dottedunderline", keywords: ["contentTransition", "interpolate", "numericText", "glyph", "morph", "text animation", "counter", "string"]),
         // Accessibility
         .init(name: "VoiceOver Labels",      section: "Accessibility",      tab: "Patterns & System", icon: "accessibility"),
         .init(name: "Dynamic Type",          section: "Accessibility",      tab: "Patterns & System", icon: "textformat.size"),

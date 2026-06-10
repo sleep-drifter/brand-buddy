@@ -5,26 +5,40 @@ import SwiftUI
 private let kKFMaxDuration: Double = 5.0
 private let kKFRulerH: CGFloat     = 22
 private let kKFLaneH: CGFloat      = 38
+private let kSnapVelocityThreshold: CGFloat = 10   // pts/sec — below this, snapping activates
+private let kSnapRadiusPt: CGFloat          = 12   // screen pts converted to time units per zoom
 
 // MARK: - Property
 
 private enum KFProperty: String, CaseIterable, Identifiable {
-    case scale, offsetX, offsetY, opacity, rotation
+    case scale, offsetX, offsetY, opacity, rotation, scaleX, scaleY, blur
     var id: String { rawValue }
-    var label: String { rawValue.capitalized }
+    var label: String {
+        switch self {
+        case .scale:    return "Scale"
+        case .offsetX:  return "Offset X"
+        case .offsetY:  return "Offset Y"
+        case .opacity:  return "Opacity"
+        case .rotation: return "Rotation"
+        case .scaleX:   return "Scale X"
+        case .scaleY:   return "Scale Y"
+        case .blur:     return "Blur"
+        }
+    }
 
     var range: ClosedRange<Double> {
         switch self {
-        case .scale:              return 0.1...3.0
-        case .offsetX, .offsetY: return -150...150
-        case .opacity:            return 0...1
-        case .rotation:           return -360...360
+        case .scale, .scaleX, .scaleY: return 0.1...3.0
+        case .offsetX, .offsetY:       return -150...150
+        case .opacity:                  return 0...1
+        case .rotation:                 return -360...360
+        case .blur:                     return 0...30
         }
     }
     var defaultValue: Double {
         switch self {
-        case .scale, .opacity: return 1.0
-        default:               return 0.0
+        case .scale, .scaleX, .scaleY, .opacity: return 1.0
+        default:                                  return 0.0
         }
     }
     var color: Color {
@@ -34,6 +48,9 @@ private enum KFProperty: String, CaseIterable, Identifiable {
         case .offsetY:  return .teal
         case .opacity:  return .pink
         case .rotation: return .purple
+        case .scaleX:   return .cyan
+        case .scaleY:   return .green
+        case .blur:     return .secondary
         }
     }
     var icon: String {
@@ -43,6 +60,9 @@ private enum KFProperty: String, CaseIterable, Identifiable {
         case .offsetY:  return "arrow.up.and.down"
         case .opacity:  return "circle.lefthalf.filled"
         case .rotation: return "rotate.right"
+        case .scaleX:   return "arrow.left.and.right.square"
+        case .scaleY:   return "arrow.up.and.down.square"
+        case .blur:     return "aqi.medium"
         }
     }
     // Pre-set "to" value used when adding from the quick-add grid
@@ -53,14 +73,18 @@ private enum KFProperty: String, CaseIterable, Identifiable {
         case .offsetY:  return -40
         case .opacity:  return 0.0
         case .rotation: return 15
+        case .scaleX:   return 1.5
+        case .scaleY:   return 0.7
+        case .blur:     return 8.0
         }
     }
     func formatted(_ v: Double) -> String {
         switch self {
-        case .scale:              return String(format: "%.2f×", v)
-        case .offsetX, .offsetY: return String(format: "%.0fpt", v)
-        case .opacity:            return String(format: "%.2f", v)
-        case .rotation:           return String(format: "%.0f°", v)
+        case .scale, .scaleX, .scaleY: return String(format: "%.2f×", v)
+        case .offsetX, .offsetY:       return String(format: "%.0fpt", v)
+        case .opacity:                  return String(format: "%.2f", v)
+        case .rotation:                 return String(format: "%.0f°", v)
+        case .blur:                     return String(format: "%.1fpt", v)
         }
     }
 }
@@ -87,7 +111,8 @@ private struct KFKeyframe: Identifiable {
     var id        = UUID()
     var property:  KFProperty
     var startTime: Double = 0
-    var value:     Double
+    var fromValue: Double
+    var toValue:   Double
     var duration:  Double
     var interp:    KFInterp
 }
@@ -100,6 +125,9 @@ private struct KFAnimValues {
     var offsetY:  CGFloat = 0
     var opacity:  Double  = 1.0
     var rotation: Double  = 0
+    var scaleX:   CGFloat = 1.0
+    var scaleY:   CGFloat = 1.0
+    var blur:     CGFloat = 0
 }
 
 // MARK: - Presets
@@ -124,12 +152,16 @@ private enum KFPreset: CaseIterable {
         }
     }
     // Converts sequential keyframes (startTime=0) into absolute startTimes per property lane
+    // and auto-chains fromValue from the preceding segment's toValue.
     private static func withStartTimes(_ kfs: [KFKeyframe]) -> [KFKeyframe] {
-        var cursor: [KFProperty: Double] = [:]
+        var timeCursor:  [KFProperty: Double] = [:]
+        var valueCursor: [KFProperty: Double] = [:]
         return kfs.map { kf in
             var k = kf
-            k.startTime = cursor[kf.property, default: 0]
-            cursor[kf.property] = k.startTime + k.duration
+            k.startTime  = timeCursor[kf.property, default: 0]
+            k.fromValue  = valueCursor[kf.property, default: kf.property.defaultValue]
+            timeCursor[kf.property]  = k.startTime + k.duration
+            valueCursor[kf.property] = k.toValue
             return k
         }
     }
@@ -138,35 +170,35 @@ private enum KFPreset: CaseIterable {
         switch self {
         case .bounce:
             return KFPreset.withStartTimes([
-                KFKeyframe(property: .scale,   value: 1.0,  duration: 0.1,  interp: .linear),
-                KFKeyframe(property: .scale,   value: 1.4,  duration: 0.25, interp: .spring),
-                KFKeyframe(property: .scale,   value: 1.0,  duration: 0.35, interp: .spring),
-                KFKeyframe(property: .offsetY, value: 0,    duration: 0.1,  interp: .linear),
-                KFKeyframe(property: .offsetY, value: -60,  duration: 0.25, interp: .spring),
-                KFKeyframe(property: .offsetY, value: 0,    duration: 0.35, interp: .spring),
+                KFKeyframe(property: .scale,   fromValue: 0, toValue: 1.0,  duration: 0.1,  interp: .linear),
+                KFKeyframe(property: .scale,   fromValue: 0, toValue: 1.4,  duration: 0.25, interp: .spring),
+                KFKeyframe(property: .scale,   fromValue: 0, toValue: 1.0,  duration: 0.35, interp: .spring),
+                KFKeyframe(property: .offsetY, fromValue: 0, toValue: 0,    duration: 0.1,  interp: .linear),
+                KFKeyframe(property: .offsetY, fromValue: 0, toValue: -60,  duration: 0.25, interp: .spring),
+                KFKeyframe(property: .offsetY, fromValue: 0, toValue: 0,    duration: 0.35, interp: .spring),
             ])
         case .fadeIn:
             return KFPreset.withStartTimes([
-                KFKeyframe(property: .opacity, value: 0.0, duration: 0.05, interp: .linear),
-                KFKeyframe(property: .opacity, value: 1.0, duration: 0.5,  interp: .cubic),
-                KFKeyframe(property: .scale,   value: 0.8, duration: 0.05, interp: .linear),
-                KFKeyframe(property: .scale,   value: 1.0, duration: 0.5,  interp: .spring),
+                KFKeyframe(property: .opacity, fromValue: 0, toValue: 0.0, duration: 0.05, interp: .linear),
+                KFKeyframe(property: .opacity, fromValue: 0, toValue: 1.0, duration: 0.5,  interp: .cubic),
+                KFKeyframe(property: .scale,   fromValue: 0, toValue: 0.8, duration: 0.05, interp: .linear),
+                KFKeyframe(property: .scale,   fromValue: 0, toValue: 1.0, duration: 0.5,  interp: .spring),
             ])
         case .swing:
             return KFPreset.withStartTimes([
-                KFKeyframe(property: .rotation, value: 0,   duration: 0.05, interp: .linear),
-                KFKeyframe(property: .rotation, value: -25, duration: 0.2,  interp: .spring),
-                KFKeyframe(property: .rotation, value: 25,  duration: 0.2,  interp: .spring),
-                KFKeyframe(property: .rotation, value: -15, duration: 0.15, interp: .spring),
-                KFKeyframe(property: .rotation, value: 0,   duration: 0.15, interp: .spring),
+                KFKeyframe(property: .rotation, fromValue: 0, toValue: 0,   duration: 0.05, interp: .linear),
+                KFKeyframe(property: .rotation, fromValue: 0, toValue: -25, duration: 0.2,  interp: .spring),
+                KFKeyframe(property: .rotation, fromValue: 0, toValue: 25,  duration: 0.2,  interp: .spring),
+                KFKeyframe(property: .rotation, fromValue: 0, toValue: -15, duration: 0.15, interp: .spring),
+                KFKeyframe(property: .rotation, fromValue: 0, toValue: 0,   duration: 0.15, interp: .spring),
             ])
         case .popIn:
             return KFPreset.withStartTimes([
-                KFKeyframe(property: .scale,   value: 0.0, duration: 0.01, interp: .linear),
-                KFKeyframe(property: .scale,   value: 1.2, duration: 0.3,  interp: .spring),
-                KFKeyframe(property: .scale,   value: 1.0, duration: 0.2,  interp: .spring),
-                KFKeyframe(property: .opacity, value: 0.0, duration: 0.01, interp: .linear),
-                KFKeyframe(property: .opacity, value: 1.0, duration: 0.25, interp: .cubic),
+                KFKeyframe(property: .scale,   fromValue: 0, toValue: 0.0, duration: 0.01, interp: .linear),
+                KFKeyframe(property: .scale,   fromValue: 0, toValue: 1.2, duration: 0.3,  interp: .spring),
+                KFKeyframe(property: .scale,   fromValue: 0, toValue: 1.0, duration: 0.2,  interp: .spring),
+                KFKeyframe(property: .opacity, fromValue: 0, toValue: 0.0, duration: 0.01, interp: .linear),
+                KFKeyframe(property: .opacity, fromValue: 0, toValue: 1.0, duration: 0.25, interp: .cubic),
             ])
         }
     }
@@ -177,12 +209,22 @@ private enum KFPreset: CaseIterable {
 struct KeyframeStudioView: View {
     @State private var keyframes: [KFKeyframe] = KFPreset.bounce.keyframes
     @State private var selectedID: UUID? = nil
+    @State private var previewAssetIndex: Int = 0
 
     // Timeline pan/zoom
     @State private var timeScale: CGFloat = 0
     @State private var scrollOffset: CGFloat = 0
     @GestureState private var dragDelta: CGFloat = 0
     @GestureState private var pinchDelta: CGFloat = 1.0
+
+    // Snap HUD
+    @AppStorage("showSnapHUD_keyframe") private var showSnapHUD = false
+    @State private var hudVelocity: CGFloat    = 0
+    @State private var hudVelocityMin: CGFloat = 0
+    @State private var hudVelocityMax: CGFloat = 0
+    @State private var hudIsSnapping: Bool     = false
+    @State private var hudVisible: Bool        = false
+    @State private var hudHideTask: Task<Void, Never>? = nil
 
     // Playback
     @State private var triggerAnimation: Int = 0
@@ -195,6 +237,10 @@ struct KeyframeStudioView: View {
     @State private var storedAnimDur: Double = 0
 
     // MARK: Derived
+
+    private var snapPoints: [Double] {
+        Array(Set(keyframes.flatMap { [$0.startTime, $0.startTime + $0.duration] })).sorted()
+    }
 
     private var liveScale: CGFloat {
         timeScale == 0 ? 0 : min(500, max(30, timeScale * pinchDelta))
@@ -217,11 +263,14 @@ struct KeyframeStudioView: View {
                 .last
             guard let last else { continue }
             switch prop {
-            case .scale:    v.scale    = CGFloat(last.value)
-            case .offsetX:  v.offsetX  = CGFloat(last.value)
-            case .offsetY:  v.offsetY  = CGFloat(last.value)
-            case .opacity:  v.opacity  = last.value
-            case .rotation: v.rotation = last.value
+            case .scale:    v.scale    = CGFloat(last.toValue)
+            case .offsetX:  v.offsetX  = CGFloat(last.toValue)
+            case .offsetY:  v.offsetY  = CGFloat(last.toValue)
+            case .opacity:  v.opacity  = last.toValue
+            case .rotation: v.rotation = last.toValue
+            case .scaleX:   v.scaleX   = CGFloat(last.toValue)
+            case .scaleY:   v.scaleY   = CGFloat(last.toValue)
+            case .blur:     v.blur     = CGFloat(last.toValue)
             }
         }
         return v
@@ -233,21 +282,6 @@ struct KeyframeStudioView: View {
         return $keyframes[idx]
     }
 
-    // The keyframe in the same property lane whose end point is closest before selectedKeyframe.startTime
-    private var selectedKeyframePrev: Binding<KFKeyframe>? {
-        guard let id = selectedID,
-              let kf = keyframes.first(where: { $0.id == id })
-        else { return nil }
-        let prev = keyframes
-            .filter { $0.property == kf.property && $0.id != kf.id }
-            .filter { $0.startTime + $0.duration <= kf.startTime + 0.001 }
-            .max { ($0.startTime + $0.duration) < ($1.startTime + $1.duration) }
-        guard let prev,
-              let prevIdx = keyframes.firstIndex(where: { $0.id == prev.id })
-        else { return nil }
-        return $keyframes[prevIdx]
-    }
-
     // MARK: Body
 
     var body: some View {
@@ -257,7 +291,7 @@ struct KeyframeStudioView: View {
             timelineSection
             Divider()
             if let kfBinding = selectedKeyframe {
-                inspectorSection(kfBinding, prev: selectedKeyframePrev)
+                inspectorSection(kfBinding)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 Divider()
             }
@@ -279,94 +313,230 @@ struct KeyframeStudioView: View {
         .onDisappear { stopPlayback() }
     }
 
+    // MARK: – Scrub Evaluation
+
+    // Computes the exact animated state at time t by evaluating each property's
+    // built track using Spring.value for spring/cubic curves, linear lerp otherwise.
+    private func evaluateAt(time t: Double) -> KFAnimValues {
+        var result = KFAnimValues()
+        let clamped = max(0, t)
+        for prop in KFProperty.allCases {
+            let track = buildTrack(for: prop)
+            let value: Double
+            if let active = track.last(where: { $0.startTime <= clamped }) {
+                let elapsed = clamped - active.startTime
+                if elapsed >= active.duration {
+                    value = active.toValue
+                } else {
+                    switch active.interp {
+                    case .linear:
+                        value = active.fromValue + (active.toValue - active.fromValue) * (elapsed / active.duration)
+                    case .spring, .cubic:
+                        // Spring.value(target:time:) computes displacement from 0 toward target,
+                        // starting at rest. Shift so the spring travels from fromValue to toValue.
+                        let delta = active.toValue - active.fromValue
+                        value = active.fromValue + active.interp.springCurve.value(
+                            target: delta,
+                            time: elapsed
+                        )
+                    }
+                }
+            } else {
+                value = track.first?.fromValue ?? prop.defaultValue
+            }
+            switch prop {
+            case .scale:    result.scale    = CGFloat(value)
+            case .offsetX:  result.offsetX  = CGFloat(value)
+            case .offsetY:  result.offsetY  = CGFloat(value)
+            case .opacity:  result.opacity  = value
+            case .rotation: result.rotation = value
+            case .scaleX:   result.scaleX   = CGFloat(value)
+            case .scaleY:   result.scaleY   = CGFloat(value)
+            case .blur:     result.blur     = CGFloat(value)
+            }
+        }
+        return result
+    }
+
     // MARK: – Preview
+
+    // The 5 cycling preview assets. Second item is explicitly the bookmark symbol per spec;
+    // others are common interactive elements that appear throughout the app.
+    @ViewBuilder
+    private var previewAsset: some View {
+        switch previewAssetIndex {
+        case 1:
+            Image(systemName: "bookmark.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.indigo)
+        case 2:
+            Image(systemName: "heart.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.pink)
+        case 3:
+            Image(systemName: "person.crop.circle.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.orange)
+        case 4:
+            Image(systemName: "bell.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.teal)
+        default:
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(LinearGradient(
+                    colors: [.indigo, .purple],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                ))
+                .frame(width: 80, height: 80)
+                .overlay(
+                    Image(systemName: "wand.and.sparkles")
+                        .font(.title2).foregroundStyle(.white)
+                )
+        }
+    }
+
+    @ViewBuilder
+    private func previewShape(_ v: KFAnimValues) -> some View {
+        previewAsset
+            .blur(radius: v.blur)
+            .scaleEffect(x: v.scaleX, y: v.scaleY)
+            .scaleEffect(v.scale)
+            .opacity(v.opacity)
+            .offset(x: v.offsetX, y: v.offsetY)
+            .rotationEffect(.degrees(v.rotation))
+    }
 
     private var previewSection: some View {
         ZStack {
             Color(.systemGroupedBackground)
 
             if keyframes.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "wand.and.sparkles")
-                        .font(.system(size: 32)).foregroundStyle(.secondary)
-                    Text("Add keyframes to preview")
-                        .font(.caption).foregroundStyle(.tertiary)
+                // Tap to cycle through preview assets; dots show current position.
+                // Cycling is only available while the timeline is empty.
+                ZStack {
+                    previewAsset
+                        .id(previewAssetIndex)
+                        .transition(.scale(scale: 0.72).combined(with: .opacity))
+
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 5) {
+                            ForEach(0..<5, id: \.self) { i in
+                                Circle()
+                                    .fill(i == previewAssetIndex
+                                          ? Color.primary.opacity(0.5)
+                                          : Color.secondary.opacity(0.18))
+                                    .frame(width: 5, height: 5)
+                            }
+                        }
+                        .padding(.bottom, 12)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.spring(duration: 0.3, bounce: 0.35)) {
+                        previewAssetIndex = (previewAssetIndex + 1) % 5
+                    }
                 }
             } else {
-                KeyframeAnimator(
-                    initialValue: isReversePhase ? finalAnimValues : KFAnimValues(),
-                    trigger: triggerAnimation
-                ) { v in
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(LinearGradient(
-                            colors: [.indigo, .purple],
-                            startPoint: .topLeading, endPoint: .bottomTrailing
-                        ))
-                        .frame(width: 80, height: 80)
-                        .overlay(
-                            Image(systemName: "wand.and.sparkles")
-                                .font(.title2).foregroundStyle(.white)
-                        )
-                        .scaleEffect(v.scale)
-                        .opacity(v.opacity)
-                        .offset(x: v.offsetX, y: v.offsetY)
-                        .rotationEffect(.degrees(v.rotation))
-                } keyframes: { _ in
-                    if isReversePhase {
-                        // Reverse phase: animate from final state back to defaults
-                        let d = storedAnimDur
-                        KeyframeTrack(\.scale)    { LinearKeyframe(1.0, duration: d) }
-                        KeyframeTrack(\.offsetX)  { LinearKeyframe(0,   duration: d) }
-                        KeyframeTrack(\.offsetY)  { LinearKeyframe(0,   duration: d) }
-                        KeyframeTrack(\.opacity)  { LinearKeyframe(1.0, duration: d) }
-                        KeyframeTrack(\.rotation) { LinearKeyframe(0,   duration: d) }
-                    } else {
-                        // Forward phase: normal keyframe tracks
+                ZStack {
+                    // KeyframeAnimator stays in the hierarchy at all times so trigger changes
+                    // always land on an existing view (not a freshly created one).
+                    // Opacity hides it while the user scrubs; the scrub preview sits on top.
+                    //
+                    // Reverse phase uses a ternary to select a single-frame hold array rather
+                    // than if/else between track groups — @KeyframesBuilder doesn't support
+                    // top-level conditionals between KeyframeTrack sets.
+                    let revDur = storedAnimDur > 0 ? storedAnimDur : 0.1
+                    let hold: (KFProperty, Double) -> [KFKeyframe] = { prop, val in
+                        [KFKeyframe(property: prop, fromValue: val, toValue: val,
+                                    duration: revDur, interp: .linear)]
+                    }
+                    KeyframeAnimator(
+                        initialValue: isReversePhase ? finalAnimValues : KFAnimValues(),
+                        trigger: triggerAnimation
+                    ) { v in
+                        previewShape(v)
+                    } keyframes: { _ in
                         KeyframeTrack(\.scale) {
-                            for kf in buildTrack(for: .scale) {
+                            for kf in (isReversePhase ? hold(.scale, 1.0) : buildTrack(for: .scale)) {
                                 if kf.interp == .linear {
-                                    LinearKeyframe(CGFloat(kf.value), duration: kf.duration)
+                                    LinearKeyframe(CGFloat(kf.toValue), duration: kf.duration)
                                 } else {
-                                    SpringKeyframe(CGFloat(kf.value), duration: kf.duration, spring: kf.interp.springCurve)
+                                    SpringKeyframe(CGFloat(kf.toValue), duration: kf.duration, spring: kf.interp.springCurve)
                                 }
                             }
                         }
                         KeyframeTrack(\.offsetX) {
-                            for kf in buildTrack(for: .offsetX) {
+                            for kf in (isReversePhase ? hold(.offsetX, 0) : buildTrack(for: .offsetX)) {
                                 if kf.interp == .linear {
-                                    LinearKeyframe(CGFloat(kf.value), duration: kf.duration)
+                                    LinearKeyframe(CGFloat(kf.toValue), duration: kf.duration)
                                 } else {
-                                    SpringKeyframe(CGFloat(kf.value), duration: kf.duration, spring: kf.interp.springCurve)
+                                    SpringKeyframe(CGFloat(kf.toValue), duration: kf.duration, spring: kf.interp.springCurve)
                                 }
                             }
                         }
                         KeyframeTrack(\.offsetY) {
-                            for kf in buildTrack(for: .offsetY) {
+                            for kf in (isReversePhase ? hold(.offsetY, 0) : buildTrack(for: .offsetY)) {
                                 if kf.interp == .linear {
-                                    LinearKeyframe(CGFloat(kf.value), duration: kf.duration)
+                                    LinearKeyframe(CGFloat(kf.toValue), duration: kf.duration)
                                 } else {
-                                    SpringKeyframe(CGFloat(kf.value), duration: kf.duration, spring: kf.interp.springCurve)
+                                    SpringKeyframe(CGFloat(kf.toValue), duration: kf.duration, spring: kf.interp.springCurve)
                                 }
                             }
                         }
                         KeyframeTrack(\.opacity) {
-                            for kf in buildTrack(for: .opacity) {
+                            for kf in (isReversePhase ? hold(.opacity, 1.0) : buildTrack(for: .opacity)) {
                                 if kf.interp == .linear {
-                                    LinearKeyframe(kf.value, duration: kf.duration)
+                                    LinearKeyframe(kf.toValue, duration: kf.duration)
                                 } else {
-                                    SpringKeyframe(kf.value, duration: kf.duration, spring: kf.interp.springCurve)
+                                    SpringKeyframe(kf.toValue, duration: kf.duration, spring: kf.interp.springCurve)
                                 }
                             }
                         }
                         KeyframeTrack(\.rotation) {
-                            for kf in buildTrack(for: .rotation) {
+                            for kf in (isReversePhase ? hold(.rotation, 0) : buildTrack(for: .rotation)) {
                                 if kf.interp == .linear {
-                                    LinearKeyframe(kf.value, duration: kf.duration)
+                                    LinearKeyframe(kf.toValue, duration: kf.duration)
                                 } else {
-                                    SpringKeyframe(kf.value, duration: kf.duration, spring: kf.interp.springCurve)
+                                    SpringKeyframe(kf.toValue, duration: kf.duration, spring: kf.interp.springCurve)
                                 }
                             }
                         }
+                        KeyframeTrack(\.scaleX) {
+                            for kf in (isReversePhase ? hold(.scaleX, 1.0) : buildTrack(for: .scaleX)) {
+                                if kf.interp == .linear {
+                                    LinearKeyframe(CGFloat(kf.toValue), duration: kf.duration)
+                                } else {
+                                    SpringKeyframe(CGFloat(kf.toValue), duration: kf.duration, spring: kf.interp.springCurve)
+                                }
+                            }
+                        }
+                        KeyframeTrack(\.scaleY) {
+                            for kf in (isReversePhase ? hold(.scaleY, 1.0) : buildTrack(for: .scaleY)) {
+                                if kf.interp == .linear {
+                                    LinearKeyframe(CGFloat(kf.toValue), duration: kf.duration)
+                                } else {
+                                    SpringKeyframe(CGFloat(kf.toValue), duration: kf.duration, spring: kf.interp.springCurve)
+                                }
+                            }
+                        }
+                        KeyframeTrack(\.blur) {
+                            for kf in (isReversePhase ? hold(.blur, 0) : buildTrack(for: .blur)) {
+                                if kf.interp == .linear {
+                                    LinearKeyframe(CGFloat(kf.toValue), duration: kf.duration)
+                                } else {
+                                    SpringKeyframe(CGFloat(kf.toValue), duration: kf.duration, spring: kf.interp.springCurve)
+                                }
+                            }
+                        }
+                    }
+                    .opacity(isPlaying ? 1 : 0)
+
+                    // Scrub preview — exact evaluated state at current playhead position
+                    if !isPlaying {
+                        let t = liveScale > 0 ? Double(liveOffset / liveScale) : 0
+                        previewShape(evaluateAt(time: t))
                     }
                 }
             }
@@ -410,7 +580,7 @@ struct KeyframeStudioView: View {
 
                 // Clipped region: ruler + lane chips
                 ZStack(alignment: .topLeading) {
-                    KFRuler(viewWidth: vw, timeScale: scale, scrollOffset: offset)
+                    TimelineRuler(timeScale: scale, scrollOffset: offset, maxDuration: kKFMaxDuration)
                         .frame(height: totalH)
 
                     VStack(spacing: 0) {
@@ -432,6 +602,9 @@ struct KeyframeStudioView: View {
                                         isSelected: sel,
                                         timeScale: scale,
                                         minLeftDelta: CGFloat(kf.startTime) * scale,
+                                        snapPoints: snapPoints,
+                                        currentStartTime: kf.startTime,
+                                        currentDuration: kf.duration,
                                         onTap: {
                                             withAnimation(.spring(duration: 0.22)) {
                                                 selectedID = selectedID == kf.id ? nil : kf.id
@@ -448,6 +621,19 @@ struct KeyframeStudioView: View {
                                             let clampedDT = newStart - kf.startTime
                                             keyframes[i].startTime = newStart
                                             keyframes[i].duration  = max(0.05, kf.duration - clampedDT)
+                                        },
+                                        onDragChanged: { vel, vMin, vMax, snapping in
+                                            hudVelocity    = vel
+                                            hudVelocityMin = vMin
+                                            hudVelocityMax = vMax
+                                            hudIsSnapping  = snapping
+                                            hudVisible     = true
+                                            hudHideTask?.cancel()
+                                            hudHideTask = Task {
+                                                try? await Task.sleep(for: .seconds(2))
+                                                guard !Task.isCancelled else { return }
+                                                await MainActor.run { hudVisible = false }
+                                            }
                                         }
                                     )
                                     .offset(x: x, y: 4)
@@ -511,6 +697,21 @@ struct KeyframeStudioView: View {
                     .background(.red.opacity(0.15), in: Capsule())
                     .position(x: vw / 2, y: kKFRulerH / 2 + 4)
                     .allowsHitTesting(false)
+
+                // Snap debug HUD — top-trailing, visible when enabled and a drag is active
+                if showSnapHUD && hudVisible {
+                    SnapHUDView(
+                        velocity:    hudVelocity,
+                        velocityMin: hudVelocityMin,
+                        velocityMax: hudVelocityMax,
+                        threshold:   kSnapVelocityThreshold,
+                        isSnapping:  hudIsSnapping
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(8)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+                }
             }
             .gesture(
                 DragGesture(minimumDistance: 8)
@@ -532,6 +733,12 @@ struct KeyframeStudioView: View {
                         timeScale    = newScale
                     }
             )
+            .simultaneousGesture(
+                LongPressGesture(minimumDuration: 0.5)
+                    .onEnded { _ in
+                        withAnimation(.easeInOut(duration: 0.2)) { showSnapHUD.toggle() }
+                    }
+            )
         }
         .frame(height: totalH)
         .onAppear {
@@ -545,9 +752,8 @@ struct KeyframeStudioView: View {
     // MARK: – Inspector
 
     @ViewBuilder
-    private func inspectorSection(_ binding: Binding<KFKeyframe>, prev: Binding<KFKeyframe>?) -> some View {
-        let kf        = binding.wrappedValue
-        let fromValue = prev?.wrappedValue.value ?? kf.property.defaultValue
+    private func inspectorSection(_ binding: Binding<KFKeyframe>) -> some View {
+        let kf = binding.wrappedValue
 
         VStack(spacing: 0) {
             Capsule()
@@ -563,7 +769,7 @@ struct KeyframeStudioView: View {
                         .padding(.horizontal, 7).padding(.vertical, 3)
                         .background(kf.property.color.opacity(0.15), in: Capsule())
                         .foregroundStyle(kf.property.color)
-                    Text("\(kf.property.formatted(fromValue)) → \(kf.property.formatted(kf.value))")
+                    Text("\(kf.property.formatted(kf.fromValue)) → \(kf.property.formatted(kf.toValue))")
                         .font(.caption.monospacedDigit())
                     Spacer()
                     Button {
@@ -576,25 +782,16 @@ struct KeyframeStudioView: View {
 
                 Divider()
 
-                // From value — editable only when a previous keyframe exists
+                // From value — always editable, bound directly to this keyframe
                 HStack(spacing: 10) {
                     Text("From")
                         .font(.caption).foregroundStyle(.secondary)
                         .frame(width: 44, alignment: .leading)
-                    if let prevBinding = prev {
-                        Slider(value: prevBinding.value, in: kf.property.range)
-                            .tint(kf.property.color.opacity(0.55))
-                        Text(kf.property.formatted(fromValue))
-                            .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                            .frame(width: 52, alignment: .trailing)
-                    } else {
-                        Text("initial state")
-                            .font(.caption).foregroundStyle(.tertiary)
-                        Spacer()
-                        Text(kf.property.formatted(fromValue))
-                            .font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
-                            .frame(width: 52, alignment: .trailing)
-                    }
+                    Slider(value: binding.fromValue, in: kf.property.range)
+                        .tint(kf.property.color.opacity(0.55))
+                    Text(kf.property.formatted(kf.fromValue))
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        .frame(width: 52, alignment: .trailing)
                 }
 
                 // To value — always editable
@@ -602,9 +799,9 @@ struct KeyframeStudioView: View {
                     Text("To")
                         .font(.caption).foregroundStyle(.secondary)
                         .frame(width: 44, alignment: .leading)
-                    Slider(value: binding.value, in: kf.property.range)
+                    Slider(value: binding.toValue, in: kf.property.range)
                         .tint(kf.property.color)
-                    Text(kf.property.formatted(kf.value))
+                    Text(kf.property.formatted(kf.toValue))
                         .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                         .frame(width: 52, alignment: .trailing)
                 }
@@ -614,6 +811,15 @@ struct KeyframeStudioView: View {
                     ForEach(KFInterp.allCases, id: \.self) { t in Text(t.rawValue).tag(t) }
                 }
                 .pickerStyle(.segmented)
+
+                // Duration — read-only, shown in ms to match ruler
+                HStack {
+                    Text("Duration").font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(kf.duration * 1000, specifier: "%.0f")ms")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
 
                 // Delete
                 Button(role: .destructive) {
@@ -687,8 +893,12 @@ struct KeyframeStudioView: View {
                     ForEach(KFProperty.allCases) { prop in
                         Button {
                             let startTime = timeScale > 0 ? Double(scrollOffset / timeScale) : 0
+                            let prevKF = keyframes
+                                .filter { $0.property == prop && $0.startTime + $0.duration <= startTime + 0.001 }
+                                .max { ($0.startTime + $0.duration) < ($1.startTime + $1.duration) }
+                            let fromVal = prevKF?.toValue ?? prop.defaultValue
                             let kf = KFKeyframe(property: prop, startTime: startTime,
-                                                value: prop.defaultAddValue,
+                                                fromValue: fromVal, toValue: prop.defaultAddValue,
                                                 duration: 0.25, interp: .spring)
                             withAnimation(.spring(duration: 0.25)) { keyframes.append(kf) }
                         } label: {
@@ -808,16 +1018,18 @@ struct KeyframeStudioView: View {
 
         guard !sorted.isEmpty else {
             return [KFKeyframe(property: prop, startTime: 0,
-                               value: prop.defaultValue, duration: total, interp: .linear)]
+                               fromValue: prop.defaultValue, toValue: prop.defaultValue,
+                               duration: total, interp: .linear)]
         }
 
         var result: [KFKeyframe] = []
         var cursor = 0.0
 
-        for (i, kf) in sorted.enumerated() {
+        for kf in sorted {
             if kf.startTime > cursor + 0.001 {
-                let holdVal = i > 0 ? sorted[i - 1].value : prop.defaultValue
-                result.append(KFKeyframe(property: prop, startTime: cursor, value: holdVal,
+                // Gap before this segment: hold at its fromValue so the animator starts there
+                result.append(KFKeyframe(property: prop, startTime: cursor,
+                                         fromValue: kf.fromValue, toValue: kf.fromValue,
                                          duration: kf.startTime - cursor, interp: .linear))
             }
             result.append(kf)
@@ -825,8 +1037,9 @@ struct KeyframeStudioView: View {
         }
 
         if cursor < total - 0.001 {
+            let lastVal = sorted.last!.toValue
             result.append(KFKeyframe(property: prop, startTime: cursor,
-                                     value: sorted.last!.value,
+                                     fromValue: lastVal, toValue: lastVal,
                                      duration: total - cursor, interp: .linear))
         }
 
@@ -921,27 +1134,38 @@ struct KeyframeStudioView: View {
 private let kHandleW: CGFloat = 16
 
 private struct KFChipView: View {
-    let property:     KFProperty
-    let chipWidth:    CGFloat
-    let chipHeight:   CGFloat
-    let isSelected:   Bool
-    let timeScale:    CGFloat
-    let minLeftDelta: CGFloat
-    let onTap:           () -> Void
-    let onRightDragEnd:  (CGFloat) -> Void
-    let onLeftDragEnd:   (CGFloat) -> Void
+    let property:         KFProperty
+    let chipWidth:        CGFloat
+    let chipHeight:       CGFloat
+    let isSelected:       Bool
+    let timeScale:        CGFloat
+    let minLeftDelta:     CGFloat
+    let snapPoints:       [Double]
+    let currentStartTime: Double
+    let currentDuration:  Double
+    let onTap:            () -> Void
+    let onRightDragEnd:   (CGFloat) -> Void
+    let onLeftDragEnd:    (CGFloat) -> Void
+    let onDragChanged:    (CGFloat, CGFloat, CGFloat, Bool) -> Void  // vel, vMin, vMax, isSnapping
 
-    // Single gesture state covering both handles — eliminates gesture conflicts with parent timeline
-    private enum HandleDrag {
-        case none, left(CGFloat), right(CGFloat)
-        var leftDelta:  CGFloat { if case .left(let d)  = self { return d } else { return 0 } }
-        var rightDelta: CGFloat { if case .right(let d) = self { return d } else { return 0 } }
-    }
-    @GestureState private var handleDrag: HandleDrag = .none
+    // Live drag deltas (replace @GestureState so snap can be applied before committing)
+    @State private var leftDelta:  CGFloat = 0
+    @State private var rightDelta: CGFloat = 0
+
+    // Which handle is active — used to detect drag-session start for velocity reset
+    private enum ActiveHandle { case none, left, right }
+    @State private var activeHandle: ActiveHandle = .none
+
+    // Velocity tracking
+    @State private var velocityTracker = VelocityTracker()
+
+    // Snap state
+    @State private var wasSnapped: Bool = false
+    @State private var isSnapping: Bool = false
 
     private var liveWidth: CGFloat {
         guard isSelected else { return max(8, chipWidth) }
-        return max(8, chipWidth + handleDrag.rightDelta - handleDrag.leftDelta)
+        return max(8, chipWidth + rightDelta - leftDelta)
     }
 
     private var showHandles: Bool {
@@ -968,31 +1192,77 @@ private struct KFChipView: View {
         }
         .frame(width: liveWidth, height: chipHeight)
         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-        .offset(x: isSelected ? handleDrag.leftDelta : 0)
+        .offset(x: isSelected ? leftDelta : 0)
         .contentShape(Rectangle())
         .onTapGesture { onTap() }
         // One gesture on the whole chip; startLocation.x determines which handle is active.
         // including: .none when not selected lets the parent timeline pan receive these drags.
         .highPriorityGesture(
             DragGesture(minimumDistance: 4)
-                .updating($handleDrag) { value, state, transaction in
-                    transaction.animation = nil
+                .onChanged { value in
                     guard showHandles else { return }
                     let x = value.startLocation.x
-                    if x <= kHandleW + 4 {
-                        state = .left(min(max(value.translation.width, -minLeftDelta), chipWidth - 8))
-                    } else if x >= chipWidth - kHandleW - 4 {
-                        state = .right(max(value.translation.width, -(chipWidth - 8)))
+                    let isLeft  = x <= kHandleW + 4
+                    let isRight = x >= chipWidth - kHandleW - 4
+                    guard isLeft || isRight else { return }
+
+                    // Reset velocity stats at the start of each drag session
+                    if activeHandle == .none {
+                        velocityTracker.reset()
+                        wasSnapped   = false
+                        isSnapping   = false
+                        activeHandle = isLeft ? .left : .right
                     }
+
+                    let raw          = value.translation.width
+                    let dragVelocity = velocityTracker.update(rawDelta: raw)
+
+                    // Clamped raw delta (same bounds as before)
+                    let rawDelta: CGFloat = isLeft
+                        ? min(max(raw, -minLeftDelta), chipWidth - 8)
+                        : max(raw, -(chipWidth - 8))
+
+                    // Snap via shared engine — re-apply bounds clamping after snapping
+                    let baseTime = isLeft ? currentStartTime : (currentStartTime + currentDuration)
+                    let (engineDelta, snapping) = TimelineSnapEngine.snappedDelta(
+                        rawDelta:     rawDelta,
+                        baseTime:     baseTime,
+                        snapPoints:   snapPoints,
+                        timeScale:    timeScale,
+                        snapRadiusPt: kSnapRadiusPt,
+                        velocity:     dragVelocity,
+                        threshold:    kSnapVelocityThreshold
+                    )
+                    let finalDelta: CGFloat = isLeft
+                        ? min(max(engineDelta, -minLeftDelta), chipWidth - 8)
+                        : max(engineDelta, -(chipWidth - 8))
+
+                    isSnapping = snapping
+                    if snapping && !wasSnapped {
+                        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+                        wasSnapped = true
+                    } else if !snapping {
+                        wasSnapped = false
+                    }
+
+                    if isLeft { leftDelta  = finalDelta }
+                    else      { rightDelta = finalDelta }
+
+                    onDragChanged(dragVelocity, velocityTracker.velocityMin, velocityTracker.velocityMax, isSnapping)
                 }
                 .onEnded { value in
                     guard showHandles else { return }
                     let x = value.startLocation.x
                     if x <= kHandleW + 4 {
-                        onLeftDragEnd(value.translation.width)
+                        onLeftDragEnd(leftDelta)
                     } else if x >= chipWidth - kHandleW - 4 {
-                        onRightDragEnd(value.translation.width)
+                        onRightDragEnd(rightDelta)
                     }
+                    leftDelta    = 0
+                    rightDelta   = 0
+                    activeHandle = .none
+                    wasSnapped   = false
+                    isSnapping   = false
                 },
             including: isSelected ? .all : .none
         )
@@ -1016,97 +1286,6 @@ private struct KFChipView: View {
     }
 }
 
-// MARK: - Timeline Ruler
-
-private struct KFRuler: View {
-    let viewWidth: CGFloat
-    let timeScale: CGFloat
-    let scrollOffset: CGFloat
-
-    var body: some View {
-        Canvas { ctx, size in
-            guard timeScale > 0 else { return }
-
-            let zeroX = size.width / 2 - scrollOffset
-            let endX  = size.width / 2 + CGFloat(kKFMaxDuration) * timeScale - scrollOffset
-
-            // Hatching outside the valid [0, 5s] window
-            for (from, to) in [(CGFloat(0), min(zeroX, size.width)),
-                               (max(endX, 0), size.width)] {
-                guard to > from + 0.5 else { continue }
-                let rect = CGRect(x: from, y: 0, width: to - from, height: size.height)
-                ctx.fill(Path(rect), with: .color(.primary.opacity(0.07)))
-                var clipped = ctx
-                clipped.clip(to: Path(rect))
-                let spacing: CGFloat = 9
-                var k = from - size.height
-                while k < to + size.height {
-                    var ln = Path()
-                    ln.move(to:    CGPoint(x: k,               y: 0))
-                    ln.addLine(to: CGPoint(x: k + size.height, y: size.height))
-                    clipped.stroke(ln, with: .color(.primary.opacity(0.1)), lineWidth: 1)
-                    k += spacing
-                }
-            }
-
-            // Adaptive tick step — only draw ticks that will be >= 3pt apart
-            let step: Double = timeScale * 0.05 >= 3 ? 0.05
-                             : timeScale * 0.25 >= 3 ? 0.25
-                             : 0.5
-
-            // Adaptive label interval — show finer labels only when they're >= 40pt apart
-            // Priority: 1s → 500ms → 250ms
-            let labelIntervalMs: Int = CGFloat(0.25) * timeScale >= 40 ? 250
-                                     : CGFloat(0.5)  * timeScale >= 40 ? 500
-                                     : 1000
-
-            let tLeft: Double = Double((scrollOffset - size.width / 2) / timeScale)
-            var t = max(0.0, floor(tLeft / step) * step)
-
-            while t <= kKFMaxDuration + step * 0.01 {
-                let x = size.width / 2 + CGFloat(t) * timeScale - scrollOffset
-                guard x >= -1 && x <= size.width + 1 else { t += step; continue }
-
-                let ms      = Int((t * 1000).rounded())
-                let isWhole = ms % 1000 == 0
-                let isLabel = ms % labelIntervalMs == 0
-
-                var tick = Path()
-                tick.move(to:    .init(x: x, y: 0))
-                tick.addLine(to: .init(x: x, y: size.height))
-
-                if isWhole {
-                    ctx.stroke(tick, with: .color(.secondary.opacity(0.35)), lineWidth: 1.5)
-                } else {
-                    ctx.stroke(tick, with: .color(.secondary.opacity(0.18)),
-                               style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
-                }
-
-                if isLabel {
-                    let lbl = isWhole ? (ms == 0 ? "0s" : "\(ms / 1000)s") : "\(ms)ms"
-                    ctx.draw(
-                        Text(lbl).font(.system(size: 9)).foregroundColor(.secondary),
-                        at: .init(x: x + 3, y: 3), anchor: .topLeading
-                    )
-                }
-
-                t += step
-            }
-
-            // Hard end marker at 5s
-            if endX >= 0 && endX <= size.width {
-                var ep = Path()
-                ep.move(to:    .init(x: endX, y: 0))
-                ep.addLine(to: .init(x: endX, y: size.height))
-                ctx.stroke(ep, with: .color(.primary.opacity(0.5)), lineWidth: 2)
-                ctx.draw(
-                    Text("5s").font(.system(size: 9, weight: .semibold)).foregroundColor(.primary.opacity(0.6)),
-                    at: .init(x: endX + 3, y: 3), anchor: .topLeading
-                )
-            }
-        }
-    }
-}
 
 #Preview {
     NavigationStack { KeyframeStudioView() }

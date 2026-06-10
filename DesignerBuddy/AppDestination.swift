@@ -86,6 +86,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Symbol Effects":         SymbolEffectsView()
     case "Symbol Playground":      SymbolPlaygroundView()
     case "Matched Geometry":       MatchedGeometryView()
+    case "Content Transition":     ContentTransitionView()
     case "VoiceOver Labels":       VoiceOverLabelsView()
     case "Dynamic Type":           DynamicTypeExploreView()
     case "Reduce Motion":          ReduceMotionView()
