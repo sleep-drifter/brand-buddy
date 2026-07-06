@@ -447,3 +447,63 @@ float3 hueToRGB(float h) {
     float mag = 1.0 - strength * falloff;
     return center + delta * mag;
 }
+
+// Color grade: procedural film "looks" selected by index, blended by amount.
+// Each branch is an analytic tone/colour transform — an in-shader stand-in for a LUT.
+[[ stitchable ]] half4 shaderColorGrade(
+    float2 position,
+    half4 color,
+    float look,
+    float amount
+) {
+    float3 c = float3(color.rgb);
+    float luma = dot(c, float3(0.299, 0.587, 0.114));
+    float3 g = c;
+    int L = int(look + 0.5);
+    if (L == 1) {                 // Teal-Orange
+        float3 shadowTint = float3(0.0, 0.35, 0.45);
+        float3 highTint   = float3(1.0, 0.65, 0.30);
+        float3 tint = mix(shadowTint, highTint, smoothstep(0.2, 0.8, luma));
+        g = mix(c, c * 0.6 + tint * 0.6, 0.6);
+        g = (g - 0.5) * 1.12 + 0.5;
+    } else if (L == 2) {          // Warm Vintage
+        g = c * float3(1.08, 1.02, 0.88) + float3(0.06, 0.03, 0.0);
+        g = (g - 0.5) * 0.9 + 0.5;
+    } else if (L == 3) {          // Bleach Bypass
+        float3 gray = float3(luma);
+        g = mix(c, gray, 0.6) * gray * 2.0;
+        g = (g - 0.5) * 1.3 + 0.5;
+    } else if (L == 4) {          // Noir
+        float3 gray = float3(luma);
+        g = (gray - 0.5) * 1.35 + 0.5 + float3(0.0, 0.0, 0.04);
+    } else if (L == 5) {          // Cross Process
+        float3 tint = mix(float3(0.0, 0.30, 0.10), float3(1.0, 0.95, 0.40), luma);
+        g = mix(c, tint, 0.35);
+        g = (g - 0.5) * 1.2 + 0.5;
+        g = mix(float3(luma), g, 1.3);
+    } else if (L == 6) {          // Faded matte
+        g = (c - 0.5) * 0.75 + 0.5;
+        g = g * 0.9 + 0.08;
+    }
+    return half4(half3(saturate(mix(c, g, amount))), color.a);
+}
+
+// Topographic: posterize luminance into bands, drawing thin contour lines at each
+// band boundary; tint blends grayscale steps toward a cool→warm elevation ramp.
+[[ stitchable ]] half4 shaderTopographic(
+    float2 position,
+    half4 color,
+    float levels,
+    float lineWidth,
+    float tint
+) {
+    float luma = dot(float3(color.rgb), float3(0.299, 0.587, 0.114));
+    float lv = max(levels, 2.0);
+    float scaled = luma * lv;
+    float band = floor(scaled) / lv;
+    float f = fract(scaled);
+    float line = 1.0 - smoothstep(0.0, max(lineWidth, 0.001), min(f, 1.0 - f));
+    float3 ramp = mix(float3(0.10, 0.15, 0.35), float3(0.95, 0.85, 0.50), band);
+    float3 base = mix(float3(band), ramp, tint);
+    return half4(half3(base * (1.0 - line)), color.a);
+}
