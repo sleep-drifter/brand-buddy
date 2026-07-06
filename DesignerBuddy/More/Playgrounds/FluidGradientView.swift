@@ -39,8 +39,8 @@ struct FluidGradientView: View {
         TimelineView(.animation) { tl in
             let t = Float(tl.date.timeIntervalSinceReferenceDate)
             GeometryReader { geo in
-                Rectangle()
-                    .fill(ShaderLibrary.fluidGradientArt(
+                Color.black
+                    .colorEffect(ShaderLibrary.fluidGradientArt(
                         .float2(geo.size),
                         .float(t),
                         .float(0.05 + blobSize * 0.6),

@@ -510,10 +510,12 @@ float3 hueToRGB(float h) {
 
 // Fluid gradient (generative): five drifting metaball "blobs", each a colour, blended
 // by an inverse-square field into a soft gradient, then dusted with film grain.
-// Used as a ShapeStyle fill — `position` is the fill's local space; `size` normalizes it.
+// Applied via .colorEffect on an opaque fill — the incoming `color` is ignored and
+// fully replaced; `size` normalizes `position`.
 // Reimplemented in-house; inspired by iShader's FluidGradient.
 [[ stitchable ]] half4 fluidGradientArt(
     float2 position,
+    half4 color,
     float2 size,
     float time,
     float blobScale,
