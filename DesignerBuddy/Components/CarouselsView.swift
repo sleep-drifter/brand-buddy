@@ -120,19 +120,21 @@ struct CarouselsView: View {
                         ForEach(covers) { item in
                             coverCard(item, size: cardWidth)
                                 .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                                    content
+                                    // Precompute with explicit types so the type-checker has nothing to infer.
+                                    let p = Double(phase.value)
+                                    let mag = abs(p)
+                                    let angle: Double = p * -55
+                                    let scale: CGFloat = 1 - mag * 0.22
+                                    let fade: Double = 1 - mag * 0.25
+                                    return content
                                         .rotation3DEffect(
-                                            .degrees(phase.value * -55),
+                                            .degrees(angle),
                                             axis: (x: 0, y: 1, z: 0),
                                             anchor: .center,
                                             perspective: 0.5
                                         )
-                                        .scaleEffect(1 - abs(phase.value) * 0.22)
-                                        .opacity(1 - abs(phase.value) * 0.25)
-                                        // Pull neighbours toward the centered card for the overlapped, stacked look.
-                                        .offset(x: -phase.value * 28)
-                                        // Keep the centered card drawn on top of its rotated neighbours.
-                                        .zIndex(1 - Double(abs(phase.value)))
+                                        .scaleEffect(scale)
+                                        .opacity(fade)
                                 }
                         }
                     }
@@ -310,10 +312,11 @@ struct CarouselsView: View {
 
             ZStack(alignment: .top) {
                 ForEach(Array(cards.enumerated()), id: \.element.id) { i, item in
+                    let yOffset: CGFloat = CGFloat(i) * gap
+                    let depthScale: CGFloat = deckExpanded ? 1 : 1 - CGFloat(cards.count - 1 - i) * 0.03
                     walletCard(item, height: cardHeight)
-                        .offset(y: CGFloat(i) * gap)
-                        .scaleEffect(deckExpanded ? 1 : 1 - CGFloat(cards.count - 1 - i) * 0.03,
-                                     anchor: .top)
+                        .offset(y: yOffset)
+                        .scaleEffect(depthScale, anchor: .top)
                         .zIndex(Double(i))
                 }
             }
@@ -511,7 +514,8 @@ struct CarouselsView: View {
                     .foregroundStyle(.white.opacity(0.9))
                     // The inner artwork shifts slower than the page for a parallax feel.
                     .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                        content.offset(x: phase.value * 60)
+                        let dx = CGFloat(phase.value) * 60
+                        return content.offset(x: dx)
                     }
             )
             .overlay(alignment: .bottomLeading) {
