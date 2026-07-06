@@ -507,3 +507,70 @@ float3 hueToRGB(float h) {
     float3 base = mix(float3(band), ramp, tint);
     return half4(half3(base * (1.0 - line)), color.a);
 }
+
+// Fluid gradient (generative): five drifting metaball "blobs", each a colour, blended
+// by an inverse-square field into a soft gradient, then dusted with film grain.
+// Used as a ShapeStyle fill — `position` is the fill's local space; `size` normalizes it.
+// Reimplemented in-house; inspired by iShader's FluidGradient.
+[[ stitchable ]] half4 fluidGradientArt(
+    float2 position,
+    float2 size,
+    float time,
+    float blobScale,
+    float speed,
+    float grainAmount,
+    float saturation,
+    float palette
+) {
+    float2 uv = position / max(size, float2(1.0, 1.0));
+    float2 p = uv * 2.0 - 1.0;
+    p.x *= size.x / max(size.y, 1.0);
+    float t = time * speed;
+
+    int pal = int(palette + 0.5);
+    float3 c0, c1, c2, c3, c4;
+    if (pal == 1) {            // Aurora
+        c0 = float3(0.10, 0.85, 0.55);
+        c1 = float3(0.15, 0.75, 0.95);
+        c2 = float3(0.35, 0.35, 0.95);
+        c3 = float3(0.55, 0.95, 0.70);
+        c4 = float3(0.10, 0.45, 0.75);
+    } else if (pal == 2) {     // Candy
+        c0 = float3(0.98, 0.45, 0.85);
+        c1 = float3(0.55, 0.45, 0.98);
+        c2 = float3(0.30, 0.85, 0.98);
+        c3 = float3(1.00, 0.90, 0.95);
+        c4 = float3(0.65, 0.55, 1.00);
+    } else {                   // Sunset
+        c0 = float3(1.00, 0.55, 0.10);
+        c1 = float3(0.98, 0.20, 0.65);
+        c2 = float3(0.55, 0.30, 0.95);
+        c3 = float3(0.15, 0.75, 0.95);
+        c4 = float3(1.00, 0.85, 0.55);
+    }
+    float3 colors[5] = { c0, c1, c2, c3, c4 };
+
+    float scale = max(blobScale, 0.05);
+    float3 acc = float3(0.0);
+    float wsum = 0.0;
+    for (int i = 0; i < 5; i++) {
+        float fi = float(i);
+        float2 center = float2(
+            sin(t * (0.30 + fi * 0.13) + fi * 1.7) * 0.7,
+            cos(t * (0.25 + fi * 0.11) + fi * 2.3) * 0.7
+        );
+        float2 d = p - center;
+        float w = 1.0 / (dot(d, d) / scale + 0.18);
+        acc += colors[i] * w;
+        wsum += w;
+    }
+    float3 col = acc / max(wsum, 0.0001);
+
+    float luma = dot(col, float3(0.299, 0.587, 0.114));
+    col = mix(float3(luma), col, saturation);
+
+    float g = fract(sin(dot(position + fract(time) * 137.0, float2(12.9898, 78.233))) * 43758.5453);
+    col += (g - 0.5) * grainAmount;
+
+    return half4(half3(saturate(col)), 1.0);
+}
