@@ -62,6 +62,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Lists & Tables",        section: "Layout",          tab: "Elements", icon: "list.bullet"),
         .init(name: "Swipeable Rows",        section: "Layout",          tab: "Elements", icon: "arrow.left.arrow.right"),
         .init(name: "Scroll Views",          section: "Layout",          tab: "Elements", icon: "scroll"),
+        .init(name: "Carousels",             section: "Layout",          tab: "Elements", icon: "rectangle.portrait.on.rectangle.portrait.angled", keywords: ["carousel", "cover flow", "coverflow", "snap", "paging", "horizontal scroll", "peeking", "page control", "swipe", "gallery", "3d", "rotation"]),
         .init(name: "Grids",                 section: "Layout",          tab: "Elements", icon: "grid"),
         .init(name: "Cards",                 section: "Layout",          tab: "Elements", icon: "rectangle.on.rectangle"),
         // Navigation

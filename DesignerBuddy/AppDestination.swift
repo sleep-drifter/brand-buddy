@@ -25,6 +25,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Lists & Tables":         ListsView()
     case "Swipeable Rows":         SwipeableRowsView()
     case "Scroll Views":           ScrollViewsView()
+    case "Carousels":              CarouselsView()
     case "Grids":                  GridsView()
     case "Grouped Forms":          GroupedFormsView()
     case "Cards":                  CardsView()
