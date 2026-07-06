@@ -28,11 +28,17 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
     case progressiveBlur = "Progressive Blur"
     case dissolve        = "Dissolve"
     case zoomBlur        = "Zoom Blur"
+    case holographic     = "Holographic"
+    case duotone         = "Duotone"
+    case halftone        = "Halftone"
+    case solarize        = "Solarize"
+    case frosted         = "Frosted"
+    case refractLens     = "Refract Lens"
 
     var id: String { rawValue }
-    var isTapBased:     Bool { self == .ripple || self == .zoomBlur }
+    var isTapBased:     Bool { self == .ripple || self == .zoomBlur || self == .refractLens }
     var alwaysAnimates: Bool {
-        self == .wave || self == .grain || self == .glitch || self == .hueRotate
+        self == .wave || self == .grain || self == .glitch || self == .hueRotate || self == .holographic
     }
 
     var icon: String {
@@ -54,6 +60,12 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
         case .progressiveBlur: return "aqi.medium"
         case .dissolve:        return "flame"
         case .zoomBlur:        return "arrow.up.left.and.arrow.down.right.circle"
+        case .holographic:     return "rainbow"
+        case .duotone:         return "circle.lefthalf.filled"
+        case .halftone:        return "circle.grid.3x3.fill"
+        case .solarize:        return "sun.max.fill"
+        case .frosted:         return "snowflake"
+        case .refractLens:     return "magnifyingglass"
         }
     }
 }
@@ -476,6 +488,61 @@ struct ShadersPlaygroundView: View {
                 ),
                 maxSampleOffset: CGSize(width: 110, height: 110)
             )
+
+        case .holographic:
+            img.colorEffect(
+                ShaderLibrary.shaderHolographic(
+                    .float(time),
+                    .float(ep(0, time: time) * 1.2),
+                    .float(4 + ep(1, time: time) * 96),
+                    .float(ep(2, time: time) * 3.0)
+                )
+            )
+
+        case .duotone:
+            img.colorEffect(
+                ShaderLibrary.shaderDuotone(
+                    .float(ep(0, time: time)),
+                    .float(ep(1, time: time)),
+                    .float(ep(2, time: time))
+                )
+            )
+
+        case .halftone:
+            img.colorEffect(
+                ShaderLibrary.shaderHalftone(
+                    .float(3 + ep(0, time: time) * 21),
+                    .float(ep(1, time: time) * .pi),
+                    .float(ep(2, time: time))
+                )
+            )
+
+        case .solarize:
+            img.colorEffect(
+                ShaderLibrary.shaderSolarize(
+                    .float(ep(0, time: time)),
+                    .float(0.2 + ep(1, time: time) * 0.8)
+                )
+            )
+
+        case .frosted:
+            img.layerEffect(
+                ShaderLibrary.shaderFrosted(
+                    .float(ep(0, time: time) * 20),
+                    .float(ep(1, time: time) * 0.3)
+                ),
+                maxSampleOffset: CGSize(width: 20, height: 20)
+            )
+
+        case .refractLens:
+            img.distortionEffect(
+                ShaderLibrary.shaderRefractLens(
+                    .float2(tapOrigin),
+                    .float(20 + ep(0, time: time) * 100),
+                    .float(ep(1, time: time) * 0.55)
+                ),
+                maxSampleOffset: CGSize(width: previewPt, height: previewPt)
+            )
         }
     }
 
@@ -724,6 +791,39 @@ struct ShadersPlaygroundView: View {
             ]
         case .zoomBlur:
             return [("Strength", $params[0], String(format: "%.0f%%", params[0] * 90))]
+        case .holographic:
+            return [
+                ("Intensity", $params[0], String(format: "%.0f%%", params[0] * 120)),
+                ("Band Width", $params[1], "\(Int(4 + params[1] * 96))pt"),
+                ("Speed",     $params[2], String(format: "%.1f×", params[2] * 3.0))
+            ]
+        case .duotone:
+            return [
+                ("Shadow Hue",    $params[0], String(format: "%.0f°", params[0] * 360)),
+                ("Highlight Hue", $params[1], String(format: "%.0f°", params[1] * 360)),
+                ("Contrast",      $params[2], String(format: "%.0f%%", params[2] * 100))
+            ]
+        case .halftone:
+            return [
+                ("Cell Size", $params[0], "\(Int(3 + params[0] * 21))px"),
+                ("Angle",     $params[1], String(format: "%.0f°", params[1] * 180)),
+                ("Ink",       $params[2], String(format: "%.0f%%", params[2] * 100))
+            ]
+        case .solarize:
+            return [
+                ("Threshold", $params[0], String(format: "%.2f", params[0])),
+                ("Amount",    $params[1], String(format: "%.0f%%", (0.2 + params[1] * 0.8) * 100))
+            ]
+        case .frosted:
+            return [
+                ("Radius",     $params[0], "\(Int(params[0] * 20))pt"),
+                ("Brightness", $params[1], String(format: "%.0f%%", params[1] * 30))
+            ]
+        case .refractLens:
+            return [
+                ("Radius",   $params[0], "\(Int(20 + params[0] * 100))pt"),
+                ("Strength", $params[1], String(format: "%.0f%%", params[1] * 55))
+            ]
         }
     }
 
@@ -748,6 +848,12 @@ struct ShadersPlaygroundView: View {
         case .progressiveBlur: return [0.45, 0.2,  0.65, 0.5,  0.5 ]
         case .dissolve:        return [0.35, 0.25, 0.8,  0.35, 0.5 ]
         case .zoomBlur:        return [0.35, 0.5,  0.5,  0.5,  0.5 ]
+        case .holographic:     return [0.6,  0.35, 0.4,  0.5,  0.5 ]
+        case .duotone:         return [0.62, 0.12, 0.5,  0.5,  0.5 ] // indigo shadows → warm highlights
+        case .halftone:        return [0.4,  0.25, 0.6,  0.5,  0.5 ]
+        case .solarize:        return [0.5,  0.7,  0.5,  0.5,  0.5 ]
+        case .frosted:         return [0.5,  0.4,  0.5,  0.5,  0.5 ]
+        case .refractLens:     return [0.45, 0.5,  0.5,  0.5,  0.5 ]
         }
     }
 

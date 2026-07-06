@@ -323,3 +323,127 @@ float valueNoise(float2 p) {
     float3 rgb = hue * float3(color.r, color.g, color.b);
     return half4(half3(saturate(rgb)), color.a);
 }
+
+// Pure hue (0–1) to fully-saturated RGB
+float3 hueToRGB(float h) {
+    float r = abs(h * 6.0 - 3.0) - 1.0;
+    float g = 2.0 - abs(h * 6.0 - 2.0);
+    float b = 2.0 - abs(h * 6.0 - 4.0);
+    return clamp(float3(r, g, b), 0.0, 1.0);
+}
+
+// Holographic foil: a prismatic rainbow sheen that sweeps across the image,
+// strongest over the brighter regions (like light catching a foil sticker)
+[[ stitchable ]] half4 shaderHolographic(
+    float2 position,
+    half4 color,
+    float time,
+    float intensity,
+    float scale,
+    float speed
+) {
+    float3 base = float3(color.rgb);
+    float luma = dot(base, float3(0.299, 0.587, 0.114));
+    float sweep = (position.x + position.y) / max(scale, 1.0) + time * speed;
+    float phase = sweep + luma * 6.2831;
+    float3 rainbow = float3(
+        0.5 + 0.5 * sin(phase),
+        0.5 + 0.5 * sin(phase + 2.094),
+        0.5 + 0.5 * sin(phase + 4.188)
+    );
+    float mask = smoothstep(0.15, 0.9, luma);
+    float3 outc = base + rainbow * intensity * mask;
+    return half4(half3(saturate(outc)), color.a);
+}
+
+// Duotone: remap luminance onto a two-colour gradient (shadow hue → highlight hue)
+[[ stitchable ]] half4 shaderDuotone(
+    float2 position,
+    half4 color,
+    float shadowHue,
+    float highlightHue,
+    float contrast
+) {
+    float luma = dot(float3(color.rgb), float3(0.299, 0.587, 0.114));
+    luma = saturate((luma - 0.5) * (0.5 + contrast * 2.0) + 0.5);
+    float3 lo = hueToRGB(shadowHue) * 0.85;
+    float3 hi = hueToRGB(highlightHue);
+    return half4(half3(mix(lo, hi, luma)), color.a);
+}
+
+// Halftone: newspaper-print dot screen. Dot radius grows as the area darkens;
+// the grid can be rotated, and tint blends from full colour to monochrome ink.
+[[ stitchable ]] half4 shaderHalftone(
+    float2 position,
+    half4 color,
+    float cellSize,
+    float angle,
+    float tint
+) {
+    float s = max(cellSize, 2.0);
+    float ca = cos(angle);
+    float sa = sin(angle);
+    float2 rot = float2(position.x * ca - position.y * sa,
+                        position.x * sa + position.y * ca);
+    float2 cell = fmod(fmod(rot, s) + s, s) - s * 0.5;
+    float luma = dot(float3(color.rgb), float3(0.299, 0.587, 0.114));
+    float radius = (1.0 - luma) * s * 0.72;
+    float ink = smoothstep(radius + 1.0, radius - 1.0, length(cell));
+    float3 dotColor = mix(float3(color.rgb), float3(0.0), tint);
+    return half4(half3(mix(float3(1.0), dotColor, ink)), color.a);
+}
+
+// Solarize: invert each channel above a threshold (Sabattier effect), blended in
+[[ stitchable ]] half4 shaderSolarize(
+    float2 position,
+    half4 color,
+    float threshold,
+    float amount
+) {
+    float3 c = float3(color.rgb);
+    float3 solar = float3(
+        c.r > threshold ? 1.0 - c.r : c.r,
+        c.g > threshold ? 1.0 - c.g : c.g,
+        c.b > threshold ? 1.0 - c.b : c.b
+    );
+    return half4(half3(saturate(mix(c, solar, amount))), color.a);
+}
+
+// Frosted glass: jittered ring blur with a slight brightness lift
+[[ stitchable ]] half4 shaderFrosted(
+    float2 position,
+    SwiftUI::Layer layer,
+    float radius,
+    float brightness
+) {
+    float r = max(radius, 0.5);
+    half4 result = half4(0);
+    const int N = 12;
+    for (int i = 0; i < N; i++) {
+        float a = float(i) * (M_PI_F * 2.0 / float(N));
+        float jitter = fract(sin(dot(position + float(i), float2(12.9898, 78.233))) * 43758.5453);
+        float rr = r * (0.4 + 0.6 * jitter);
+        result += layer.sample(position + float2(cos(a), sin(a)) * rr);
+    }
+    result /= half(N);
+    result.rgb = saturate(result.rgb + half(brightness));
+    return result;
+}
+
+// Refractive lens: a magnifying bubble centred on the tap point that eases to
+// no distortion at its rim
+[[ stitchable ]] float2 shaderRefractLens(
+    float2 position,
+    float2 center,
+    float radius,
+    float strength
+) {
+    float2 delta = position - center;
+    float dist = length(delta);
+    float r = max(radius, 1.0);
+    if (dist >= r) return position;
+    float t = dist / r;
+    float falloff = 1.0 - smoothstep(0.0, 1.0, t);
+    float mag = 1.0 - strength * falloff;
+    return center + delta * mag;
+}
