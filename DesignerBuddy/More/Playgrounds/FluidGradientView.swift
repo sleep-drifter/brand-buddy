@@ -13,6 +13,10 @@ enum FluidPalette: String, CaseIterable {
 // MARK: - View
 
 struct FluidGradientView: View {
+    // Elapsed time from launch. Feeding `timeIntervalSinceReferenceDate` (~8e8)
+    // into a 32-bit Float quantizes to ~64s steps, freezing the animation.
+    private let startDate = Date()
+
     @State private var blobSize:   Float = 0.5
     @State private var speed:      Float = 0.4
     @State private var grain:      Float = 0.35
@@ -37,7 +41,7 @@ struct FluidGradientView: View {
 
     private var preview: some View {
         TimelineView(.animation) { tl in
-            let t = Float(tl.date.timeIntervalSinceReferenceDate)
+            let t = Float(tl.date.timeIntervalSince(startDate))
             GeometryReader { geo in
                 Color.black
                     .colorEffect(ShaderLibrary.fluidGradientArt(
