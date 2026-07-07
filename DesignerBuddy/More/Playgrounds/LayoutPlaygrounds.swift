@@ -7,8 +7,14 @@ import UIKit
 
 // MARK: - Radial ring layout
 
-/// Places subviews evenly around a ring, sizing each to touch its neighbours.
+/// Places subviews evenly around a ring. `gap` shrinks items (1 = touching),
+/// `startAngle` rotates the starting position, and `centerItem` pulls the first
+/// subview into the middle with the rest ringed around it.
 private struct RadialRingLayout: Layout {
+    var gap: CGFloat = 1
+    var startAngle: Double = 0
+    var centerItem: Bool = false
+
     func sizeThatFits(proposal: ProposedViewSize, subviews _: Subviews, cache _: inout Void) -> CGSize {
         proposal.replacingUnspecifiedDimensions()
     }
@@ -16,85 +22,83 @@ private struct RadialRingLayout: Layout {
     func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: Subviews, cache _: inout Void) {
         guard !subviews.isEmpty else { return }
         let side = min(bounds.size.width, bounds.size.height)
+        let cx = bounds.midX, cy = bounds.midY
+
         // A single item has no ring to sit on (sin(π) ≈ 0 → zero radius); centre it.
         if subviews.count == 1 {
-            let d = side * 0.6
-            subviews[0].place(at: CGPoint(x: bounds.midX, y: bounds.midY),
-                              anchor: .center,
-                              proposal: ProposedViewSize(width: d, height: d))
+            place(subviews[0], at: CGPoint(x: cx, y: cy), diameter: side * 0.6)
             return
         }
-        let angle = Double.pi / Double(subviews.count)
-        let itemRadius = (side / 2.0) * sin(angle) / (1.0 + sin(angle))
-        let ringRadius = (side / 2.0) * (1.0 + sin(angle)).rounded(.down)
-        let step = Angle.radians(2.0 * angle).radians
-        for (index, subview) in subviews.enumerated() {
-            var center = CGPoint(x: 0, y: -ringRadius + itemRadius).applying(
-                CGAffineTransform(rotationAngle: step * Double(index))
-            )
-            center.x += bounds.midX
-            center.y += bounds.midY
-            let proposal = ProposedViewSize(width: 2 * itemRadius, height: 2 * itemRadius)
-            subview.place(at: center, anchor: .center, proposal: proposal)
+
+        let hasCenter = centerItem && subviews.count >= 2
+        let ringStart = hasCenter ? 1 : 0
+        let ringCount = subviews.count - ringStart
+
+        let m = max(ringCount, 2)
+        let angle = Double.pi / Double(m)
+        let s = sin(angle)
+        let itemRadius = (side / 2.0) * s / (1.0 + s)
+        let ringRadius = (side / 2.0) * (1.0 + s).rounded(.down)
+        let baseR = ringRadius - itemRadius
+        let diameter = 2 * itemRadius * gap
+        let step = 2.0 * angle
+
+        if hasCenter {
+            let cd = min(2 * itemRadius * 1.15, side * 0.5)
+            place(subviews[0], at: CGPoint(x: cx, y: cy), diameter: max(cd, side * 0.16))
+        }
+
+        if ringCount == 1 {
+            let a = startAngle - .pi / 2
+            let r = side * 0.30
+            place(subviews[ringStart],
+                  at: CGPoint(x: cx + r * cos(a), y: cy + r * sin(a)),
+                  diameter: side * 0.30 * gap)
+            return
+        }
+
+        for j in 0 ..< ringCount {
+            let rot = step * Double(j) + startAngle
+            var p = CGPoint(x: 0, y: -baseR).applying(CGAffineTransform(rotationAngle: rot))
+            p.x += cx; p.y += cy
+            place(subviews[ringStart + j], at: p, diameter: diameter)
         }
     }
+
+    private func place(_ sub: LayoutSubview, at center: CGPoint, diameter: CGFloat) {
+        sub.place(at: center, anchor: .center,
+                  proposal: ProposedViewSize(width: diameter, height: diameter))
+    }
+}
+
+private enum RingShape: String, CaseIterable, Identifiable {
+    case circle = "Circle", rounded = "Rounded"
+    var id: String { rawValue }
 }
 
 struct RadialLayoutView: View {
     @State private var count: Double = 12
+    @State private var gap: Double = 1.0
+    @State private var startAngle: Double = 0        // degrees
+    @State private var centerItem = false
+    @State private var shape: RingShape = .circle
     @State private var photoItems: [PhotosPickerItem] = []
     @State private var images: [UIImage] = []
+    @State private var focused: Int?
+
+    private var itemShape: AnyShape {
+        switch shape {
+        case .circle:  return AnyShape(Circle())
+        case .rounded: return AnyShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                RadialRingLayout {
-                    ForEach(0..<Int(count), id: \.self) { i in
-                        ringItem(i)
-                    }
-                }
-                .aspectRatio(1, contentMode: .fit)
-                .frame(maxWidth: .infinity)
-                .padding(20)
-                .background(Color.black,
-                            in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .animation(.snappy, value: count)
-
-                VStack(spacing: 0) {
-                    HStack(spacing: 12) {
-                        Text("Items").frame(width: 90, alignment: .leading)
-                        Slider(value: $count, in: 1...24, step: 1)
-                        Text("\(Int(count))")
-                            .font(.subheadline.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                            .frame(width: 28, alignment: .trailing)
-                    }
-                    .padding(.horizontal, 16).padding(.vertical, 12)
-                    Divider().padding(.leading, 16)
-                    HStack {
-                        Text("Photos").frame(width: 90, alignment: .leading)
-                        Spacer()
-                        PhotosPicker(selection: $photoItems, matching: .images) {
-                            Label(images.isEmpty ? "Choose Photos" : "\(images.count) selected",
-                                  systemImage: "photo.on.rectangle")
-                        }
-                        if !images.isEmpty {
-                            Button {
-                                images = []; photoItems = []
-                            } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
-                        }
-                    }
-                    .padding(.horizontal, 16).padding(.vertical, 12)
-                }
-                .background(Color(.secondarySystemGroupedBackground),
-                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                Text("A custom `Layout` that arranges its subviews evenly around a ring, sizing "
-                     + "each circle so neighbours just touch. Pick photos to fill the circles "
-                     + "(they cycle if there are fewer photos than items); otherwise they show as "
-                     + "colours. From Koshimizu-Takehito\u{2019}s my-toybox.")
-                    .font(.footnote).foregroundStyle(.secondary)
-                    .padding(.horizontal, 4).fixedSize(horizontal: false, vertical: true)
+                ring
+                controls
+                caption
             }
             .padding(16)
         }
@@ -115,16 +119,135 @@ struct RadialLayoutView: View {
         }
     }
 
+    private var ring: some View {
+        RadialRingLayout(gap: CGFloat(gap),
+                         startAngle: startAngle * .pi / 180,
+                         centerItem: centerItem) {
+            ForEach(0..<Int(count), id: \.self) { i in
+                itemView(i)
+            }
+        }
+        .aspectRatio(1, contentMode: .fit)
+        .frame(maxWidth: .infinity)
+        .padding(20)
+        .background(Color.black, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay { focusOverlay }
+        .animation(.snappy, value: count)
+        .animation(.snappy, value: gap)
+        .animation(.snappy, value: startAngle)
+        .animation(.snappy, value: centerItem)
+    }
+
+    private func itemView(_ i: Int) -> some View {
+        shapeView(for: i)
+            .contentShape(itemShape)
+            .onTapGesture {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { focused = i }
+            }
+    }
+
     @ViewBuilder
-    private func ringItem(_ i: Int) -> some View {
+    private func shapeView(for i: Int) -> some View {
         if images.isEmpty {
-            Circle().foregroundStyle(Color(hue: Double(i) / count, saturation: 0.55, brightness: 1))
+            itemShape.fill(Color(hue: Double(i) / max(count, 1), saturation: 0.55, brightness: 1))
         } else {
             Color.clear
                 .overlay(Image(uiImage: images[i % images.count]).resizable().scaledToFill())
-                .clipShape(Circle())
+                .clipShape(itemShape)
         }
     }
+
+    @ViewBuilder
+    private var focusOverlay: some View {
+        if let f = focused, f < Int(count) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                shapeView(for: f)
+                    .frame(width: 200, height: 200)
+                    .shadow(radius: 20)
+                    .transition(.scale.combined(with: .opacity))
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { focused = nil }
+            }
+        }
+    }
+
+    private var controls: some View {
+        VStack(spacing: 0) {
+            sliderRow("Items", $count, 1...24, step: 1, text: "\(Int(count))")
+            divider
+            sliderRow("Item Size", $gap, 0.4...1.0, text: String(format: "%.0f%%", gap * 100))
+            divider
+            sliderRow("Start Angle", $startAngle, 0...360, text: "\(Int(startAngle))°")
+            divider
+            row {
+                Toggle("Center Item", isOn: $centerItem)
+            }
+            divider
+            row {
+                HStack {
+                    Text("Shape").frame(width: 96, alignment: .leading)
+                    Spacer()
+                    Picker("Shape", selection: $shape) {
+                        ForEach(RingShape.allCases) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.segmented).frame(width: 180)
+                }
+            }
+            divider
+            row {
+                HStack {
+                    Text("Photos").frame(width: 96, alignment: .leading)
+                    Spacer()
+                    PhotosPicker(selection: $photoItems, matching: .images) {
+                        Label(images.isEmpty ? "Choose Photos" : "\(images.count) selected",
+                              systemImage: "photo.on.rectangle")
+                    }
+                    if !images.isEmpty {
+                        Button { images = []; photoItems = [] } label: {
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+        .background(Color(.secondarySystemGroupedBackground),
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private var caption: some View {
+        Text("A custom `Layout` arranging subviews around a ring. Adjust item size for gaps, "
+             + "the start angle, pull one item to the centre, switch shape, and tap any item to "
+             + "pop it up close. Add photos to fill the shapes (they cycle). From my-toybox.")
+            .font(.footnote).foregroundStyle(.secondary)
+            .padding(.horizontal, 4).fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func sliderRow(_ label: String, _ value: Binding<Double>,
+                           _ range: ClosedRange<Double>, step: Double = 0, text: String) -> some View {
+        row {
+            HStack(spacing: 12) {
+                Text(label).frame(width: 96, alignment: .leading)
+                if step > 0 {
+                    Slider(value: value, in: range, step: step)
+                } else {
+                    Slider(value: value, in: range)
+                }
+                Text(text).font(.subheadline.monospacedDigit())
+                    .foregroundStyle(.secondary).frame(width: 44, alignment: .trailing)
+            }
+        }
+    }
+
+    private func row<C: View>(@ViewBuilder _ content: () -> C) -> some View {
+        content().padding(.horizontal, 16).padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var divider: some View { Divider().padding(.leading, 16) }
 }
 
 // MARK: - Wrapping flow layout
