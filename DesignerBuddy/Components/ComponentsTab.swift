@@ -62,6 +62,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Lists & Tables",        section: "Layout",          tab: "Elements", icon: "list.bullet"),
         .init(name: "Swipeable Rows",        section: "Layout",          tab: "Elements", icon: "arrow.left.arrow.right"),
         .init(name: "Scroll Views",          section: "Layout",          tab: "Elements", icon: "scroll"),
+        .init(name: "Carousels",             section: "Layout",          tab: "Elements", icon: "rectangle.portrait.on.rectangle.portrait.angled", keywords: ["carousel", "cover flow", "coverflow", "snap", "paging", "horizontal scroll", "peeking", "page control", "swipe", "gallery", "3d", "rotation", "auto advance", "infinite", "loop", "wallet", "stacked deck", "stories", "reels", "banner"]),
         .init(name: "Grids",                 section: "Layout",          tab: "Elements", icon: "grid"),
         .init(name: "Cards",                 section: "Layout",          tab: "Elements", icon: "rectangle.on.rectangle"),
         // Navigation
@@ -155,7 +156,7 @@ struct AppEntry: Identifiable, Hashable {
     // MARK: - Playgrounds
 
     static let playgrounds: [AppEntry] = [
-        .init(name: "Shaders",               section: "Playgrounds", tab: "Playgrounds", icon: "sparkles.rectangle.stack", keywords: ["metal", "shader", "filter", "effect", "ripple", "pixelate", "distortion", "gpu", "grain", "vignette", "chromatic", "emboss", "swirl", "wave"]),
+        .init(name: "Shaders",               section: "Playgrounds", tab: "Playgrounds", icon: "sparkles.rectangle.stack", keywords: ["metal", "shader", "filter", "effect", "ripple", "pixelate", "distortion", "gpu", "grain", "vignette", "chromatic", "emboss", "swirl", "wave", "holographic", "foil", "duotone", "halftone", "solarize", "frosted", "glass", "lens", "refract", "color grade", "lut", "cinematic", "topographic", "contour", "stack", "layers", "preset", "photo", "metaball", "liquid", "blobs"]),
         .init(name: "Spring Physics",        section: "Playgrounds", tab: "Playgrounds", icon: "waveform.path.ecg",       keywords: ["animation", "bounce", "easing", "motion", "damping", "stiffness"]),
         .init(name: "Haptics",               section: "Playgrounds", tab: "Playgrounds", icon: "hand.tap",                keywords: ["vibration", "feedback", "taptic", "impact", "selection"]),
         .init(name: "Corner Radius",         section: "Playgrounds", tab: "Playgrounds", icon: "square.on.square",        keywords: ["rounded", "border radius", "roundrectangle"]),
@@ -163,9 +164,38 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Shadow Explorer",       section: "Playgrounds", tab: "Playgrounds", icon: "shadow"),
         .init(name: "Blur Stack",            section: "Playgrounds", tab: "Playgrounds", icon: "square.stack.3d.up"),
         .init(name: "Mesh Gradient",         section: "Playgrounds", tab: "Playgrounds", icon: "mosaic",                  keywords: ["mesh", "gradient", "color", "animation", "mask", "blend"]),
+        .init(name: "Fluid Gradient",        section: "Playgrounds", tab: "Playgrounds", icon: "drop.halffull",          keywords: ["fluid", "gradient", "generative", "metaball", "blob", "grain", "noise", "animated", "background", "ishader", "mesh"]),
+        .init(name: "Random Metaball 2D",    section: "Playgrounds", tab: "Playgrounds", icon: "circle.hexagongrid.fill", keywords: ["metaball", "blob", "goo", "liquid", "merge", "fuse", "field", "generative", "shader", "organic", "lava", "mercury", "ishader"]),
+        .init(name: "Circle SDF 1",          section: "Playgrounds", tab: "Playgrounds", icon: "circle.circle",           keywords: ["sdf", "signed distance field", "circle", "metaball", "smooth min", "blend", "shader", "metal", "my-toybox", "toybox"]),
+        .init(name: "Circle SDF 2",          section: "Playgrounds", tab: "Playgrounds", icon: "circle.circle.fill",      keywords: ["sdf", "signed distance field", "circle", "iso", "contour", "smooth min", "shader", "metal", "my-toybox", "toybox"]),
+        .init(name: "Smooth Min 2D",         section: "Playgrounds", tab: "Playgrounds", icon: "drop.circle",             keywords: ["sdf", "smooth min", "smoothmin", "blend", "field", "metaball", "shader", "metal", "my-toybox", "toybox"]),
+        .init(name: "Implicit Equation",     section: "Playgrounds", tab: "Playgrounds", icon: "function",                keywords: ["implicit", "equation", "contour", "curve", "math", "field", "layer effect", "shader", "metal", "my-toybox", "toybox"]),
+        .init(name: "Lissajous Curve",       section: "Playgrounds", tab: "Playgrounds", icon: "scribble.variable",       keywords: ["lissajous", "curve", "parametric", "harmonic", "canvas", "oscillator", "sine", "cosine", "my-toybox", "toybox"]),
+        .init(name: "Radial Layout",         section: "Playgrounds", tab: "Playgrounds", icon: "circle.grid.cross",       keywords: ["layout", "radial", "ring", "circular", "custom layout", "arrange", "my-toybox", "toybox"]),
+        .init(name: "Flow Layout",           section: "Playgrounds", tab: "Playgrounds", icon: "square.grid.3x2",         keywords: ["layout", "flow", "wrap", "tags", "chips", "reflow", "custom layout", "my-toybox", "toybox"]),
+        .init(name: "Flow Distortion",       section: "Playgrounds", tab: "Playgrounds", icon: "water.waves",             keywords: ["flow", "distortion", "curl", "noise", "warp", "chromatic aberration", "layer effect", "shader", "metal", "my-toybox", "toybox"]),
+        .init(name: "Physics Tag",           section: "Playgrounds", tab: "Playgrounds", icon: "tag.circle",              keywords: ["physics", "spritekit", "gravity", "motion", "tilt", "coremotion", "tag cloud", "drag", "throw", "collision", "my-toybox", "toybox"]),
+        .init(name: "Stable Fluid",          section: "Playgrounds", tab: "Playgrounds", icon: "drop.degreesign",        keywords: ["fluid", "stable fluid", "navier stokes", "simulation", "smoke", "ink", "metal", "compute", "gpu", "jos stam", "my-toybox", "toybox"]),
+        .init(name: "Liquid Wallet",         section: "Playgrounds", tab: "Playgrounds", icon: "wallet.pass",             keywords: ["glass", "liquid glass", "wallet", "carousel", "stack", "deck", "merge", "union", "morph", "metaball", "glasseffect", "glasseffectcontainer", "ios 26"]),
         .init(name: "Safe Areas",            section: "Reference",   tab: "Playgrounds", icon: "iphone",                  keywords: ["insets", "home indicator", "notch", "status bar"]),
         .init(name: "Sheet Detents",         section: "Reference",   tab: "Playgrounds", icon: "rectangle.bottomhalf.inset.filled"),
     ]
+
+    // MARK: - Shaders
+
+    /// Metal/GPU-effect pages, surfaced as their own Home section. These reference
+    /// the existing playground entries (not copies), so pins and search stay unified.
+    static let shaders: [AppEntry] = [
+        "Shaders",
+        "Fluid Gradient",
+        "Stable Fluid",
+        "Flow Distortion",
+        "Implicit Equation",
+        "Random Metaball 2D",
+        "Circle SDF 1",
+        "Circle SDF 2",
+        "Smooth Min 2D",
+    ].compactMap { name in playgrounds.first { $0.name == name } }
 
     // MARK: - Legacy aliases (used by old tab views)
 

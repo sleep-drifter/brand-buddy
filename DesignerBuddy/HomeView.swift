@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum SectionDest: Hashable {
-    case elements, patternsAndSystem, playgrounds
+    case elements, patternsAndSystem, playgrounds, shaders
 }
 
 struct HomeView: View {
@@ -35,6 +35,11 @@ struct HomeView: View {
                                 title: "Patterns & System",
                                 entries: AppEntry.patternsAndSystem,
                                 dest: SectionDest.patternsAndSystem
+                            )
+                            HomeSectionRow(
+                                title: "Shaders",
+                                entries: AppEntry.shaders,
+                                dest: SectionDest.shaders
                             )
                             HomeSectionRow(
                                 title: "Playgrounds",
@@ -95,6 +100,8 @@ struct HomeView: View {
                         entries: AppEntry.playgrounds,
                         sectionOrder: ["Playgrounds", "Reference"]
                     )
+                case .shaders:
+                    ShaderListView()
                 }
             }
             .sheet(isPresented: $showSaved) {
@@ -217,6 +224,26 @@ struct CategoryListView: View {
             }
         }
         .navigationTitle(title)
+        .navigationDestination(for: AppEntry.self) { appDestination(for: $0) }
+    }
+}
+
+// MARK: - Shader List View (flat — all shader pages share one catalog section)
+
+struct ShaderListView: View {
+    @EnvironmentObject var pinsStore: PinsStore
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(AppEntry.shaders) { entry in
+                    pinnableRow(entry, pinsStore: pinsStore)
+                }
+            } footer: {
+                Text("Metal-backed effects: SwiftUI colorEffect/layerEffect shaders and the Stable Fluid compute pipeline.")
+            }
+        }
+        .navigationTitle("Shaders")
         .navigationDestination(for: AppEntry.self) { appDestination(for: $0) }
     }
 }
