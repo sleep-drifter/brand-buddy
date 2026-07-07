@@ -26,12 +26,13 @@ struct PhysicsTagView: View {
         SpriteView(scene: scene)
             .ignoresSafeArea(edges: .bottom)
             .overlay(alignment: .bottom) { panel }
-            .onChange(of: usesDeviceMotion) { _, v in scene.usesDeviceMotion = v }
-            .onChange(of: gravity) { _, v in scene.gravityStrength = CGFloat(v) }
-            .onChange(of: bounciness) { _, v in scene.bounciness = CGFloat(v) }
-            .onChange(of: tagCount) { _, v in scene.tagCount = Int(v.rounded()) }
-            .onChange(of: tagSize) { _, v in scene.sizeScale = CGFloat(v) }
-            .onChange(of: colorScheme) { _, _ in scene.backgroundColor = .systemBackground }
+            .modifier(ParamSync(scene: scene,
+                                usesDeviceMotion: usesDeviceMotion,
+                                gravity: gravity,
+                                bounciness: bounciness,
+                                tagCount: tagCount,
+                                tagSize: tagSize,
+                                colorScheme: colorScheme))
             .tint(.blue)
             .navigationTitle("Physics Tag")
             .navigationBarTitleDisplayMode(.inline)
@@ -79,6 +80,30 @@ struct PhysicsTagView: View {
                 .foregroundStyle(.secondary).frame(width: 34, alignment: .trailing)
         }
         .font(.subheadline)
+    }
+}
+
+// MARK: - Parameter sync
+
+/// Pushes control changes into the scene. Kept as its own modifier so the screen's
+/// `body` stays a short chain the type-checker can resolve quickly.
+private struct ParamSync: ViewModifier {
+    let scene: PhysicsTagScene
+    let usesDeviceMotion: Bool
+    let gravity: Double
+    let bounciness: Double
+    let tagCount: Double
+    let tagSize: Double
+    let colorScheme: ColorScheme
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: usesDeviceMotion) { _, v in scene.usesDeviceMotion = v }
+            .onChange(of: gravity) { _, v in scene.gravityStrength = CGFloat(v) }
+            .onChange(of: bounciness) { _, v in scene.bounciness = CGFloat(v) }
+            .onChange(of: tagCount) { _, v in scene.tagCount = Int(v.rounded()) }
+            .onChange(of: tagSize) { _, v in scene.sizeScale = CGFloat(v) }
+            .onChange(of: colorScheme) { _, _ in scene.backgroundColor = .systemBackground }
     }
 }
 
