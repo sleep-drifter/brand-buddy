@@ -39,12 +39,18 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
     case refractLens     = "Refract Lens"
     case colorGrade      = "Color Grade"
     case topographic     = "Topographic"
+    case metaballs       = "Metaballs"
 
     var id: String { rawValue }
     var isTapBased:     Bool { self == .ripple || self == .zoomBlur || self == .refractLens }
     var alwaysAnimates: Bool {
-        self == .wave || self == .grain || self == .glitch || self == .hueRotate || self == .holographic
+        self == .wave || self == .grain || self == .glitch || self == .hueRotate
+            || self == .holographic || self == .metaballs
     }
+
+    // Generative effects paint from scratch (ignoring the image), so they read as a
+    // source rather than a filter — most useful as the first layer in a stack.
+    var isGenerative: Bool { self == .metaballs }
 
     var icon: String {
         switch self {
@@ -73,6 +79,7 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
         case .refractLens:     return "magnifyingglass"
         case .colorGrade:      return "camera.aperture"
         case .topographic:     return "mountain.2"
+        case .metaballs:       return "circle.hexagongrid.fill"
         }
     }
 
@@ -104,6 +111,7 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
         case .refractLens:     return [0.45, 0.5,  0.5,  0.5,  0.5 ]
         case .colorGrade:      return [1.0,  0.5,  0.5,  0.5,  0.5 ]
         case .topographic:     return [0.4,  0.2,  0.6,  0.5,  0.5 ]
+        case .metaballs:       return [0.33, 0.5,  0.4,  0.35, 0.6 ]
         }
     }
 }
@@ -699,6 +707,19 @@ struct ShadersPlaygroundView: View {
                     .float(av(2))
                 )
             ))
+
+        case .metaballs:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.randomMetaball2D(
+                    .float2(CGSize(width: previewPt, height: previewPt)),
+                    .float(time),
+                    .float(1 + av(0) * 15),
+                    .float(0.06 + av(1) * 0.28),
+                    .float(0.1 + av(2) * 1.4),
+                    .float(0.05 + av(3) * 0.5),
+                    .float(av(4))
+                )
+            ))
         }
     }
 
@@ -832,6 +853,16 @@ struct ShadersPlaygroundView: View {
                                 }
                             }
                         }
+                    }
+                }
+
+                if selectedLayer.effect.isGenerative {
+                    divider
+                    row {
+                        Label("Generative — paints its own content. Best as the first layer; layers above it filter the result.",
+                              systemImage: "wand.and.stars")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -1158,6 +1189,14 @@ struct ShadersPlaygroundView: View {
                 ("Levels",     b(0), "\(Int(2 + p[0] * 18))"),
                 ("Line Width", b(1), String(format: "%.2f", 0.02 + p[1] * 0.4)),
                 ("Tint",       b(2), String(format: "%.0f%%", p[2] * 100))
+            ]
+        case .metaballs:
+            return [
+                ("Balls",     b(0), "\(1 + Int(p[0] * 15))"),
+                ("Ball Size", b(1), String(format: "%.2f", 0.06 + p[1] * 0.28)),
+                ("Speed",     b(2), String(format: "%.1f×", 0.1 + p[2] * 1.4)),
+                ("Merge",     b(3), String(format: "%.0f%%", p[3] * 100)),
+                ("Hue",       b(4), String(format: "%.0f°", p[4] * 360))
             ]
         }
     }
