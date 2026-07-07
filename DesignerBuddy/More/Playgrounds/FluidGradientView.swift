@@ -21,6 +21,9 @@ struct FluidGradientView: View {
     @State private var saturation: Float = 1.0
     @State private var softness:   Float = 1.0
     @State private var warp:       Float = 1.0
+    @State private var aberration: Float = 0.0
+    @State private var vignette:   Float = 0.0
+    @State private var hueShift:   Float = 0.0
     @State private var darkBackground = false
     @State private var isPaused = false
     @State private var blobs: [FluidBlob] = FluidGradientView.defaultBlobs
@@ -77,7 +80,10 @@ struct FluidGradientView: View {
             .float4(c[1].0, c[1].1, c[1].2, c[1].3),
             .float4(c[2].0, c[2].1, c[2].2, c[2].3),
             .float4(c[3].0, c[3].1, c[3].2, c[3].3),
-            .float4(c[4].0, c[4].1, c[4].2, c[4].3)
+            .float4(c[4].0, c[4].1, c[4].2, c[4].3),
+            .float(aberration),
+            .float(vignette),
+            .float(hueShift)
         )
     }
 
@@ -110,6 +116,12 @@ struct FluidGradientView: View {
             sliderRow("Softness",   $softness,   range: 0.5...2)
             divider
             sliderRow("Warp",       $warp,       range: 0...2)
+            divider
+            sliderRow("Aberration", $aberration)
+            divider
+            sliderRow("Vignette",   $vignette)
+            divider
+            sliderRow("Hue Shift",  $hueShift)
             divider
             row {
                 HStack(spacing: 16) {
@@ -192,6 +204,7 @@ struct FluidGradientView: View {
     private func reset() {
         speed = 0.5; grain = 0.4; zoom = 0.5
         saturation = 1.0; softness = 1.0; warp = 1.0
+        aberration = 0; vignette = 0; hueShift = 0
         darkBackground = false
         blobs = Self.defaultBlobs
     }

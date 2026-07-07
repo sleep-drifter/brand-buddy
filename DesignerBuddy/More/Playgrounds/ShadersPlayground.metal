@@ -574,6 +574,39 @@ static float cg_blob(float2 u, float n, float s, float z) {
                       length(u * float2(z * 0.8, z) + n * 0.3) - 0.3);
 }
 
+// Rotate an RGB colour around the luma (1,1,1) axis by `shift` turns (0…1).
+static half3 cg_hueShift(half3 c, float shift) {
+    float angle = shift * 6.2831853;
+    float3 k = float3(0.5773503);           // normalize(1,1,1)
+    float3 col = float3(c);
+    float ca = cos(angle), sa = sin(angle);
+    float3 rot = col * ca + cross(k, col) * sa + k * dot(k, col) * (1.0 - ca);
+    return half3(saturate(rot));
+}
+
+// The composited blob scene at a given uv (grain + background + colour layers),
+// before hue/saturation/vignette. Factored out so chromatic aberration can
+// evaluate it at per-channel offsets.
+static half3 cg_scene(float2 uv, float time, float grainAmt, float softness, float warp,
+                      float3 bg, int count, thread const float4 *cols) {
+    const float os[5] = { 1.0, 3.0, 5.0, 7.0, 9.0 };
+    const float ws[5] = { 0.6, 0.5, 0.42, 0.35, 0.30 };
+    const float ss[5] = { 1.2, 1.5, 1.8, 2.1, 2.4 };
+    const float zs[5] = { 1.1, 1.4, 1.7, 2.0, 2.3 };
+
+    float n = grainAmt * cg_snoise(float3(uv * 300.0, time * 0.2));
+    half3 outc = half3(bg) + half3(n * 0.1);
+    for (int i = 0; i < 5; i++) {
+        if (i >= count) { break; }
+        float wv = cg_warp(uv * ws[i], os[i], time) * warp;
+        float b = clamp(cg_blob(uv, wv, ss[i] * softness, zs[i]), 0.0, 1.0);
+        float4 ci = cols[i];
+        half a = half(b) * half(ci.a);
+        outc = mix(outc, half3(ci.rgb) + half3(n), a);
+    }
+    return outc;
+}
+
 [[ stitchable ]] half4 chromaGradientArt(
     float2 position,
     half4 color,
@@ -590,36 +623,36 @@ static float cg_blob(float2 u, float n, float s, float z) {
     float4 c1,
     float4 c2,
     float4 c3,
-    float4 c4
+    float4 c4,
+    float aberration,
+    float vignette,
+    float hueShift
 ) {
     float2 uv = (position - 0.5 * size) / min(size.x, size.y);
     uv *= zoom;
-
-    // Per-slot shape params (warp offset / warp scale / softness / squish).
-    const float os[5] = { 1.0, 3.0, 5.0, 7.0, 9.0 };
-    const float ws[5] = { 0.6, 0.5, 0.42, 0.35, 0.30 };
-    const float ss[5] = { 1.2, 1.5, 1.8, 2.1, 2.4 };
-    const float zs[5] = { 1.1, 1.4, 1.7, 2.0, 2.3 };
     float4 cols[5] = { c0, c1, c2, c3, c4 };
-
-    float n = grainAmt * cg_snoise(float3(uv * 300.0, time * 0.2));
-
-    // Composite each blob as its own coloured layer, in draw order, over the
-    // grainy background. Each blob's own alpha controls how much shows through.
     int count = clamp(int(blobCount + 0.5), 1, 5);
-    half3 outc = half3(bg) + half3(n * 0.1);
-    for (int i = 0; i < 5; i++) {
-        if (i >= count) { break; }
-        float wv = cg_warp(uv * ws[i], os[i], time) * warp;
-        float b = clamp(cg_blob(uv, wv, ss[i] * softness, zs[i]), 0.0, 1.0);
-        float4 ci = cols[i];
-        half a = half(b) * half(ci.a);
-        outc = mix(outc, half3(ci.rgb) + half3(n), a);
+
+    // Chromatic aberration: sample the generative scene at a radial offset that
+    // grows toward the edges, taking R/G/B from slightly different positions.
+    half3 outc;
+    if (aberration > 0.001) {
+        float2 off = uv * aberration * 0.06;
+        half3 cr = cg_scene(uv + off, time, grainAmt, softness, warp, bg, count, cols);
+        half3 cg = cg_scene(uv,       time, grainAmt, softness, warp, bg, count, cols);
+        half3 cb = cg_scene(uv - off, time, grainAmt, softness, warp, bg, count, cols);
+        outc = half3(cr.r, cg.g, cb.b);
+    } else {
+        outc = cg_scene(uv, time, grainAmt, softness, warp, bg, count, cols);
     }
 
-    // Saturation around luma.
+    outc = cg_hueShift(outc, hueShift);
+
     half luma = dot(outc, half3(0.299, 0.587, 0.114));
     outc = mix(half3(luma), outc, half(saturation));
+
+    half vig = half(1.0 - vignette * smoothstep(0.35, 0.95, length(uv)));
+    outc *= vig;
 
     return half4(outc, 1.0);
 }
