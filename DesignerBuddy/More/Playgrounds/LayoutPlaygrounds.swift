@@ -1,4 +1,6 @@
+import PhotosUI
 import SwiftUI
+import UIKit
 
 // Custom-Layout playgrounds ported from Koshimizu-Takehito's my-toybox
 // (RadialLayout / FlowLayout). Pure SwiftUI Layout protocol — no Metal.
@@ -32,13 +34,15 @@ private struct RadialRingLayout: Layout {
 
 struct RadialLayoutView: View {
     @State private var count: Double = 12
+    @State private var photoItems: [PhotosPickerItem] = []
+    @State private var images: [UIImage] = []
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 RadialRingLayout {
                     ForEach(0..<Int(count), id: \.self) { i in
-                        Circle().foregroundStyle(Color(hue: Double(i) / count, saturation: 0.55, brightness: 1))
+                        ringItem(i)
                     }
                 }
                 .aspectRatio(1, contentMode: .fit)
@@ -58,13 +62,29 @@ struct RadialLayoutView: View {
                             .frame(width: 28, alignment: .trailing)
                     }
                     .padding(.horizontal, 16).padding(.vertical, 12)
+                    Divider().padding(.leading, 16)
+                    HStack {
+                        Text("Photos").frame(width: 90, alignment: .leading)
+                        Spacer()
+                        PhotosPicker(selection: $photoItems, matching: .images) {
+                            Label(images.isEmpty ? "Choose Photos" : "\(images.count) selected",
+                                  systemImage: "photo.on.rectangle")
+                        }
+                        if !images.isEmpty {
+                            Button {
+                                images = []; photoItems = []
+                            } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
+                        }
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 12)
                 }
                 .background(Color(.secondarySystemGroupedBackground),
                             in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
                 Text("A custom `Layout` that arranges its subviews evenly around a ring, sizing "
-                     + "each circle so neighbours just touch. The math derives the item radius from "
-                     + "the count. From Koshimizu-Takehito\u{2019}s my-toybox.")
+                     + "each circle so neighbours just touch. Pick photos to fill the circles "
+                     + "(they cycle if there are fewer photos than items); otherwise they show as "
+                     + "colours. From Koshimizu-Takehito\u{2019}s my-toybox.")
                     .font(.footnote).foregroundStyle(.secondary)
                     .padding(.horizontal, 4).fixedSize(horizontal: false, vertical: true)
             }
@@ -73,6 +93,29 @@ struct RadialLayoutView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Radial Layout")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: photoItems) { _, items in
+            Task {
+                var loaded: [UIImage] = []
+                for item in items {
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        loaded.append(image)
+                    }
+                }
+                images = loaded
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func ringItem(_ i: Int) -> some View {
+        if images.isEmpty {
+            Circle().foregroundStyle(Color(hue: Double(i) / count, saturation: 0.55, brightness: 1))
+        } else {
+            Color.clear
+                .overlay(Image(uiImage: images[i % images.count]).resizable().scaledToFill())
+                .clipShape(Circle())
+        }
     }
 }
 
