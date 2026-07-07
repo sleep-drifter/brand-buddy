@@ -636,6 +636,8 @@ static inline float3 mb_hsv2rgb(float3 c) {
     float edge = smoothstep(1.0 - soft, 1.0 + soft, field);
 
     float3 ballColor = mb_hsv2rgb(float3(fract(hue), 0.85, 1.0));
-    float3 col = mix(float3(0.0), ballColor, edge);
-    return half4(half3(col), 1.0);
+    // Composite the balls over the incoming pixels (black for the standalone page,
+    // lower layers when used as a stacked effect) so it composes instead of wiping.
+    float3 col = mix(float3(color.rgb), ballColor, edge);
+    return half4(half3(col), color.a);
 }
