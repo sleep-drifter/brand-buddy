@@ -576,3 +576,66 @@ float3 hueToRGB(float h) {
 
     return half4(half3(saturate(col)), 1.0);
 }
+
+// Random metaball 2D (generative): a set of randomly-sized balls wander the frame
+// on Lissajous paths. Each contributes an inverse-square field; where the summed
+// field crosses `threshold` we fill a solid colour, so neighbouring balls fuse with
+// smooth liquid bridges. `smoothing` softens the edge (and how eagerly balls merge).
+// Applied via .colorEffect on an opaque fill — the incoming `color` is ignored;
+// `size` normalizes `position`. Inspired by iShader's RandomMetaball.
+static inline float mb_hash(float n) {
+    return fract(sin(n * 12.9898) * 43758.5453);
+}
+
+static inline float3 mb_hsv2rgb(float3 c) {
+    float3 rgb = clamp(abs(fmod(c.x * 6.0 + float3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0,
+                       0.0, 1.0);
+    return c.z * mix(float3(1.0), rgb, c.y);
+}
+
+[[ stitchable ]] half4 randomMetaball2D(
+    float2 position,
+    half4 color,
+    float2 size,
+    float time,
+    float ballCount,
+    float ballSize,
+    float speed,
+    float smoothing,
+    float hue
+) {
+    float2 uv = position / max(size, float2(1.0, 1.0));
+    float aspect = size.x / max(size.y, 1.0);
+    // Centered coords, x scaled by aspect so balls stay round.
+    float2 p = float2((uv.x * 2.0 - 1.0) * aspect, uv.y * 2.0 - 1.0);
+    float t = time * speed;
+
+    const int MAX_BALLS = 16;
+    int count = clamp(int(ballCount + 0.5), 1, MAX_BALLS);
+    float radius = max(ballSize, 0.02);
+
+    float field = 0.0;
+    for (int i = 0; i < MAX_BALLS; i++) {
+        if (i >= count) { break; }
+        float fi = float(i);
+        // Per-ball drift: Lissajous paths keep balls wandering but on-screen.
+        float2 freq  = 0.25 + float2(mb_hash(fi * 3.3 + 1.0),
+                                     mb_hash(fi * 4.1 + 2.0)) * 0.65;
+        float2 phase = float2(mb_hash(fi * 5.5 + 3.0),
+                              mb_hash(fi * 6.9 + 4.0)) * 6.28318;
+        float2 amp   = float2(aspect, 1.0) * 0.78;
+        float2 center = float2(sin(t * freq.x + phase.x),
+                               sin(t * freq.y * 0.9 + phase.y)) * amp;
+        // Per-ball radius variation, like the screenshots' mix of big + small.
+        float r = radius * (0.45 + mb_hash(fi * 8.3 + 5.0) * 1.05);
+        float2 d = p - center;
+        field += (r * r) / (dot(d, d) + 1e-4);
+    }
+
+    float soft = max(smoothing, 0.001);
+    float edge = smoothstep(1.0 - soft, 1.0 + soft, field);
+
+    float3 ballColor = mb_hsv2rgb(float3(fract(hue), 0.85, 1.0));
+    float3 col = mix(float3(0.0), ballColor, edge);
+    return half4(half3(col), 1.0);
+}

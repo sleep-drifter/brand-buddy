@@ -63,6 +63,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Blur Stack":             BlurStackView()
     case "Mesh Gradient":          MeshGradientPlaygroundView()
     case "Fluid Gradient":         FluidGradientView()
+    case "Random Metaball 2D":     RandomMetaball2DView()
     case "Safe Areas":             SafeAreasView()
     case "Dynamic Type Scale":     DynamicTypeScaleView()
     case "Permission Requests":        PermissionRequestView()
