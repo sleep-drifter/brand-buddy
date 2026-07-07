@@ -176,6 +176,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Flow Distortion",       section: "Playgrounds", tab: "Playgrounds", icon: "water.waves",             keywords: ["flow", "distortion", "curl", "noise", "warp", "chromatic aberration", "layer effect", "shader", "metal", "my-toybox", "toybox"]),
         .init(name: "Physics Tag",           section: "Playgrounds", tab: "Playgrounds", icon: "tag.circle",              keywords: ["physics", "spritekit", "gravity", "motion", "tilt", "coremotion", "tag cloud", "drag", "throw", "collision", "my-toybox", "toybox"]),
         .init(name: "Stable Fluid",          section: "Playgrounds", tab: "Playgrounds", icon: "drop.degreesign",        keywords: ["fluid", "stable fluid", "navier stokes", "simulation", "smoke", "ink", "metal", "compute", "gpu", "jos stam", "my-toybox", "toybox"]),
+        .init(name: "Liquid Wallet",         section: "Playgrounds", tab: "Playgrounds", icon: "wallet.pass",             keywords: ["glass", "liquid glass", "wallet", "carousel", "stack", "deck", "merge", "union", "morph", "metaball", "glasseffect", "glasseffectcontainer", "ios 26"]),
         .init(name: "Safe Areas",            section: "Reference",   tab: "Playgrounds", icon: "iphone",                  keywords: ["insets", "home indicator", "notch", "status bar"]),
         .init(name: "Sheet Detents",         section: "Reference",   tab: "Playgrounds", icon: "rectangle.bottomhalf.inset.filled"),
     ]

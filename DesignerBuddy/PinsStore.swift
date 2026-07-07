@@ -6,6 +6,8 @@ final class PinsStore: ObservableObject {
     @AppStorage("pinnedItemKeys") private var data: Data = Data()
     // One-time QA seed: force today's new/updated playgrounds into Saved.
     @AppStorage("didSeedQAPins_2026_07_07") private var didSeedQAPins = false
+    // Second wave, seeded separately so installs that already ran wave 1 still get it.
+    @AppStorage("didSeedQAPins_2026_07_07_wave2") private var didSeedQAPinsWave2 = false
 
     /// Pages added or modified today — pinned once for QA. All live in the
     /// "Playgrounds" tab, so keys are "Playgrounds:<name>".
@@ -15,6 +17,10 @@ final class PinsStore: ObservableObject {
         "Implicit Equation", "Flow Distortion", "Lissajous Curve",
         "Radial Layout", "Flow Layout", "Physics Tag", "Stable Fluid",
         "Shaders",
+    ]
+
+    private static let qaPinNamesWave2 = [
+        "Liquid Wallet",
     ]
 
     init() {
@@ -32,11 +38,18 @@ final class PinsStore: ObservableObject {
     /// Runs once (per install) to drop today's pages into Saved for QA. Guarded by
     /// a flag so it won't re-pin items the user later removes.
     private func seedQAPinsIfNeeded() {
-        guard !didSeedQAPins else { return }
-        var keys = pinnedKeys
-        keys.formUnion(Self.qaPinNames.map { "Playgrounds:\($0)" })
-        pinnedKeys = keys
-        didSeedQAPins = true
+        if !didSeedQAPins {
+            var keys = pinnedKeys
+            keys.formUnion(Self.qaPinNames.map { "Playgrounds:\($0)" })
+            pinnedKeys = keys
+            didSeedQAPins = true
+        }
+        if !didSeedQAPinsWave2 {
+            var keys = pinnedKeys
+            keys.formUnion(Self.qaPinNamesWave2.map { "Playgrounds:\($0)" })
+            pinnedKeys = keys
+            didSeedQAPinsWave2 = true
+        }
     }
 
     func isPinned(_ entry: AppEntry) -> Bool {
