@@ -508,73 +508,98 @@ float3 hueToRGB(float h) {
     return half4(half3(base * (1.0 - line)), color.a);
 }
 
-// Fluid gradient (generative): five drifting metaball "blobs", each a colour, blended
-// by an inverse-square field into a soft gradient, then dusted with film grain.
-// Applied via .colorEffect on an opaque fill — the incoming `color` is ignored and
-// fully replaced; `size` normalizes `position`.
-// Reimplemented in-house; inspired by iShader's FluidGradient.
-[[ stitchable ]] half4 fluidGradientArt(
+// Chroma gradient (generative): a grainy near-white field with orange & purple blobs
+// warped by simplex noise. Applied via .colorEffect on an opaque fill — the incoming
+// `color` is ignored; `size` normalizes `position`.
+// Ports iShader's ChromaGradients (ShaderToy mtKfDG); simplex noise below is the
+// Ashima / McEwan / Gustavson implementation (MIT / public domain).
+static float3 cg_mod289(float3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+static float4 cg_mod289(float4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+static float4 cg_permute(float4 x) { return cg_mod289(((x * 34.0) + 1.0) * x); }
+static float4 cg_taylorInvSqrt(float4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
+static float cg_snoise(float3 v) {
+    const float2 C = float2(1.0 / 6.0, 1.0 / 3.0);
+    const float4 D = float4(0.0, 0.5, 1.0, 2.0);
+    float3 i  = floor(v + dot(v, C.yyy));
+    float3 x0 = v - i + dot(i, C.xxx);
+    float3 g = step(x0.yzx, x0.xyz);
+    float3 l = 1.0 - g;
+    float3 i1 = min(g.xyz, l.zxy);
+    float3 i2 = max(g.xyz, l.zxy);
+    float3 x1 = x0 - i1 + C.xxx;
+    float3 x2 = x0 - i2 + C.yyy;
+    float3 x3 = x0 - D.yyy;
+    i = cg_mod289(i);
+    float4 p = cg_permute(cg_permute(cg_permute(
+                 i.z + float4(0.0, i1.z, i2.z, 1.0))
+               + i.y + float4(0.0, i1.y, i2.y, 1.0))
+               + i.x + float4(0.0, i1.x, i2.x, 1.0));
+    float n_ = 1.0 / 7.0;
+    float3 ns = n_ * D.wyz - D.xzx;
+    float4 j = p - 49.0 * floor(p * ns.z * ns.z);
+    float4 x_ = floor(j * ns.z);
+    float4 y_ = floor(j - 7.0 * x_);
+    float4 x = x_ * ns.x + ns.yyyy;
+    float4 y = y_ * ns.x + ns.yyyy;
+    float4 h = 1.0 - abs(x) - abs(y);
+    float4 b0 = float4(x.xy, y.xy);
+    float4 b1 = float4(x.zw, y.zw);
+    float4 s0 = floor(b0) * 2.0 + 1.0;
+    float4 s1 = floor(b1) * 2.0 + 1.0;
+    float4 sh = -step(h, float4(0.0));
+    float4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+    float4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+    float3 p0 = float3(a0.xy, h.x);
+    float3 p1 = float3(a0.zw, h.y);
+    float3 p2 = float3(a1.xy, h.z);
+    float3 p3 = float3(a1.zw, h.w);
+    float4 norm = cg_taylorInvSqrt(float4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
+    p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+    float4 m = max(0.6 - float4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
+    m = m * m;
+    return 42.0 * dot(m * m, float4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
+}
+
+// Two-octave noise warp
+static float cg_warp(float2 u, float o, float time) {
+    float t = (time + o) * 0.2;
+    float n = cg_snoise(float3(u.x * 0.9 + t, u.y * 0.9 - t, t));
+    return cg_snoise(float3(n * 0.2, n * 0.7, t * 0.1));
+}
+
+// Soft blob field (nested smoothstep)
+static float cg_blob(float2 u, float n, float s, float z) {
+    return smoothstep(smoothstep(0.1, s, length(u)), 0.0,
+                      length(u * float2(z * 0.8, z) + n * 0.3) - 0.3);
+}
+
+[[ stitchable ]] half4 chromaGradientArt(
     float2 position,
     half4 color,
     float2 size,
     float time,
-    float blobScale,
-    float speed,
-    float grainAmount,
-    float saturation,
-    float palette
+    float grainAmt,
+    float zoom
 ) {
-    float2 uv = position / max(size, float2(1.0, 1.0));
-    float2 p = uv * 2.0 - 1.0;
-    p.x *= size.x / max(size.y, 1.0);
-    float t = time * speed;
+    float2 uv = (position - 0.5 * size) / min(size.x, size.y);
+    uv *= zoom;
+    float c1 = cg_blob(uv, cg_warp(uv * 0.6, 1.0, time), 1.2, 1.1);
+    float c2 = cg_blob(uv, cg_warp(uv * 0.5, 3.0, time), 1.5, 1.4);
+    float n = grainAmt * cg_snoise(float3(uv * 300.0, time * 0.2));
 
-    int pal = int(palette + 0.5);
-    float3 c0, c1, c2, c3, c4;
-    if (pal == 1) {            // Aurora
-        c0 = float3(0.10, 0.85, 0.55);
-        c1 = float3(0.15, 0.75, 0.95);
-        c2 = float3(0.35, 0.35, 0.95);
-        c3 = float3(0.55, 0.95, 0.70);
-        c4 = float3(0.10, 0.45, 0.75);
-    } else if (pal == 2) {     // Candy
-        c0 = float3(0.98, 0.45, 0.85);
-        c1 = float3(0.55, 0.45, 0.98);
-        c2 = float3(0.30, 0.85, 0.98);
-        c3 = float3(1.00, 0.90, 0.95);
-        c4 = float3(0.65, 0.55, 1.00);
-    } else {                   // Sunset
-        c0 = float3(1.00, 0.55, 0.10);
-        c1 = float3(0.98, 0.20, 0.65);
-        c2 = float3(0.55, 0.30, 0.95);
-        c3 = float3(0.15, 0.75, 0.95);
-        c4 = float3(1.00, 0.85, 0.55);
-    }
-    float3 colors[5] = { c0, c1, c2, c3, c4 };
+    // clamp arg order kept verbatim from the source: min(0.9, c1-c2) and min(1, c1+c2).
+    half3 outc = mix(
+        half3(n * 0.1 + 0.9),
+        half3(n) + mix(
+            half3(1.0, 0.5 - uv.y * 0.4, 0.0) * 1.3,
+            half3(uv.x + 0.75, 0.3, 1.0) * 0.9,
+            half(clamp(-0.14, 0.9, c1 - c2))
+        ),
+        half(clamp(0.0, 1.0, c1 + c2))
+    );
 
-    float scale = max(blobScale, 0.05);
-    float3 acc = float3(0.0);
-    float wsum = 0.0;
-    for (int i = 0; i < 5; i++) {
-        float fi = float(i);
-        float2 center = float2(
-            sin(t * (0.30 + fi * 0.13) + fi * 1.7) * 0.7,
-            cos(t * (0.25 + fi * 0.11) + fi * 2.3) * 0.7
-        );
-        float2 d = p - center;
-        float w = 1.0 / (dot(d, d) / scale + 0.18);
-        acc += colors[i] * w;
-        wsum += w;
-    }
-    float3 col = acc / max(wsum, 0.0001);
-
-    float luma = dot(col, float3(0.299, 0.587, 0.114));
-    col = mix(float3(luma), col, saturation);
-
-    float g = fract(sin(dot(position + fract(time) * 137.0, float2(12.9898, 78.233))) * 43758.5453);
-    col += (g - 0.5) * grainAmount;
-
-    return half4(half3(saturate(col)), 1.0);
+    return half4(outc, 1.0);
 }
 
 // Random metaball 2D (generative): a set of randomly-sized balls wander the frame
