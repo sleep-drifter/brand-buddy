@@ -260,6 +260,10 @@ struct ShadersPlaygroundView: View {
     private var anyParamAnimated:   Bool { layers.contains { $0.anim.contains { $0.enabled } } }
     private var anyProgressiveBlur: Bool { layers.contains { $0.effect == .progressiveBlur } }
 
+    // Elapsed time from launch. Feeding `timeIntervalSinceReferenceDate` (~8e8)
+    // into a 32-bit Float quantizes to ~64s steps, freezing time-driven shaders.
+    private let startDate = Date()
+
     private var timeSinceTap: Float {
         Float(max(0, -rippleTapTime.timeIntervalSinceNow))
     }
@@ -425,7 +429,7 @@ struct ShadersPlaygroundView: View {
                         }
                     } else if anyAlways || anyParamAnimated {
                         TimelineView(.animation) { tl in
-                            shaderView(time: Float(tl.date.timeIntervalSinceReferenceDate))
+                            shaderView(time: Float(tl.date.timeIntervalSince(startDate)))
                         }
                     } else {
                         shaderView(time: 0)

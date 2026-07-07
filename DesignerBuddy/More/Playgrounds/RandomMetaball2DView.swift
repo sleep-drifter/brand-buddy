@@ -6,6 +6,10 @@ import SwiftUI
 /// smooth liquid blobs where their inverse-square fields overlap. Rendered on the
 /// GPU via `randomMetaball2D` (ShadersPlayground.metal), driven by TimelineView.
 struct RandomMetaball2DView: View {
+    // Elapsed time from launch. Feeding `timeIntervalSinceReferenceDate` (~8e8)
+    // into a 32-bit Float quantizes to ~64s steps, freezing the animation.
+    private let startDate = Date()
+
     @State private var ballCount: Float = 6
     @State private var ballSize:  Float = 0.5
     @State private var speed:     Float = 0.4
@@ -30,7 +34,7 @@ struct RandomMetaball2DView: View {
 
     private var preview: some View {
         TimelineView(.animation) { tl in
-            let t = Float(tl.date.timeIntervalSinceReferenceDate)
+            let t = Float(tl.date.timeIntervalSince(startDate))
             GeometryReader { geo in
                 Color.black
                     .colorEffect(ShaderLibrary.randomMetaball2D(
