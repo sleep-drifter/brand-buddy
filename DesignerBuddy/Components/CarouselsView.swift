@@ -33,10 +33,7 @@ struct CarouselsView: View {
     // Section 6: Wallet-style deck.
     @State private var deckExpanded = false
 
-    // Section 7: parallax gallery + thumbnail strip.
-    @State private var galleryPosition: Int? = 0
-
-    // Section 8: full-screen vertical stories.
+    // Section 7: full-screen vertical stories.
     @State private var showStories = false
 
     // MARK: - Data
@@ -73,8 +70,6 @@ struct CarouselsView: View {
                 walletSection
             }
             .padding(16)
-
-            gallerySection
 
             VStack(spacing: 24) {
                 storiesSection
@@ -335,71 +330,7 @@ struct CarouselsView: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
-    // MARK: - Section 7: Parallax gallery + thumbnails
-
-    private var gallerySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("Parallax + thumbnails")
-                .padding(.horizontal, 16)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 0) {
-                    ForEach(Array(covers.enumerated()), id: \.element.id) { index, item in
-                        galleryPage(item)
-                            .containerRelativeFrame(.horizontal)
-                            .id(index)
-                    }
-                }
-                .scrollTargetLayout()
-            }
-            .scrollTargetBehavior(.paging)
-            .scrollPosition(id: $galleryPosition)
-            .frame(height: 220)
-
-            thumbnailStrip
-
-            captionText("scrollTransition offset = parallax; thumbnails drive .scrollPosition")
-                .padding(.horizontal, 16)
-        }
-    }
-
-    private var thumbnailStrip: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(Array(covers.enumerated()), id: \.element.id) { index, item in
-                        let selected = (galleryPosition ?? 0) == index
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(item.gradient)
-                            .frame(width: 54, height: 54)
-                            .overlay(
-                                Image(systemName: item.symbol)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.white.opacity(0.95))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0)
-                            )
-                            .opacity(selected ? 1 : 0.55)
-                            .scaleEffect(selected ? 1 : 0.9)
-                            .id(index)
-                            .onTapGesture {
-                                withAnimation(.snappy) { galleryPosition = index }
-                            }
-                    }
-                }
-                .padding(.horizontal, 16)
-            }
-            .animation(.snappy, value: galleryPosition)
-            .onChange(of: galleryPosition) { _, new in
-                guard let new else { return }
-                withAnimation(.snappy) { proxy.scrollTo(new, anchor: .center) }
-            }
-        }
-    }
-
-    // MARK: - Section 8: Full-screen vertical stories
+    // MARK: - Section 7: Full-screen vertical stories
 
     private var storiesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -504,32 +435,6 @@ struct CarouselsView: View {
                 }
                 .foregroundStyle(.white)
             )
-    }
-
-    private func galleryPage(_ item: CoverItem) -> some View {
-        item.gradient
-            .overlay(
-                Image(systemName: item.symbol)
-                    .font(.system(size: 80, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.9))
-                    // The inner artwork shifts slower than the page for a parallax feel.
-                    .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                        let dx = CGFloat(phase.value) * 60
-                        return content.offset(x: dx)
-                    }
-            )
-            .overlay(alignment: .bottomLeading) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.title)
-                        .font(.title3.bold())
-                        .foregroundStyle(.white)
-                    Text(item.subtitle)
-                        .font(.footnote)
-                        .foregroundStyle(.white.opacity(0.85))
-                }
-                .padding(16)
-            }
-            .clipped()
     }
 
     // MARK: - Helpers
