@@ -156,7 +156,7 @@ struct AppEntry: Identifiable, Hashable {
     // MARK: - Playgrounds
 
     static let playgrounds: [AppEntry] = [
-        .init(name: "Shaders",               section: "Playgrounds", tab: "Playgrounds", icon: "sparkles.rectangle.stack", keywords: ["metal", "shader", "filter", "effect", "ripple", "pixelate", "distortion", "gpu", "grain", "vignette", "chromatic", "emboss", "swirl", "wave"]),
+        .init(name: "Shaders",               section: "Playgrounds", tab: "Playgrounds", icon: "sparkles.rectangle.stack", keywords: ["metal", "shader", "filter", "effect", "ripple", "pixelate", "distortion", "gpu", "grain", "vignette", "chromatic", "emboss", "swirl", "wave", "holographic", "foil", "duotone", "halftone", "solarize", "frosted", "glass", "lens", "refract", "color grade", "lut", "cinematic", "topographic", "contour", "stack", "layers", "preset", "photo"]),
         .init(name: "Spring Physics",        section: "Playgrounds", tab: "Playgrounds", icon: "waveform.path.ecg",       keywords: ["animation", "bounce", "easing", "motion", "damping", "stiffness"]),
         .init(name: "Haptics",               section: "Playgrounds", tab: "Playgrounds", icon: "hand.tap",                keywords: ["vibration", "feedback", "taptic", "impact", "selection"]),
         .init(name: "Corner Radius",         section: "Playgrounds", tab: "Playgrounds", icon: "square.on.square",        keywords: ["rounded", "border radius", "roundrectangle"]),
@@ -164,6 +164,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Shadow Explorer",       section: "Playgrounds", tab: "Playgrounds", icon: "shadow"),
         .init(name: "Blur Stack",            section: "Playgrounds", tab: "Playgrounds", icon: "square.stack.3d.up"),
         .init(name: "Mesh Gradient",         section: "Playgrounds", tab: "Playgrounds", icon: "mosaic",                  keywords: ["mesh", "gradient", "color", "animation", "mask", "blend"]),
+        .init(name: "Fluid Gradient",        section: "Playgrounds", tab: "Playgrounds", icon: "drop.halffull",          keywords: ["fluid", "gradient", "generative", "metaball", "blob", "grain", "noise", "animated", "background", "ishader", "mesh"]),
         .init(name: "Safe Areas",            section: "Reference",   tab: "Playgrounds", icon: "iphone",                  keywords: ["insets", "home indicator", "notch", "status bar"]),
         .init(name: "Sheet Detents",         section: "Reference",   tab: "Playgrounds", icon: "rectangle.bottomhalf.inset.filled"),
     ]

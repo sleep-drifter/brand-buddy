@@ -323,3 +323,256 @@ float valueNoise(float2 p) {
     float3 rgb = hue * float3(color.r, color.g, color.b);
     return half4(half3(saturate(rgb)), color.a);
 }
+
+// Pure hue (0–1) to fully-saturated RGB
+float3 hueToRGB(float h) {
+    float r = abs(h * 6.0 - 3.0) - 1.0;
+    float g = 2.0 - abs(h * 6.0 - 2.0);
+    float b = 2.0 - abs(h * 6.0 - 4.0);
+    return clamp(float3(r, g, b), 0.0, 1.0);
+}
+
+// Holographic foil: a prismatic rainbow sheen that sweeps across the image,
+// strongest over the brighter regions (like light catching a foil sticker)
+[[ stitchable ]] half4 shaderHolographic(
+    float2 position,
+    half4 color,
+    float time,
+    float intensity,
+    float scale,
+    float speed
+) {
+    float3 base = float3(color.rgb);
+    float luma = dot(base, float3(0.299, 0.587, 0.114));
+    float sweep = (position.x + position.y) / max(scale, 1.0) + time * speed;
+    float phase = sweep + luma * 6.2831;
+    float3 rainbow = float3(
+        0.5 + 0.5 * sin(phase),
+        0.5 + 0.5 * sin(phase + 2.094),
+        0.5 + 0.5 * sin(phase + 4.188)
+    );
+    float mask = smoothstep(0.15, 0.9, luma);
+    float3 outc = base + rainbow * intensity * mask;
+    return half4(half3(saturate(outc)), color.a);
+}
+
+// Duotone: remap luminance onto a two-colour gradient (shadow hue → highlight hue)
+[[ stitchable ]] half4 shaderDuotone(
+    float2 position,
+    half4 color,
+    float shadowHue,
+    float highlightHue,
+    float contrast
+) {
+    float luma = dot(float3(color.rgb), float3(0.299, 0.587, 0.114));
+    luma = saturate((luma - 0.5) * (0.5 + contrast * 2.0) + 0.5);
+    float3 lo = hueToRGB(shadowHue) * 0.85;
+    float3 hi = hueToRGB(highlightHue);
+    return half4(half3(mix(lo, hi, luma)), color.a);
+}
+
+// Halftone: newspaper-print dot screen. Dot radius grows as the area darkens;
+// the grid can be rotated, and tint blends from full colour to monochrome ink.
+[[ stitchable ]] half4 shaderHalftone(
+    float2 position,
+    half4 color,
+    float cellSize,
+    float angle,
+    float tint
+) {
+    float s = max(cellSize, 2.0);
+    float ca = cos(angle);
+    float sa = sin(angle);
+    float2 rot = float2(position.x * ca - position.y * sa,
+                        position.x * sa + position.y * ca);
+    float2 cell = fmod(fmod(rot, s) + s, s) - s * 0.5;
+    float luma = dot(float3(color.rgb), float3(0.299, 0.587, 0.114));
+    float radius = (1.0 - luma) * s * 0.72;
+    float ink = smoothstep(radius + 1.0, radius - 1.0, length(cell));
+    float3 dotColor = mix(float3(color.rgb), float3(0.0), tint);
+    return half4(half3(mix(float3(1.0), dotColor, ink)), color.a);
+}
+
+// Solarize: invert each channel above a threshold (Sabattier effect), blended in
+[[ stitchable ]] half4 shaderSolarize(
+    float2 position,
+    half4 color,
+    float threshold,
+    float amount
+) {
+    float3 c = float3(color.rgb);
+    float3 solar = float3(
+        c.r > threshold ? 1.0 - c.r : c.r,
+        c.g > threshold ? 1.0 - c.g : c.g,
+        c.b > threshold ? 1.0 - c.b : c.b
+    );
+    return half4(half3(saturate(mix(c, solar, amount))), color.a);
+}
+
+// Frosted glass: jittered ring blur with a slight brightness lift
+[[ stitchable ]] half4 shaderFrosted(
+    float2 position,
+    SwiftUI::Layer layer,
+    float radius,
+    float brightness
+) {
+    float r = max(radius, 0.5);
+    half4 result = half4(0);
+    const int N = 12;
+    for (int i = 0; i < N; i++) {
+        float a = float(i) * (M_PI_F * 2.0 / float(N));
+        float jitter = fract(sin(dot(position + float(i), float2(12.9898, 78.233))) * 43758.5453);
+        float rr = r * (0.4 + 0.6 * jitter);
+        result += layer.sample(position + float2(cos(a), sin(a)) * rr);
+    }
+    result /= half(N);
+    result.rgb = saturate(result.rgb + half(brightness));
+    return result;
+}
+
+// Refractive lens: a magnifying bubble centred on the tap point that eases to
+// no distortion at its rim
+[[ stitchable ]] float2 shaderRefractLens(
+    float2 position,
+    float2 center,
+    float radius,
+    float strength
+) {
+    float2 delta = position - center;
+    float dist = length(delta);
+    float r = max(radius, 1.0);
+    if (dist >= r) return position;
+    float t = dist / r;
+    float falloff = 1.0 - smoothstep(0.0, 1.0, t);
+    float mag = 1.0 - strength * falloff;
+    return center + delta * mag;
+}
+
+// Color grade: procedural film "looks" selected by index, blended by amount.
+// Each branch is an analytic tone/colour transform — an in-shader stand-in for a LUT.
+[[ stitchable ]] half4 shaderColorGrade(
+    float2 position,
+    half4 color,
+    float look,
+    float amount
+) {
+    float3 c = float3(color.rgb);
+    float luma = dot(c, float3(0.299, 0.587, 0.114));
+    float3 g = c;
+    int L = int(look + 0.5);
+    if (L == 1) {                 // Teal-Orange
+        float3 shadowTint = float3(0.0, 0.35, 0.45);
+        float3 highTint   = float3(1.0, 0.65, 0.30);
+        float3 tint = mix(shadowTint, highTint, smoothstep(0.2, 0.8, luma));
+        g = mix(c, c * 0.6 + tint * 0.6, 0.6);
+        g = (g - 0.5) * 1.12 + 0.5;
+    } else if (L == 2) {          // Warm Vintage
+        g = c * float3(1.08, 1.02, 0.88) + float3(0.06, 0.03, 0.0);
+        g = (g - 0.5) * 0.9 + 0.5;
+    } else if (L == 3) {          // Bleach Bypass
+        float3 gray = float3(luma);
+        g = mix(c, gray, 0.6) * gray * 2.0;
+        g = (g - 0.5) * 1.3 + 0.5;
+    } else if (L == 4) {          // Noir
+        float3 gray = float3(luma);
+        g = (gray - 0.5) * 1.35 + 0.5 + float3(0.0, 0.0, 0.04);
+    } else if (L == 5) {          // Cross Process
+        float3 tint = mix(float3(0.0, 0.30, 0.10), float3(1.0, 0.95, 0.40), luma);
+        g = mix(c, tint, 0.35);
+        g = (g - 0.5) * 1.2 + 0.5;
+        g = mix(float3(luma), g, 1.3);
+    } else if (L == 6) {          // Faded matte
+        g = (c - 0.5) * 0.75 + 0.5;
+        g = g * 0.9 + 0.08;
+    }
+    return half4(half3(saturate(mix(c, g, amount))), color.a);
+}
+
+// Topographic: posterize luminance into bands, drawing thin contour lines at each
+// band boundary; tint blends grayscale steps toward a cool→warm elevation ramp.
+[[ stitchable ]] half4 shaderTopographic(
+    float2 position,
+    half4 color,
+    float levels,
+    float lineWidth,
+    float tint
+) {
+    float luma = dot(float3(color.rgb), float3(0.299, 0.587, 0.114));
+    float lv = max(levels, 2.0);
+    float scaled = luma * lv;
+    float band = floor(scaled) / lv;
+    float f = fract(scaled);
+    float line = 1.0 - smoothstep(0.0, max(lineWidth, 0.001), min(f, 1.0 - f));
+    float3 ramp = mix(float3(0.10, 0.15, 0.35), float3(0.95, 0.85, 0.50), band);
+    float3 base = mix(float3(band), ramp, tint);
+    return half4(half3(base * (1.0 - line)), color.a);
+}
+
+// Fluid gradient (generative): five drifting metaball "blobs", each a colour, blended
+// by an inverse-square field into a soft gradient, then dusted with film grain.
+// Applied via .colorEffect on an opaque fill — the incoming `color` is ignored and
+// fully replaced; `size` normalizes `position`.
+// Reimplemented in-house; inspired by iShader's FluidGradient.
+[[ stitchable ]] half4 fluidGradientArt(
+    float2 position,
+    half4 color,
+    float2 size,
+    float time,
+    float blobScale,
+    float speed,
+    float grainAmount,
+    float saturation,
+    float palette
+) {
+    float2 uv = position / max(size, float2(1.0, 1.0));
+    float2 p = uv * 2.0 - 1.0;
+    p.x *= size.x / max(size.y, 1.0);
+    float t = time * speed;
+
+    int pal = int(palette + 0.5);
+    float3 c0, c1, c2, c3, c4;
+    if (pal == 1) {            // Aurora
+        c0 = float3(0.10, 0.85, 0.55);
+        c1 = float3(0.15, 0.75, 0.95);
+        c2 = float3(0.35, 0.35, 0.95);
+        c3 = float3(0.55, 0.95, 0.70);
+        c4 = float3(0.10, 0.45, 0.75);
+    } else if (pal == 2) {     // Candy
+        c0 = float3(0.98, 0.45, 0.85);
+        c1 = float3(0.55, 0.45, 0.98);
+        c2 = float3(0.30, 0.85, 0.98);
+        c3 = float3(1.00, 0.90, 0.95);
+        c4 = float3(0.65, 0.55, 1.00);
+    } else {                   // Sunset
+        c0 = float3(1.00, 0.55, 0.10);
+        c1 = float3(0.98, 0.20, 0.65);
+        c2 = float3(0.55, 0.30, 0.95);
+        c3 = float3(0.15, 0.75, 0.95);
+        c4 = float3(1.00, 0.85, 0.55);
+    }
+    float3 colors[5] = { c0, c1, c2, c3, c4 };
+
+    float scale = max(blobScale, 0.05);
+    float3 acc = float3(0.0);
+    float wsum = 0.0;
+    for (int i = 0; i < 5; i++) {
+        float fi = float(i);
+        float2 center = float2(
+            sin(t * (0.30 + fi * 0.13) + fi * 1.7) * 0.7,
+            cos(t * (0.25 + fi * 0.11) + fi * 2.3) * 0.7
+        );
+        float2 d = p - center;
+        float w = 1.0 / (dot(d, d) / scale + 0.18);
+        acc += colors[i] * w;
+        wsum += w;
+    }
+    float3 col = acc / max(wsum, 0.0001);
+
+    float luma = dot(col, float3(0.299, 0.587, 0.114));
+    col = mix(float3(luma), col, saturation);
+
+    float g = fract(sin(dot(position + fract(time) * 137.0, float2(12.9898, 78.233))) * 43758.5453);
+    col += (g - 0.5) * grainAmount;
+
+    return half4(half3(saturate(col)), 1.0);
+}

@@ -1,4 +1,7 @@
 import SwiftUI
+import PhotosUI
+import UIKit
+import Combine
 
 // MARK: - ParamAnimation
 
@@ -28,11 +31,19 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
     case progressiveBlur = "Progressive Blur"
     case dissolve        = "Dissolve"
     case zoomBlur        = "Zoom Blur"
+    case holographic     = "Holographic"
+    case duotone         = "Duotone"
+    case halftone        = "Halftone"
+    case solarize        = "Solarize"
+    case frosted         = "Frosted"
+    case refractLens     = "Refract Lens"
+    case colorGrade      = "Color Grade"
+    case topographic     = "Topographic"
 
     var id: String { rawValue }
-    var isTapBased:     Bool { self == .ripple || self == .zoomBlur }
+    var isTapBased:     Bool { self == .ripple || self == .zoomBlur || self == .refractLens }
     var alwaysAnimates: Bool {
-        self == .wave || self == .grain || self == .glitch || self == .hueRotate
+        self == .wave || self == .grain || self == .glitch || self == .hueRotate || self == .holographic
     }
 
     var icon: String {
@@ -54,8 +65,61 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
         case .progressiveBlur: return "aqi.medium"
         case .dissolve:        return "flame"
         case .zoomBlur:        return "arrow.up.left.and.arrow.down.right.circle"
+        case .holographic:     return "rainbow"
+        case .duotone:         return "circle.lefthalf.filled"
+        case .halftone:        return "circle.grid.3x3.fill"
+        case .solarize:        return "sun.max.fill"
+        case .frosted:         return "snowflake"
+        case .refractLens:     return "magnifyingglass"
+        case .colorGrade:      return "camera.aperture"
+        case .topographic:     return "mountain.2"
         }
     }
+
+    // Default slider positions (5 slots) for each effect.
+    var defaultParams: [Float] {
+        switch self {
+        case .ripple:          return [0.35, 0.35, 0.2,  0.3,  0.35]
+        case .pixelate:        return [0.05, 0.5,  0.5,  0.5,  0.5 ]
+        case .chromatic:       return [0.3,  0.3,  0.5,  0.5,  0.5 ]
+        case .wave:            return [0.55, 0.45, 0.45, 0.5,  0.5 ]
+        case .grain:           return [0.35, 0.25, 0.5,  0.5,  0.5 ]
+        case .vignette:        return [0.4,  0.3,  0.5,  0.5,  0.5 ]
+        case .swirl:           return [0.25, 0.5,  0.5,  0.5,  0.5 ]
+        case .emboss:          return [0.2,  0.5,  0.5,  0.5,  0.5 ]
+        case .hueRotate:       return [0.5,  0.5,  0.5,  0.5,  0.5 ]
+        case .kaleidoscope:    return [0.25, 0.5,  0.5,  0.5,  0.5 ]
+        case .glitch:          return [0.4,  0.2,  0.25, 0.2,  0.5 ]
+        case .crt:             return [0.45, 0.2,  0.15, 0.5,  0.5 ]
+        case .edgeDetect:      return [0.2,  0.15, 0.1,  0.5,  0.5 ]
+        case .fisheye:         return [0.25, 0.55, 0.5,  0.5,  0.5 ]
+        case .progressiveBlur: return [0.45, 0.2,  0.65, 0.5,  0.5 ]
+        case .dissolve:        return [0.35, 0.25, 0.8,  0.35, 0.5 ]
+        case .zoomBlur:        return [0.35, 0.5,  0.5,  0.5,  0.5 ]
+        case .holographic:     return [0.6,  0.35, 0.4,  0.5,  0.5 ]
+        case .duotone:         return [0.62, 0.12, 0.5,  0.5,  0.5 ]
+        case .halftone:        return [0.4,  0.25, 0.6,  0.5,  0.5 ]
+        case .solarize:        return [0.5,  0.7,  0.5,  0.5,  0.5 ]
+        case .frosted:         return [0.5,  0.4,  0.5,  0.5,  0.5 ]
+        case .refractLens:     return [0.45, 0.5,  0.5,  0.5,  0.5 ]
+        case .colorGrade:      return [1.0,  0.5,  0.5,  0.5,  0.5 ]
+        case .topographic:     return [0.4,  0.2,  0.6,  0.5,  0.5 ]
+        }
+    }
+}
+
+// MARK: - Grade Look
+
+enum GradeLook: String, CaseIterable {
+    case neutral      = "Neutral"
+    case tealOrange   = "Teal-Orange"
+    case warmVintage  = "Warm Vintage"
+    case bleachBypass = "Bleach Bypass"
+    case noir         = "Noir"
+    case crossProcess = "Cross Process"
+    case faded        = "Faded"
+
+    var index: Float { Float(GradeLook.allCases.firstIndex(of: self) ?? 0) }
 }
 
 // MARK: - Preview Subject
@@ -63,11 +127,13 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
 enum PreviewSubject: String, CaseIterable {
     case wallpaper = "Wallpaper"
     case palette   = "Palette"
+    case photo     = "Photo"
 
     var assetName: String {
         switch self {
         case .wallpaper: return "PreviewBackground"
         case .palette:   return "PreviewPalette"
+        case .photo:     return ""
         }
     }
 }
@@ -98,42 +164,115 @@ enum BlurDirection: String, CaseIterable {
     }
 }
 
+// MARK: - Layer Model
+
+struct ShaderLayer: Identifiable {
+    let id = UUID()
+    var effect: ShaderEffect
+    var params: [Float]
+    var anim:   [ParamAnimation]
+    var blurDirection: BlurDirection = .bottom
+    var gradeLook:     GradeLook     = .tealOrange
+
+    init(effect: ShaderEffect) {
+        self.effect = effect
+        self.params = effect.defaultParams
+        self.anim   = Array(repeating: ParamAnimation(), count: 5)
+    }
+}
+
+// MARK: - Presets (persisted)
+
+struct PresetLayer: Codable {
+    var effect: String
+    var params: [Float]
+    var blurDirection: String
+    var gradeLook: String
+}
+
+struct ShaderPreset: Identifiable, Codable {
+    var id = UUID()
+    var name: String
+    var layers: [PresetLayer]
+}
+
+final class ShaderPresetStore: ObservableObject {
+    @Published private(set) var presets: [ShaderPreset] = []
+    private let key = "shaderPresets.v1"
+
+    init() { load() }
+
+    private func load() {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let decoded = try? JSONDecoder().decode([ShaderPreset].self, from: data) else { return }
+        presets = decoded
+    }
+
+    private func persist() {
+        if let data = try? JSONEncoder().encode(presets) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+    }
+
+    func add(_ preset: ShaderPreset) {
+        presets.append(preset)
+        persist()
+    }
+
+    func delete(_ preset: ShaderPreset) {
+        presets.removeAll { $0.id == preset.id }
+        persist()
+    }
+}
+
 // MARK: - View
 
 struct ShadersPlaygroundView: View {
     @EnvironmentObject private var pinsStore: PinsStore
+    @StateObject private var presetStore = ShaderPresetStore()
 
-    @State private var effect:  ShaderEffect   = .ripple
+    @State private var layers: [ShaderLayer] = [ShaderLayer(effect: .ripple)]
+    @State private var selectedLayerID: UUID?
+
     @State private var subject: PreviewSubject = .wallpaper
+    @State private var photoItem:  PhotosPickerItem?
+    @State private var photoImage: Image?
 
-    @State private var params:     [Float]          = Array(repeating: 0.5, count: 5)
-    @State private var animParams: [ParamAnimation] = Array(repeating: ParamAnimation(), count: 5)
+    @State private var tapOrigin:     CGPoint = .init(x: 60, y: 60)
+    @State private var rippleTapTime: Date    = .distantPast
 
-    @State private var blurDirection: BlurDirection = .bottom
-
-    @State private var tapOrigin:    CGPoint = .init(x: 60, y: 60)
-    @State private var rippleTapTime: Date   = .distantPast
+    @State private var showSaveAlert = false
+    @State private var presetName    = ""
 
     private let previewPt: CGFloat = 120
+    private let maxLayers  = 4
+
+    // MARK: - Derived state
+
+    private var selectedIndex: Int {
+        if let id = selectedLayerID, let i = layers.firstIndex(where: { $0.id == id }) { return i }
+        return 0
+    }
+    private var selectedLayer: ShaderLayer { layers[selectedIndex] }
+
+    private var anyTap:             Bool { layers.contains { $0.effect.isTapBased } }
+    private var anyAlways:          Bool { layers.contains { $0.effect.alwaysAnimates } }
+    private var anyParamAnimated:   Bool { layers.contains { $0.anim.contains { $0.enabled } } }
+    private var anyProgressiveBlur: Bool { layers.contains { $0.effect == .progressiveBlur } }
 
     private var timeSinceTap: Float {
         Float(max(0, -rippleTapTime.timeIntervalSinceNow))
     }
 
+    private var previewAreaHeight: CGFloat {
+        previewPt + 20 + (anyTap ? 28 : 0)
+    }
+
     private var shadersEntry: AppEntry? {
         AppEntry.all.first { $0.name == "Shaders" }
     }
-
     private var isBookmarked: Bool {
         shadersEntry.map { pinsStore.isPinned($0) } ?? false
-    }
-
-    private var anyParamAnimated: Bool {
-        animParams.contains { $0.enabled }
-    }
-
-    private var previewAreaHeight: CGFloat {
-        previewPt + 20 + (effect.isTapBased ? 28 : 0)
     }
 
     // MARK: - Animation helpers
@@ -142,10 +281,6 @@ struct ShadersPlaygroundView: View {
         guard anim.enabled else { return base }
         let period = 1 + anim.duration * 19
         return min(1, max(0, base + anim.drift * sin(time * 2 * .pi / period)))
-    }
-
-    private func ep(_ i: Int, time: Float) -> Float {
-        animatedValue(params[i], anim: animParams[i], time: time)
     }
 
     // MARK: - Subject fallback
@@ -167,9 +302,9 @@ struct ShadersPlaygroundView: View {
         case .palette:
             LinearGradient(
                 stops: [
-                    .init(color: Color(white: 0.45),                         location: 0.0),
-                    .init(color: Color(white: 0.18),                         location: 0.2),
-                    .init(color: .black,                                      location: 0.32),
+                    .init(color: Color(white: 0.45),                        location: 0.0),
+                    .init(color: Color(white: 0.18),                        location: 0.2),
+                    .init(color: .black,                                     location: 0.32),
                     .init(color: Color(red: 0.0,  green: 0.10, blue: 0.58), location: 0.45),
                     .init(color: Color(red: 0.09, green: 0.46, blue: 0.78), location: 0.65),
                     .init(color: Color(red: 0.13, green: 0.60, blue: 0.37), location: 1.0)
@@ -177,7 +312,26 @@ struct ShadersPlaygroundView: View {
                 startPoint: .leading,
                 endPoint: .trailing
             )
+        case .photo:
+            Color(.systemGray5)
         }
+    }
+
+    private var imageBase: AnyView {
+        AnyView(
+            ZStack {
+                subjectFallback
+                if subject == .photo {
+                    if let photoImage {
+                        photoImage.resizable().scaledToFill()
+                    }
+                } else {
+                    Image(subject.assetName).resizable().scaledToFill()
+                }
+            }
+            .frame(width: previewPt, height: previewPt)
+            .clipped()
+        )
     }
 
     // MARK: - Body
@@ -188,24 +342,34 @@ struct ShadersPlaygroundView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    // Space for the floating preview
                     Color.clear.frame(height: previewAreaHeight + 8)
 
                     controlsSection
                         .padding(.top, 8)
                         .padding(.horizontal, 16)
 
-                    if !effect.isTapBased {
+                    layersSection
+                        .padding(.top, 24)
+                        .padding(.horizontal, 16)
+
+                    editorSection
+                        .padding(.top, 24)
+                        .padding(.horizontal, 16)
+
+                    if !selectedLayer.effect.isTapBased {
                         animationSection
                             .padding(.top, 24)
                             .padding(.horizontal, 16)
                     }
 
+                    presetsSection
+                        .padding(.top, 24)
+                        .padding(.horizontal, 16)
+
                     Spacer().frame(height: 40)
                 }
             }
 
-            // Preview floats above scroll content — clear background lets content show through
             previewArea
         }
         .navigationTitle("Shaders")
@@ -214,39 +378,52 @@ struct ShadersPlaygroundView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    if let entry = shadersEntry {
-                        pinsStore.toggle(entry)
-                    }
+                    if let entry = shadersEntry { pinsStore.toggle(entry) }
                 } label: {
                     Image(systemName: isBookmarked ? "bookmark.fill" : "bookmark")
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button(action: shuffle) {
-                    Image(systemName: "shuffle")
+                Button(action: shuffle) { Image(systemName: "shuffle") }
+            }
+        }
+        .onChange(of: photoItem) { _, newItem in
+            guard let newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self),
+                   let ui = UIImage(data: data) {
+                    photoImage = Image(uiImage: ui)
+                    subject = .photo
                 }
             }
         }
-        .onChange(of: effect) { _, newEffect in
-            params         = defaultParams(for: newEffect)
-            animParams     = Array(repeating: ParamAnimation(), count: 5)
-            blurDirection  = .bottom
+        .alert("Save Preset", isPresented: $showSaveAlert) {
+            TextField("Name", text: $presetName)
+            Button("Save") {
+                let name = presetName.trimmingCharacters(in: .whitespaces)
+                if !name.isEmpty { presetStore.add(makePreset(name: name)) }
+                presetName = ""
+            }
+            Button("Cancel", role: .cancel) { presetName = "" }
+        } message: {
+            Text("Save the current \(layers.count)-layer stack.")
+        }
+        .onAppear {
+            if selectedLayerID == nil { selectedLayerID = layers.first?.id }
         }
     }
 
-    // MARK: - Preview Area (no card — clear bg so scroll content shows through)
+    // MARK: - Preview Area
 
     private var previewArea: some View {
         VStack(spacing: 8) {
-            // Full-width card — image is centered at its natural size so shader
-            // parameters (center, radius, etc.) remain correct.
             ZStack {
                 Group {
-                    if effect.isTapBased {
+                    if anyTap {
                         TimelineView(.animation) { _ in
                             shaderView(time: timeSinceTap)
                         }
-                    } else if effect.alwaysAnimates || anyParamAnimated {
+                    } else if anyAlways || anyParamAnimated {
                         TimelineView(.animation) { tl in
                             shaderView(time: Float(tl.date.timeIntervalSinceReferenceDate))
                         }
@@ -255,22 +432,22 @@ struct ShadersPlaygroundView: View {
                     }
                 }
                 .frame(width: previewPt, height: previewPt)
-                // Gesture stays on the 120 pt image so .local coordinates
-                // match what the shaders expect.
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .local)
                         .onEnded { val in
-                            guard effect.isTapBased else { return }
+                            guard anyTap else { return }
                             tapOrigin = val.location
-                            if effect == .ripple { rippleTapTime = Date() }
+                            if layers.contains(where: { $0.effect == .ripple }) {
+                                rippleTapTime = Date()
+                            }
                         }
                 )
             }
-            .frame(maxWidth: .infinity)          // card fills margin-to-margin
-            .previewCanvas(clipped: effect != .progressiveBlur)
+            .frame(maxWidth: .infinity)
+            .previewCanvas(clipped: !anyProgressiveBlur)
             .shadow(color: .black.opacity(0.18), radius: 16, y: 6)
 
-            if effect.isTapBased {
+            if anyTap {
                 Text("Tap the preview")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -281,201 +458,243 @@ struct ShadersPlaygroundView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Shader View
+    // MARK: - Shader Stack
 
-    @ViewBuilder
-    private func shaderView(time: Float) -> some View {
-        let img = ZStack {
-            subjectFallback
-            Image(subject.assetName)
-                .resizable()
-                .scaledToFill()
+    private func shaderView(time: Float) -> AnyView {
+        layers.reduce(imageBase) { acc, layer in
+            applyEffect(to: acc, layer: layer, time: time)
         }
-        .frame(width: previewPt, height: previewPt)
-        .clipped()  // contain scaledToFill inside the square frame before shader runs
+    }
 
-        switch effect {
+    private func applyEffect(to view: AnyView, layer: ShaderLayer, time: Float) -> AnyView {
+        func av(_ i: Int) -> Float { animatedValue(layer.params[i], anim: layer.anim[i], time: time) }
+
+        switch layer.effect {
         case .ripple:
-            img.distortionEffect(
+            return AnyView(view.distortionEffect(
                 ShaderLibrary.shaderRipple(
                     .float(time),
                     .float2(tapOrigin),
-                    .float(ep(0, time: time) * 80),
-                    .float(1 + ep(1, time: time) * 59),
-                    .float(0.001 + ep(3, time: time) * 0.049),
-                    .float(ep(2, time: time) * 80),
-                    .float(1 + ep(4, time: time) * 24)
+                    .float(av(0) * 80),
+                    .float(1 + av(1) * 59),
+                    .float(0.001 + av(3) * 0.049),
+                    .float(av(2) * 80),
+                    .float(1 + av(4) * 24)
                 ),
                 maxSampleOffset: CGSize(width: 80, height: 80)
-            )
+            ))
 
         case .pixelate:
-            img.layerEffect(
-                ShaderLibrary.shaderPixelate(.float(1 + ep(0, time: time) * 199)),
+            return AnyView(view.layerEffect(
+                ShaderLibrary.shaderPixelate(.float(1 + av(0) * 199)),
                 maxSampleOffset: .zero
-            )
+            ))
 
         case .chromatic:
-            img.layerEffect(
-                ShaderLibrary.shaderChromatic(
-                    .float(ep(0, time: time) * 80),
-                    .float(ep(1, time: time) * 40)
-                ),
+            return AnyView(view.layerEffect(
+                ShaderLibrary.shaderChromatic(.float(av(0) * 80), .float(av(1) * 40)),
                 maxSampleOffset: CGSize(width: 80, height: 40)
-            )
+            ))
 
         case .wave:
-            // Speed has a floor of 0.3 so wave never freezes
-            img.distortionEffect(
+            return AnyView(view.distortionEffect(
                 ShaderLibrary.shaderWave(
-                    .float(time * (0.3 + ep(2, time: time) * 4.7)),
-                    .float(ep(0, time: time) * 80),
-                    .float(0.02 + ep(1, time: time) * 0.28)
+                    .float(time * (0.3 + av(2) * 4.7)),
+                    .float(av(0) * 80),
+                    .float(0.02 + av(1) * 0.28)
                 ),
                 maxSampleOffset: CGSize(width: 80, height: 80)
-            )
+            ))
 
         case .grain:
-            img.colorEffect(
+            return AnyView(view.colorEffect(
                 ShaderLibrary.shaderGrain(
                     .float(time),
-                    .float(ep(0, time: time) * 2.0),
-                    .float(0.5 + ep(1, time: time) * 19.5),
-                    .float(ep(2, time: time))
+                    .float(av(0) * 2.0),
+                    .float(0.5 + av(1) * 19.5),
+                    .float(av(2))
                 )
-            )
+            ))
 
         case .vignette:
-            img.colorEffect(
+            return AnyView(view.colorEffect(
                 ShaderLibrary.shaderVignette(
                     .float2(CGSize(width: previewPt, height: previewPt)),
-                    .float(ep(0, time: time) * 2.5),
-                    .float(ep(1, time: time) * 1.5)
+                    .float(av(0) * 2.5),
+                    .float(av(1) * 1.5)
                 )
-            )
+            ))
 
         case .swirl:
-            img.distortionEffect(
+            return AnyView(view.distortionEffect(
                 ShaderLibrary.shaderSwirl(
                     .float2(CGPoint(x: previewPt / 2, y: previewPt / 2)),
-                    .float(ep(0, time: time) * .pi * 8),
-                    .float(Float(previewPt) * ep(1, time: time))
+                    .float(av(0) * .pi * 8),
+                    .float(Float(previewPt) * av(1))
                 ),
                 maxSampleOffset: CGSize(width: previewPt, height: previewPt)
-            )
+            ))
 
         case .emboss:
-            img.layerEffect(
-                ShaderLibrary.shaderEmboss(.float(ep(0, time: time) * 20)),
+            return AnyView(view.layerEffect(
+                ShaderLibrary.shaderEmboss(.float(av(0) * 20)),
                 maxSampleOffset: CGSize(width: 20, height: 20)
-            )
+            ))
 
         case .hueRotate:
-            img.colorEffect(
-                ShaderLibrary.shaderHueRotate(
-                    .float(time + ep(0, time: time) * .pi * 2)
-                )
-            )
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderHueRotate(.float(time + av(0) * .pi * 2))
+            ))
 
         case .kaleidoscope:
-            img.distortionEffect(
+            return AnyView(view.distortionEffect(
                 ShaderLibrary.shaderKaleidoscope(
                     .float2(CGPoint(x: previewPt / 2, y: previewPt / 2)),
-                    .float(Float(1 + Int(ep(0, time: time) * 23))),
-                    .float(ep(1, time: time) * .pi * 2)
+                    .float(Float(1 + Int(av(0) * 23))),
+                    .float(av(1) * .pi * 2)
                 ),
                 maxSampleOffset: CGSize(width: previewPt / 2, height: previewPt / 2)
-            )
+            ))
 
         case .glitch:
-            img.layerEffect(
+            return AnyView(view.layerEffect(
                 ShaderLibrary.shaderGlitch(
                     .float(time),
-                    .float(ep(0, time: time)),
-                    .float(1 + ep(1, time: time) * 99),
-                    .float(0.5 + ep(2, time: time) * 59.5),
-                    .float(ep(3, time: time) * 50)
+                    .float(av(0)),
+                    .float(1 + av(1) * 99),
+                    .float(0.5 + av(2) * 59.5),
+                    .float(av(3) * 50)
                 ),
                 maxSampleOffset: CGSize(width: 100, height: 0)
-            )
+            ))
 
         case .crt:
-            img.layerEffect(
+            return AnyView(view.layerEffect(
                 ShaderLibrary.shaderCRT(
                     .float2(CGSize(width: previewPt, height: previewPt)),
-                    .float(ep(0, time: time)),
-                    .float(ep(1, time: time) * 2.0),
-                    .float(ep(2, time: time) * 5.0)
+                    .float(av(0)),
+                    .float(av(1) * 2.0),
+                    .float(av(2) * 5.0)
                 ),
                 maxSampleOffset: CGSize(width: previewPt / 2, height: previewPt / 2)
-            )
+            ))
 
         case .edgeDetect:
-            img.layerEffect(
+            return AnyView(view.layerEffect(
                 ShaderLibrary.shaderEdgeDetect(
-                    .float(ep(0, time: time) * 30),
-                    .float(ep(1, time: time)),
-                    .float(0.5 + ep(2, time: time) * 11.5)
+                    .float(av(0) * 30),
+                    .float(av(1)),
+                    .float(0.5 + av(2) * 11.5)
                 ),
                 maxSampleOffset: CGSize(width: 12, height: 12)
-            )
+            ))
 
         case .fisheye:
-            img.distortionEffect(
+            return AnyView(view.distortionEffect(
                 ShaderLibrary.shaderFisheye(
                     .float2(CGPoint(x: previewPt / 2, y: previewPt / 2)),
-                    .float(ep(0, time: time) * 5.0),
-                    .float(Float(previewPt) * ep(1, time: time))
+                    .float(av(0) * 5.0),
+                    .float(Float(previewPt) * av(1))
                 ),
                 maxSampleOffset: CGSize(width: previewPt, height: previewPt)
-            )
+            ))
 
         case .progressiveBlur:
-            // Native SwiftUI: stacked blur layers with gradient masks — no Metal needed
-            // start/stop are normalized positions along blurDirection's axis
-            let maxR  = CGFloat(ep(0, time: time)) * 60
-            let start = Double(ep(1, time: time))
-            let stop  = Double(max(ep(1, time: time), ep(2, time: time)))
+            let maxR  = CGFloat(av(0)) * 60
+            let start = Double(av(1))
+            let stop  = Double(max(av(1), av(2)))
             let range = max(stop - start, 0.01)
-            let sp    = blurDirection.startPoint
-            let ep2   = blurDirection.endPoint
-            ZStack {
-                img
-                img.blur(radius: maxR * 0.3)
+            let sp    = layer.blurDirection.startPoint
+            let ep2   = layer.blurDirection.endPoint
+            return AnyView(ZStack {
+                view
+                view.blur(radius: maxR * 0.3)
                     .mask(LinearGradient(stops: [
                         .init(color: .clear,              location: start),
                         .init(color: .black.opacity(0.5), location: min(start + range * 0.4, 1))
                     ], startPoint: sp, endPoint: ep2))
-                img.blur(radius: maxR * 0.65)
+                view.blur(radius: maxR * 0.65)
                     .mask(LinearGradient(stops: [
                         .init(color: .clear,              location: min(start + range * 0.3, 1)),
                         .init(color: .black.opacity(0.8), location: min(start + range * 0.7, 1))
                     ], startPoint: sp, endPoint: ep2))
-                img.blur(radius: maxR)
+                view.blur(radius: maxR)
                     .mask(LinearGradient(stops: [
                         .init(color: .clear, location: min(start + range * 0.6, 1)),
                         .init(color: .black, location: min(stop, 1))
                     ], startPoint: sp, endPoint: ep2))
-            }
+            })
 
         case .dissolve:
-            img.colorEffect(
+            return AnyView(view.colorEffect(
                 ShaderLibrary.shaderDissolve(
-                    .float(ep(0, time: time)),
-                    .float(ep(1, time: time)),
-                    .float(ep(2, time: time)),
-                    .float(0.5 + ep(3, time: time) * 9.5)
+                    .float(av(0)),
+                    .float(av(1)),
+                    .float(av(2)),
+                    .float(0.5 + av(3) * 9.5)
                 )
-            )
+            ))
 
         case .zoomBlur:
-            img.layerEffect(
-                ShaderLibrary.shaderZoomBlur(
-                    .float2(tapOrigin),
-                    .float(ep(0, time: time) * 0.9)
-                ),
+            return AnyView(view.layerEffect(
+                ShaderLibrary.shaderZoomBlur(.float2(tapOrigin), .float(av(0) * 0.9)),
                 maxSampleOffset: CGSize(width: 110, height: 110)
-            )
+            ))
+
+        case .holographic:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderHolographic(
+                    .float(time),
+                    .float(av(0) * 1.2),
+                    .float(4 + av(1) * 96),
+                    .float(av(2) * 3.0)
+                )
+            ))
+
+        case .duotone:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderDuotone(.float(av(0)), .float(av(1)), .float(av(2)))
+            ))
+
+        case .halftone:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderHalftone(.float(3 + av(0) * 21), .float(av(1) * .pi), .float(av(2)))
+            ))
+
+        case .solarize:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderSolarize(.float(av(0)), .float(0.2 + av(1) * 0.8))
+            ))
+
+        case .frosted:
+            return AnyView(view.layerEffect(
+                ShaderLibrary.shaderFrosted(.float(av(0) * 20), .float(av(1) * 0.3)),
+                maxSampleOffset: CGSize(width: 20, height: 20)
+            ))
+
+        case .refractLens:
+            return AnyView(view.distortionEffect(
+                ShaderLibrary.shaderRefractLens(
+                    .float2(tapOrigin),
+                    .float(20 + av(0) * 100),
+                    .float(av(1) * 0.55)
+                ),
+                maxSampleOffset: CGSize(width: previewPt, height: previewPt)
+            ))
+
+        case .colorGrade:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderColorGrade(.float(layer.gradeLook.index), .float(av(0)))
+            ))
+
+        case .topographic:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderTopographic(
+                    .float(2 + av(0) * 18),
+                    .float(0.02 + av(1) * 0.4),
+                    .float(av(2))
+                )
+            ))
         }
     }
 
@@ -483,11 +702,7 @@ struct ShadersPlaygroundView: View {
 
     private var controlsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Controls")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-                .padding(.horizontal, 4)
+            sectionLabel("Source")
 
             VStack(spacing: 0) {
                 row {
@@ -499,21 +714,102 @@ struct ShadersPlaygroundView: View {
                         }
                     }
                 }
-                divider
+                if subject == .photo {
+                    divider
+                    row {
+                        HStack {
+                            Text("Photo").frame(width: 88, alignment: .leading)
+                            Spacer()
+                            PhotosPicker(selection: $photoItem, matching: .images) {
+                                Label(photoImage == nil ? "Choose" : "Replace",
+                                      systemImage: "photo.on.rectangle")
+                            }
+                        }
+                    }
+                }
+            }
+            .cardBackground()
+        }
+    }
+
+    // MARK: - Layers Section
+
+    private var layersSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                sectionLabel("Stack")
+                Spacer()
+                Text("\(layers.count)/\(maxLayers)")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 4)
+
+            VStack(spacing: 0) {
+                ForEach(Array(layers.enumerated()), id: \.element.id) { index, layer in
+                    if index > 0 { divider }
+                    row {
+                        HStack(spacing: 10) {
+                            Image(systemName: layer.effect.icon)
+                                .frame(width: 22)
+                                .foregroundStyle(layer.id == selectedLayerID ? Color.accentColor : .secondary)
+                            Text(layer.effect.rawValue)
+                                .fontWeight(layer.id == selectedLayerID ? .semibold : .regular)
+                            Spacer()
+                            if layer.id == selectedLayerID {
+                                Image(systemName: "checkmark")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                            if layers.count > 1 {
+                                Button(role: .destructive) {
+                                    deleteLayer(layer.id)
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .foregroundStyle(.red)
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture { selectedLayerID = layer.id }
+                    }
+                }
+                if layers.count < maxLayers {
+                    divider
+                    row {
+                        Button(action: addLayer) {
+                            Label("Add Layer", systemImage: "plus.circle.fill")
+                        }
+                    }
+                }
+            }
+            .cardBackground()
+        }
+    }
+
+    // MARK: - Layer Editor Section
+
+    private var editorSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionLabel("Layer \(selectedIndex + 1)")
+
+            VStack(spacing: 0) {
                 row {
                     LabeledPicker(label: "Shader") {
-                        Picker("Shader", selection: $effect) {
+                        Picker("Shader", selection: selectedEffectBinding) {
                             ForEach(ShaderEffect.allCases) { e in
                                 Label(e.rawValue, systemImage: e.icon).tag(e)
                             }
                         }
                     }
                 }
-                if effect == .progressiveBlur {
+
+                if selectedLayer.effect == .progressiveBlur {
                     divider
                     row {
                         LabeledPicker(label: "Direction") {
-                            Picker("Direction", selection: $blurDirection) {
+                            Picker("Direction", selection: $layers[selectedIndex].blurDirection) {
                                 ForEach(BlurDirection.allCases, id: \.self) { d in
                                     Text(d.rawValue).tag(d)
                                 }
@@ -521,13 +817,28 @@ struct ShadersPlaygroundView: View {
                         }
                     }
                 }
-                ForEach(controlRows, id: \.label) { ctrl in
+
+                if selectedLayer.effect == .colorGrade {
+                    divider
+                    row {
+                        LabeledPicker(label: "Look") {
+                            Picker("Look", selection: $layers[selectedIndex].gradeLook) {
+                                ForEach(GradeLook.allCases, id: \.self) { l in
+                                    Text(l.rawValue).tag(l)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ForEach(Array(controlRows(selectedIndex).enumerated()), id: \.offset) { _, ctrl in
                     divider
                     row {
                         LabeledSlider(label: ctrl.label, value: ctrl.binding, display: ctrl.display)
                     }
                 }
-                if effect.isTapBased {
+
+                if selectedLayer.effect.isTapBased {
                     divider
                     row {
                         HStack {
@@ -538,8 +849,7 @@ struct ShadersPlaygroundView: View {
                     }
                 }
             }
-            .background(Color(.secondarySystemGroupedBackground),
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .cardBackground()
         }
     }
 
@@ -548,11 +858,8 @@ struct ShadersPlaygroundView: View {
     private var animationSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Text("Animation")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-                if anyParamAnimated {
+                sectionLabel("Animation")
+                if selectedLayer.anim.contains(where: { $0.enabled }) {
                     HStack(spacing: 4) {
                         Image(systemName: "waveform")
                         Text("Live")
@@ -567,7 +874,7 @@ struct ShadersPlaygroundView: View {
             .padding(.horizontal, 4)
 
             VStack(spacing: 0) {
-                if effect.alwaysAnimates {
+                if selectedLayer.effect.alwaysAnimates {
                     row {
                         Label("Effect animates continuously", systemImage: "play.fill")
                             .font(.subheadline)
@@ -579,179 +886,287 @@ struct ShadersPlaygroundView: View {
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                     }
-                    let rows = controlRows
-                    ForEach(Array(rows.enumerated()), id: \.offset) { idx, ctrl in
-                        let anim = $animParams[idx]
+                }
+                let rows = controlRows(selectedIndex)
+                ForEach(Array(rows.enumerated()), id: \.offset) { idx, ctrl in
+                    let anim = $layers[selectedIndex].anim[idx]
+                    if idx > 0 || selectedLayer.effect.alwaysAnimates { divider }
+                    row { Toggle(ctrl.label, isOn: anim.enabled) }
+                    if anim.enabled.wrappedValue {
                         divider
-                        row { Toggle(ctrl.label, isOn: anim.enabled) }
-                        if anim.enabled.wrappedValue {
-                            divider
-                            row {
-                                LabeledSlider(
-                                    label: "Drift",
-                                    value: anim.drift,
-                                    display: String(format: "%.0f%%", anim.drift.wrappedValue * 100)
-                                )
-                            }
-                            divider
-                            row {
-                                LabeledSlider(
-                                    label: "Duration",
-                                    value: anim.duration,
-                                    display: String(format: "%.0fs", 1 + anim.duration.wrappedValue * 19)
-                                )
-                            }
+                        row {
+                            LabeledSlider(
+                                label: "Drift",
+                                value: anim.drift,
+                                display: String(format: "%.0f%%", anim.drift.wrappedValue * 100)
+                            )
                         }
-                    }
-                } else {
-                    let rows = controlRows
-                    ForEach(Array(rows.enumerated()), id: \.offset) { idx, ctrl in
-                        let anim = $animParams[idx]
-                        if idx > 0 { divider }
-                        row { Toggle(ctrl.label, isOn: anim.enabled) }
-                        if anim.enabled.wrappedValue {
-                            divider
-                            row {
-                                LabeledSlider(
-                                    label: "Drift",
-                                    value: anim.drift,
-                                    display: String(format: "%.0f%%", anim.drift.wrappedValue * 100)
-                                )
-                            }
-                            divider
-                            row {
-                                LabeledSlider(
-                                    label: "Duration",
-                                    value: anim.duration,
-                                    display: String(format: "%.0fs", 1 + anim.duration.wrappedValue * 19)
-                                )
-                            }
+                        divider
+                        row {
+                            LabeledSlider(
+                                label: "Duration",
+                                value: anim.duration,
+                                display: String(format: "%.0fs", 1 + anim.duration.wrappedValue * 19)
+                            )
                         }
                     }
                 }
             }
-            .background(Color(.secondarySystemGroupedBackground),
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .cardBackground()
+        }
+    }
+
+    // MARK: - Presets Section
+
+    private var presetsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionLabel("Presets")
+
+            VStack(spacing: 0) {
+                row {
+                    Button {
+                        showSaveAlert = true
+                    } label: {
+                        Label("Save current stack", systemImage: "square.and.arrow.down")
+                    }
+                }
+                ForEach(presetStore.presets) { preset in
+                    divider
+                    row {
+                        HStack {
+                            Button {
+                                load(preset)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(preset.name)
+                                    Text(preset.layers.map(\.effect).joined(separator: " → "))
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            Spacer()
+                            Button(role: .destructive) {
+                                presetStore.delete(preset)
+                            } label: {
+                                Image(systemName: "trash").foregroundStyle(.red)
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                    }
+                }
+                if presetStore.presets.isEmpty {
+                    divider
+                    row {
+                        Text("No saved presets yet.")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+            .cardBackground()
+        }
+    }
+
+    // MARK: - Layer actions
+
+    private var selectedEffectBinding: Binding<ShaderEffect> {
+        Binding(
+            get: { layers[selectedIndex].effect },
+            set: { newVal in
+                let i = selectedIndex
+                layers[i].effect = newVal
+                layers[i].params = newVal.defaultParams
+                layers[i].anim   = Array(repeating: ParamAnimation(), count: 5)
+            }
+        )
+    }
+
+    private func addLayer() {
+        guard layers.count < maxLayers else { return }
+        let layer = ShaderLayer(effect: .colorGrade)
+        layers.append(layer)
+        selectedLayerID = layer.id
+    }
+
+    private func deleteLayer(_ id: UUID) {
+        guard layers.count > 1 else { return }
+        layers.removeAll { $0.id == id }
+        if selectedLayerID == id { selectedLayerID = layers.first?.id }
+    }
+
+    private func makePreset(name: String) -> ShaderPreset {
+        ShaderPreset(name: name, layers: layers.map { l in
+            PresetLayer(
+                effect: l.effect.rawValue,
+                params: l.params,
+                blurDirection: l.blurDirection.rawValue,
+                gradeLook: l.gradeLook.rawValue
+            )
+        })
+    }
+
+    private func load(_ preset: ShaderPreset) {
+        let newLayers: [ShaderLayer] = preset.layers.map { pl in
+            var layer = ShaderLayer(effect: ShaderEffect(rawValue: pl.effect) ?? .grain)
+            if pl.params.count == 5 { layer.params = pl.params }
+            layer.blurDirection = BlurDirection(rawValue: pl.blurDirection) ?? .bottom
+            layer.gradeLook     = GradeLook(rawValue: pl.gradeLook) ?? .tealOrange
+            return layer
+        }
+        guard !newLayers.isEmpty else { return }
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            layers = newLayers
+            selectedLayerID = layers.first?.id
         }
     }
 
     // MARK: - Control Rows
 
-    private var controlRows: [(label: String, binding: Binding<Float>, display: String)] {
-        switch effect {
+    private func controlRows(_ index: Int) -> [(label: String, binding: Binding<Float>, display: String)] {
+        let p = layers[index].params
+        func b(_ i: Int) -> Binding<Float> { $layers[index].params[i] }
+
+        switch layers[index].effect {
         case .ripple:
             return [
-                ("Amplitude",     $params[0], "\(Int(params[0] * 80))pt"),
-                ("Wavelength",    $params[1], "\(Int(1 + params[1] * 59))pt"),
-                ("Spread",        $params[2], "\(Int(params[2] * 80))pt"),
-                ("Decay",         $params[3], String(format: "%.3f", 0.001 + params[3] * 0.049)),
-                ("Speed",         $params[4], String(format: "%.1f", 1 + params[4] * 24))
+                ("Amplitude",  b(0), "\(Int(p[0] * 80))pt"),
+                ("Wavelength", b(1), "\(Int(1 + p[1] * 59))pt"),
+                ("Spread",     b(2), "\(Int(p[2] * 80))pt"),
+                ("Decay",      b(3), String(format: "%.3f", 0.001 + p[3] * 0.049)),
+                ("Speed",      b(4), String(format: "%.1f", 1 + p[4] * 24))
             ]
         case .pixelate:
-            return [("Block Size", $params[0], "\(Int(1 + params[0] * 199))px")]
+            return [("Block Size", b(0), "\(Int(1 + p[0] * 199))px")]
         case .chromatic:
             return [
-                ("H Offset", $params[0], "\(Int(params[0] * 80))pt"),
-                ("V Offset", $params[1], "\(Int(params[1] * 40))pt")
+                ("H Offset", b(0), "\(Int(p[0] * 80))pt"),
+                ("V Offset", b(1), "\(Int(p[1] * 40))pt")
             ]
         case .wave:
             return [
-                ("Amplitude",  $params[0], "\(Int(params[0] * 80))pt"),
-                ("Frequency",  $params[1], String(format: "%.3f", 0.02 + params[1] * 0.28)),
-                ("Speed",      $params[2], String(format: "%.1f×", 0.3 + params[2] * 4.7))
+                ("Amplitude", b(0), "\(Int(p[0] * 80))pt"),
+                ("Frequency", b(1), String(format: "%.3f", 0.02 + p[1] * 0.28)),
+                ("Speed",     b(2), String(format: "%.1f×", 0.3 + p[2] * 4.7))
             ]
         case .grain:
             return [
-                ("Intensity",  $params[0], String(format: "%.0f%%", params[0] * 200)),
-                ("Size",       $params[1], String(format: "%.1fpx", 0.5 + params[1] * 19.5)),
-                ("Chroma",     $params[2], String(format: "%.0f%%", params[2] * 100))
+                ("Intensity", b(0), String(format: "%.0f%%", p[0] * 200)),
+                ("Size",      b(1), String(format: "%.1fpx", 0.5 + p[1] * 19.5)),
+                ("Chroma",    b(2), String(format: "%.0f%%", p[2] * 100))
             ]
         case .vignette:
             return [
-                ("Radius",     $params[0], String(format: "%.2f", params[0] * 2.5)),
-                ("Softness",   $params[1], String(format: "%.2f", params[1] * 1.5))
+                ("Radius",   b(0), String(format: "%.2f", p[0] * 2.5)),
+                ("Softness", b(1), String(format: "%.2f", p[1] * 1.5))
             ]
         case .swirl:
             return [
-                ("Angle",      $params[0], String(format: "%.0f°", params[0] * 1440)),
-                ("Radius",     $params[1], "\(Int(Float(previewPt) * params[1]))pt")
+                ("Angle",  b(0), String(format: "%.0f°", p[0] * 1440)),
+                ("Radius", b(1), "\(Int(Float(previewPt) * p[1]))pt")
             ]
         case .emboss:
-            return [("Depth", $params[0], String(format: "%.1f", params[0] * 20))]
+            return [("Depth", b(0), String(format: "%.1f", p[0] * 20))]
         case .hueRotate:
-            return [("Shift", $params[0], String(format: "%.0f°", params[0] * 360))]
+            return [("Shift", b(0), String(format: "%.0f°", p[0] * 360))]
         case .kaleidoscope:
             return [
-                ("Segments",   $params[0], "\(1 + Int(params[0] * 23))"),
-                ("Rotation",   $params[1], String(format: "%.0f°", params[1] * 360))
+                ("Segments", b(0), "\(1 + Int(p[0] * 23))"),
+                ("Rotation", b(1), String(format: "%.0f°", p[1] * 360))
             ]
         case .glitch:
             return [
-                ("Intensity",     $params[0], String(format: "%.0f%%", params[0] * 100)),
-                ("Block Size",    $params[1], "\(Int(1 + params[1] * 99))pt"),
-                ("Speed",         $params[2], String(format: "%.0ffps", 0.5 + params[2] * 59.5)),
-                ("Channel Split", $params[3], "\(Int(params[3] * 50))pt")
+                ("Intensity",     b(0), String(format: "%.0f%%", p[0] * 100)),
+                ("Block Size",    b(1), "\(Int(1 + p[1] * 99))pt"),
+                ("Speed",         b(2), String(format: "%.0ffps", 0.5 + p[2] * 59.5)),
+                ("Channel Split", b(3), "\(Int(p[3] * 50))pt")
             ]
         case .crt:
             return [
-                ("Scanlines",  $params[0], String(format: "%.0f%%", params[0] * 100)),
-                ("Curvature",  $params[1], String(format: "%.2f", params[1] * 2.0)),
-                ("Vignette",   $params[2], String(format: "%.1f", params[2] * 5.0))
+                ("Scanlines", b(0), String(format: "%.0f%%", p[0] * 100)),
+                ("Curvature", b(1), String(format: "%.2f", p[1] * 2.0)),
+                ("Vignette",  b(2), String(format: "%.1f", p[2] * 5.0))
             ]
         case .edgeDetect:
             return [
-                ("Strength",   $params[0], String(format: "%.1f", params[0] * 30)),
-                ("Threshold",  $params[1], String(format: "%.2f", params[1])),
-                ("Step",       $params[2], String(format: "%.1fpx", 0.5 + params[2] * 11.5))
+                ("Strength",  b(0), String(format: "%.1f", p[0] * 30)),
+                ("Threshold", b(1), String(format: "%.2f", p[1])),
+                ("Step",      b(2), String(format: "%.1fpx", 0.5 + p[2] * 11.5))
             ]
         case .fisheye:
             return [
-                ("Strength",   $params[0], String(format: "%.2f", params[0] * 5.0)),
-                ("Radius",     $params[1], "\(Int(Float(previewPt) * params[1]))pt")
+                ("Strength", b(0), String(format: "%.2f", p[0] * 5.0)),
+                ("Radius",   b(1), "\(Int(Float(previewPt) * p[1]))pt")
             ]
         case .progressiveBlur:
             return [
-                ("Radius",      $params[0], "\(Int(params[0] * 60))pt"),
-                ("Blur Start",  $params[1], String(format: "%.0f%%", params[1] * 100)),
-                ("Blur Stop",   $params[2], String(format: "%.0f%%", params[2] * 100))
+                ("Radius",     b(0), "\(Int(p[0] * 60))pt"),
+                ("Blur Start", b(1), String(format: "%.0f%%", p[1] * 100)),
+                ("Blur Stop",  b(2), String(format: "%.0f%%", p[2] * 100))
             ]
         case .dissolve:
             return [
-                ("Threshold",  $params[0], String(format: "%.0f%%", params[0] * 100)),
-                ("Softness",   $params[1], String(format: "%.0f%%", params[1] * 100)),
-                ("Glow",       $params[2], String(format: "%.0f%%", params[2] * 100)),
-                ("Scale",      $params[3], String(format: "%.1f", 0.5 + params[3] * 9.5))
+                ("Threshold", b(0), String(format: "%.0f%%", p[0] * 100)),
+                ("Softness",  b(1), String(format: "%.0f%%", p[1] * 100)),
+                ("Glow",      b(2), String(format: "%.0f%%", p[2] * 100)),
+                ("Scale",     b(3), String(format: "%.1f", 0.5 + p[3] * 9.5))
             ]
         case .zoomBlur:
-            return [("Strength", $params[0], String(format: "%.0f%%", params[0] * 90))]
-        }
-    }
-
-    // MARK: - Default params
-
-    private func defaultParams(for effect: ShaderEffect) -> [Float] {
-        switch effect {
-        case .ripple:          return [0.35, 0.35, 0.2,  0.3,  0.35]
-        case .pixelate:        return [0.05, 0.5,  0.5,  0.5,  0.5 ]
-        case .chromatic:       return [0.3,  0.3,  0.5,  0.5,  0.5 ]
-        case .wave:            return [0.55, 0.45, 0.45, 0.5,  0.5 ] // amp=44pt, freq=0.146, speed=2.4×
-        case .grain:           return [0.35, 0.25, 0.5,  0.5,  0.5 ]
-        case .vignette:        return [0.4,  0.3,  0.5,  0.5,  0.5 ]
-        case .swirl:           return [0.25, 0.5,  0.5,  0.5,  0.5 ]
-        case .emboss:          return [0.2,  0.5,  0.5,  0.5,  0.5 ]
-        case .hueRotate:       return [0.5,  0.5,  0.5,  0.5,  0.5 ]
-        case .kaleidoscope:    return [0.25, 0.5,  0.5,  0.5,  0.5 ]
-        case .glitch:          return [0.4,  0.2,  0.25, 0.2,  0.5 ]
-        case .crt:             return [0.45, 0.2,  0.15, 0.5,  0.5 ]
-        case .edgeDetect:      return [0.2,  0.15, 0.1,  0.5,  0.5 ]
-        case .fisheye:         return [0.25, 0.55, 0.5,  0.5,  0.5 ]
-        case .progressiveBlur: return [0.45, 0.2,  0.65, 0.5,  0.5 ]
-        case .dissolve:        return [0.35, 0.25, 0.8,  0.35, 0.5 ]
-        case .zoomBlur:        return [0.35, 0.5,  0.5,  0.5,  0.5 ]
+            return [("Strength", b(0), String(format: "%.0f%%", p[0] * 90))]
+        case .holographic:
+            return [
+                ("Intensity",  b(0), String(format: "%.0f%%", p[0] * 120)),
+                ("Band Width", b(1), "\(Int(4 + p[1] * 96))pt"),
+                ("Speed",      b(2), String(format: "%.1f×", p[2] * 3.0))
+            ]
+        case .duotone:
+            return [
+                ("Shadow Hue",    b(0), String(format: "%.0f°", p[0] * 360)),
+                ("Highlight Hue", b(1), String(format: "%.0f°", p[1] * 360)),
+                ("Contrast",      b(2), String(format: "%.0f%%", p[2] * 100))
+            ]
+        case .halftone:
+            return [
+                ("Cell Size", b(0), "\(Int(3 + p[0] * 21))px"),
+                ("Angle",     b(1), String(format: "%.0f°", p[1] * 180)),
+                ("Ink",       b(2), String(format: "%.0f%%", p[2] * 100))
+            ]
+        case .solarize:
+            return [
+                ("Threshold", b(0), String(format: "%.2f", p[0])),
+                ("Amount",    b(1), String(format: "%.0f%%", (0.2 + p[1] * 0.8) * 100))
+            ]
+        case .frosted:
+            return [
+                ("Radius",     b(0), "\(Int(p[0] * 20))pt"),
+                ("Brightness", b(1), String(format: "%.0f%%", p[1] * 30))
+            ]
+        case .refractLens:
+            return [
+                ("Radius",   b(0), "\(Int(20 + p[0] * 100))pt"),
+                ("Strength", b(1), String(format: "%.0f%%", p[1] * 55))
+            ]
+        case .colorGrade:
+            return [("Amount", b(0), String(format: "%.0f%%", p[0] * 100))]
+        case .topographic:
+            return [
+                ("Levels",     b(0), "\(Int(2 + p[0] * 18))"),
+                ("Line Width", b(1), String(format: "%.2f", 0.02 + p[1] * 0.4)),
+                ("Tint",       b(2), String(format: "%.0f%%", p[2] * 100))
+            ]
         }
     }
 
     // MARK: - Helpers
+
+    private func sectionLabel(_ title: String) -> some View {
+        Text(title)
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+            .padding(.horizontal, 4)
+    }
 
     private func row<C: View>(@ViewBuilder _ content: () -> C) -> some View {
         content()
@@ -766,9 +1181,13 @@ struct ShadersPlaygroundView: View {
 
     private func shuffle() {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            effect  = ShaderEffect.allCases.randomElement()!
-            subject = PreviewSubject.allCases.randomElement()!
-            params  = (0..<5).map { _ in Float.random(in: 0.15...0.85) }
+            let i = selectedIndex
+            layers[i].effect = ShaderEffect.allCases.randomElement()!
+            layers[i].params = (0..<5).map { _ in Float.random(in: 0.15...0.85) }
+            layers[i].anim   = Array(repeating: ParamAnimation(), count: 5)
+            if subject != .photo {
+                subject = Bool.random() ? .wallpaper : .palette
+            }
         }
     }
 }
@@ -811,9 +1230,11 @@ private struct LabeledSlider: View {
 }
 
 private extension View {
-    // Clips the shader result to a rounded rect and backs it with ultraThinMaterial.
-    // progressiveBlur passes clipped:false so the native SwiftUI blur can bleed
-    // past the frame edge naturally (matching how it behaves in real UI like Control Center).
+    func cardBackground() -> some View {
+        background(Color(.secondarySystemGroupedBackground),
+                   in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
     @ViewBuilder
     func previewCanvas(clipped: Bool) -> some View {
         if clipped {
