@@ -41,9 +41,11 @@ private struct RadialRingLayout: Layout {
         let m = max(ringCount, 2)
         let angle = Double.pi / Double(m)
         let s = sin(angle)
+        // Items of radius r on a ring of radius R touch neighbours when r = R·sin,
+        // and fit the frame when R + r = side/2 → R = (side/2)/(1+sin). (The original
+        // `(1+sin).rounded(.down)` form breaks at m=2, where sin = 1.)
         let itemRadius = (side / 2.0) * s / (1.0 + s)
-        let ringRadius = (side / 2.0) * (1.0 + s).rounded(.down)
-        let baseR = ringRadius - itemRadius
+        let baseR = (side / 2.0) / (1.0 + s)
         let diameter = 2 * itemRadius * gap
         let step = 2.0 * angle
 
