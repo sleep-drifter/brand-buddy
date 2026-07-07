@@ -14,6 +14,7 @@ private struct RadialRingLayout: Layout {
     var gap: CGFloat = 1
     var startAngle: Double = 0
     var centerItem: Bool = false
+    var centerScale: CGFloat = 1.15   // center diameter as a multiple of ring itemRadius*2
 
     func sizeThatFits(proposal: ProposedViewSize, subviews _: Subviews, cache _: inout Void) -> CGSize {
         proposal.replacingUnspecifiedDimensions()
@@ -44,8 +45,8 @@ private struct RadialRingLayout: Layout {
         let step = 2.0 * angle
 
         if hasCenter {
-            let cd = min(2 * itemRadius * 1.15, side * 0.5)
-            place(subviews[0], at: CGPoint(x: cx, y: cy), diameter: max(cd, side * 0.16))
+            let cd = min(2 * itemRadius * centerScale, side * 0.6)
+            place(subviews[0], at: CGPoint(x: cx, y: cy), diameter: max(cd, side * 0.1))
         }
 
         if ringCount == 1 {
@@ -81,17 +82,22 @@ struct RadialLayoutView: View {
     @State private var gap: Double = 1.0
     @State private var startAngle: Double = 0        // degrees
     @State private var centerItem = false
+    @State private var centerGap: Double = 0.15
     @State private var shape: RingShape = .circle
+    @State private var centerShape: RingShape = .circle
     @State private var photoItems: [PhotosPickerItem] = []
     @State private var images: [UIImage] = []
     @State private var focused: Int?
 
-    private var itemShape: AnyShape {
-        switch shape {
+    private func shapeFor(_ s: RingShape) -> AnyShape {
+        switch s {
         case .circle:  return AnyShape(Circle())
         case .rounded: return AnyShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
     }
+
+    private func isCenter(_ i: Int) -> Bool { centerItem && i == 0 }
+    private func shape(for i: Int) -> AnyShape { shapeFor(isCenter(i) ? centerShape : shape) }
 
     var body: some View {
         ScrollView {
@@ -122,7 +128,8 @@ struct RadialLayoutView: View {
     private var ring: some View {
         RadialRingLayout(gap: CGFloat(gap),
                          startAngle: startAngle * .pi / 180,
-                         centerItem: centerItem) {
+                         centerItem: centerItem,
+                         centerScale: CGFloat(1.3 - centerGap * 0.9)) {
             ForEach(0..<Int(count), id: \.self) { i in
                 itemView(i)
             }
@@ -136,11 +143,13 @@ struct RadialLayoutView: View {
         .animation(.snappy, value: gap)
         .animation(.snappy, value: startAngle)
         .animation(.snappy, value: centerItem)
+        .animation(.snappy, value: centerGap)
     }
 
     private func itemView(_ i: Int) -> some View {
         shapeView(for: i)
-            .contentShape(itemShape)
+            .contentShape(shape(for: i))
+            .zIndex(isCenter(i) ? 1 : 0)   // keep the centre item above the ring
             .onTapGesture {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { focused = i }
             }
@@ -148,12 +157,13 @@ struct RadialLayoutView: View {
 
     @ViewBuilder
     private func shapeView(for i: Int) -> some View {
+        let s = shape(for: i)
         if images.isEmpty {
-            itemShape.fill(Color(hue: Double(i) / max(count, 1), saturation: 0.55, brightness: 1))
+            s.fill(Color(hue: Double(i) / max(count, 1), saturation: 0.55, brightness: 1))
         } else {
             Color.clear
                 .overlay(Image(uiImage: images[i % images.count]).resizable().scaledToFill())
-                .clipShape(itemShape)
+                .clipShape(s)
         }
     }
 
@@ -186,17 +196,14 @@ struct RadialLayoutView: View {
             row {
                 Toggle("Center Item", isOn: $centerItem)
             }
-            divider
-            row {
-                HStack {
-                    Text("Shape").frame(width: 96, alignment: .leading)
-                    Spacer()
-                    Picker("Shape", selection: $shape) {
-                        ForEach(RingShape.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    .pickerStyle(.segmented).frame(width: 180)
-                }
+            if centerItem {
+                divider
+                sliderRow("Center Gap", $centerGap, 0...1, text: "\(Int(centerGap * 100))%")
+                divider
+                shapePicker("Center Shape", $centerShape)
             }
+            divider
+            shapePicker("Ring Shape", $shape)
             divider
             row {
                 HStack {
@@ -238,6 +245,19 @@ struct RadialLayoutView: View {
                 }
                 Text(text).font(.subheadline.monospacedDigit())
                     .foregroundStyle(.secondary).frame(width: 44, alignment: .trailing)
+            }
+        }
+    }
+
+    private func shapePicker(_ label: String, _ selection: Binding<RingShape>) -> some View {
+        row {
+            HStack {
+                Text(label).frame(width: 110, alignment: .leading)
+                Spacer()
+                Picker(label, selection: selection) {
+                    ForEach(RingShape.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented).frame(width: 170)
             }
         }
     }
