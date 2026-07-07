@@ -580,24 +580,50 @@ static float cg_blob(float2 u, float n, float s, float z) {
     float2 size,
     float time,
     float grainAmt,
-    float zoom
+    float zoom,
+    float3 colorA,
+    float3 colorB,
+    float3 bg,
+    float saturation,
+    float softness,
+    float warp,
+    float blobCount,
+    float contrast
 ) {
     float2 uv = (position - 0.5 * size) / min(size.x, size.y);
     uv *= zoom;
-    float c1 = cg_blob(uv, cg_warp(uv * 0.6, 1.0, time), 1.2, 1.1);
-    float c2 = cg_blob(uv, cg_warp(uv * 0.5, 3.0, time), 1.5, 1.4);
+
+    // Per-blob params; indices 0 and 1 reproduce the original two blobs exactly.
+    const float os[4] = { 1.0, 3.0, 5.0, 7.0 };
+    const float ws[4] = { 0.6, 0.5, 0.42, 0.35 };
+    const float ss[4] = { 1.2, 1.5, 1.8, 2.1 };
+    const float zs[4] = { 1.1, 1.4, 1.7, 2.0 };
+
+    int count = clamp(int(blobCount + 0.5), 1, 4);
+    float coverage = 0.0;
+    float colorField = 0.0;
+    for (int i = 0; i < 4; i++) {
+        if (i >= count) { break; }
+        float wv = cg_warp(uv * ws[i], os[i], time) * warp;
+        float b = cg_blob(uv, wv, ss[i] * softness, zs[i]);
+        coverage += b;
+        colorField += (i % 2 == 0) ? b : -b;
+    }
+
     float n = grainAmt * cg_snoise(float3(uv * 300.0, time * 0.2));
 
-    // clamp arg order kept verbatim from the source: min(0.9, c1-c2) and min(1, c1+c2).
-    half3 outc = mix(
-        half3(n * 0.1 + 0.9),
-        half3(n) + mix(
-            half3(1.0, 0.5 - uv.y * 0.4, 0.0) * 1.3,
-            half3(uv.x + 0.75, 0.3, 1.0) * 0.9,
-            half(clamp(-0.14, 0.9, c1 - c2))
-        ),
-        half(clamp(0.0, 1.0, c1 + c2))
-    );
+    // Gentle positional gradient so flat picker colours still read as organic.
+    half3 cA = half3(colorA) * half(1.0 - 0.25 * uv.y);
+    half3 cB = half3(colorB) * half(1.0 + 0.20 * uv.x);
+
+    // clamp arg order kept verbatim from the source: min(0.9, x) and min(1, x).
+    half3 blobColor = half3(n) + mix(cA, cB, half(clamp(-0.14, 0.9, colorField * contrast)));
+    half3 bgColor = half3(bg) + half3(n * 0.1);
+    half3 outc = mix(bgColor, blobColor, half(clamp(0.0, 1.0, coverage)));
+
+    // Saturation around luma.
+    half luma = dot(outc, half3(0.299, 0.587, 0.114));
+    outc = mix(half3(luma), outc, half(saturation));
 
     return half4(outc, 1.0);
 }
