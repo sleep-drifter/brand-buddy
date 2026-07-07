@@ -90,18 +90,40 @@ static inline half3 sdf_fieldColor(float sd1, float sd2, float sd3) {
 // This is a .layerEffect (samples the source layer), not a .colorEffect.
 
 [[ stitchable ]] half4 implicitEquation(float2 position, SwiftUI::Layer layer,
-                                        float a, float b, float iso, float zoom, float4 rect) {
+                                        float a, float b, float iso, float zoom,
+                                        float funcType, float levels, float thickness,
+                                        float phase, float4 rect) {
     float2 uv = (position - rect.zw / 2.0) / (min(rect.z, rect.w) / 2.0);
     uv /= zoom;
     float x = uv.x;
     float y = uv.y;
     float r2 = x * x + y * y;
-    float f = sin(a * r2) - cos(b * x * y);
 
-    float thickness = 0.02;
+    // Function family (0 reproduces the original waves function when phase == 0).
+    int fn = int(funcType + 0.5);
+    float f;
+    if (fn == 1) {                        // Grid
+        f = sin(a * x * 4.0 + phase) + sin(b * y * 4.0);
+    } else if (fn == 2) {                 // Spiral
+        float th = atan2(y, x);
+        f = sin(a * sqrt(r2) * 6.0 - b * th * 3.0 + phase);
+    } else if (fn == 3) {                 // Petals
+        float th = atan2(y, x);
+        f = sqrt(r2) - 0.5 - 0.25 * sin(b * th * 5.0 + a + phase);
+    } else {                              // Waves (original)
+        f = sin(a * r2 + phase) - cos(b * x * y);
+    }
+
     float aa = fwidth(f) * 2.0;
-    float dist = abs(f - iso);
-    half intensity = smoothstep(thickness + aa, thickness - aa, dist);
+    int lv = clamp(int(levels + 0.5), 1, 6);
+    float spacing = 0.35;
+    float line = 0.0;
+    for (int k = 0; k < 6; k++) {
+        if (k >= lv) { break; }
+        float isoK = iso + (float(k) - 0.5 * float(lv - 1)) * spacing;
+        line = max(line, smoothstep(thickness + aa, thickness - aa, abs(f - isoK)));
+    }
+    half intensity = half(line);
     if (sign(f - iso) < 0.0) {
         intensity = 1.0 - intensity;
     }
@@ -129,15 +151,17 @@ static inline float2 flow_curlNoise(float2 p, float time, float noiseScale) {
 
 [[ stitchable ]] half4 flowDistortion(float2 position, SwiftUI::Layer layer,
                                       float time, float distortionStrength,
-                                      float damping, float noiseScale, float4 rect) {
+                                      float damping, float noiseScale,
+                                      float steps, float aberration, float tiles, float4 rect) {
     float2 uv = position / rect.zw;
     float2 aspect = rect.zw / min(rect.z, rect.w);
     uv = (uv - 0.5) * aspect + 0.5;
-    float2 gridUv = fract(uv * 3.0);
+    float2 gridUv = fract(uv * max(tiles, 1.0));
 
     float2 offset = float2(0.0);
-    constexpr int steps = 5;
-    for (int i = 0; i < steps; ++i) {
+    int stepCount = clamp(int(steps + 0.5), 1, 12);
+    for (int i = 0; i < 12; ++i) {
+        if (i >= stepCount) { break; }
         float2 flow = flow_curlNoise(uv + offset - time * 0.1, time, noiseScale) * distortionStrength;
         offset -= flow;
         offset *= damping;
@@ -146,7 +170,7 @@ static inline float2 flow_curlNoise(float2 p, float time, float noiseScale) {
     float2 distortedPosition = (gridUv + offset) * rect.zw;
     half4 color = layer.sample(distortedPosition);
 
-    float aberStrength = length(offset) * 0.01;
+    float aberStrength = length(offset) * aberration;
     float2 dir = normalize(offset);
     float2 rOffset = dir * aberStrength * rect.zw;
     color.r = layer.sample(distortedPosition + rOffset).r;

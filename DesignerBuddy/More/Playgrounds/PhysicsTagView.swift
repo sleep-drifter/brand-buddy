@@ -3,7 +3,8 @@ import SpriteKit
 import SwiftUI
 import UIKit
 
-// Physics tag-cloud playground ported from Koshimizu-Takehito's my-toybox.
+// Physics tag-cloud playground ported from Koshimizu-Takehito's my-toybox, extended
+// with tunable tag count, gravity strength, bounciness, and tag size (padding).
 // SpriteKit physics + CoreMotion: gravity follows device tilt, drag to fling tags.
 
 // MARK: - Screen
@@ -15,34 +16,69 @@ struct PhysicsTagView: View {
         return scene
     }()
     @State private var usesDeviceMotion = true
+    @State private var tagCount: Double = 20
+    @State private var gravity: Double = 1.0
+    @State private var bounciness: Double = 0.2
+    @State private var tagSize: Double = 1.0
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         SpriteView(scene: scene)
             .ignoresSafeArea(edges: .bottom)
-            .overlay(alignment: .topTrailing) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Toggle(isOn: $usesDeviceMotion) { Text("Gyroscope") }
-                    Button {
-                        scene.resetSimulation()
-                    } label: {
-                        Label("Reset", systemImage: "arrow.counterclockwise")
-                    }
-                }
-                .fixedSize()
-                .padding()
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
-                .padding()
-            }
-            .onChange(of: usesDeviceMotion) { _, newValue in
-                scene.usesDeviceMotion = newValue
-            }
-            .onChange(of: colorScheme) { _, _ in
-                scene.backgroundColor = .systemBackground
-            }
+            .overlay(alignment: .bottom) { panel }
+            .onChange(of: usesDeviceMotion) { _, v in scene.usesDeviceMotion = v }
+            .onChange(of: gravity) { _, v in scene.gravityStrength = CGFloat(v) }
+            .onChange(of: bounciness) { _, v in scene.bounciness = CGFloat(v) }
+            .onChange(of: tagCount) { _, v in scene.tagCount = Int(v.rounded()) }
+            .onChange(of: tagSize) { _, v in scene.sizeScale = CGFloat(v) }
+            .onChange(of: colorScheme) { _, _ in scene.backgroundColor = .systemBackground }
             .tint(.blue)
             .navigationTitle("Physics Tag")
             .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var panel: some View {
+        VStack(spacing: 10) {
+            HStack {
+                Toggle("Gyroscope", isOn: $usesDeviceMotion).fixedSize()
+                Spacer()
+                Button { scene.resetSimulation() } label: {
+                    Label("Reset", systemImage: "arrow.counterclockwise")
+                }
+            }
+            slider("Tags", $tagCount, 5...40, step: 1, text: "\(Int(tagCount.rounded()))") {
+                scene.resetSimulation()
+            }
+            slider("Gravity", $gravity, 0...2, text: String(format: "%.1f", gravity))
+            slider("Bounce", $bounciness, 0...1, text: String(format: "%.2f", bounciness))
+            slider("Size", $tagSize, 0.5...2, text: String(format: "%.1f", tagSize)) {
+                scene.resetSimulation()
+            }
+        }
+        .padding()
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .padding()
+    }
+
+    private func slider(_ label: String,
+                        _ value: Binding<Double>,
+                        _ range: ClosedRange<Double>,
+                        step: Double = 0,
+                        text: String,
+                        onCommit: @escaping () -> Void = {}) -> some View {
+        HStack(spacing: 12) {
+            Text(label).frame(width: 64, alignment: .leading)
+            Group {
+                if step > 0 {
+                    Slider(value: value, in: range, step: step) { editing in if !editing { onCommit() } }
+                } else {
+                    Slider(value: value, in: range) { editing in if !editing { onCommit() } }
+                }
+            }
+            Text(text).font(.subheadline.monospacedDigit())
+                .foregroundStyle(.secondary).frame(width: 34, alignment: .trailing)
+        }
+        .font(.subheadline)
     }
 }
 
@@ -56,6 +92,28 @@ final class PhysicsTagScene: SKScene {
     private var lastDragPosition: CGPoint = .zero
     private var lastDragTimestamp: TimeInterval = 0
     private var hasSpawnedInitially = false
+    private var textureCache: [TextureKey: SKTexture] = [:]
+
+    // MARK: Tunable parameters
+
+    var tagCount: Int = 20
+    var sizeScale: CGFloat = 1.0 {
+        didSet { textureCache.removeAll() }
+    }
+    var gravityStrength: CGFloat = 1.0 {
+        didSet {
+            if !usesDeviceMotion {
+                physicsWorld.gravity = CGVector(dx: 0, dy: -9.8 * gravityStrength)
+            }
+        }
+    }
+    var bounciness: CGFloat = 0.2 {
+        didSet {
+            enumerateChildNodes(withName: Self.tagNodeName) { node, _ in
+                node.physicsBody?.restitution = self.bounciness
+            }
+        }
+    }
 
     var usesDeviceMotion = true {
         didSet {
@@ -64,7 +122,7 @@ final class PhysicsTagScene: SKScene {
                 startMotionUpdates()
             } else {
                 motionManager.stopDeviceMotionUpdates()
-                physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
+                physicsWorld.gravity = CGVector(dx: 0, dy: -9.8 * gravityStrength)
             }
         }
     }
@@ -101,7 +159,7 @@ extension PhysicsTagScene {
     }
 
     private func updatePhysicsBounds() {
-        let extraHeight = Self.physicsTopExtension(for: size)
+        let extraHeight = physicsTopExtension(for: size)
         physicsBody = SKPhysicsBody(
             edgeLoopFrom: CGRect(x: 0, y: 0, width: size.width, height: size.height + extraHeight)
         )
@@ -116,19 +174,37 @@ private extension PhysicsTagScene {
         guard !motionManager.isDeviceMotionActive else { return }
         motionManager.deviceMotionUpdateInterval = 1.0 / 60.0
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
-            guard let gravity = motion?.gravity else { return }
-            self?.physicsWorld.gravity = CGVector(dx: gravity.x * 9.8, dy: gravity.y * 9.8)
+            guard let self, let gravity = motion?.gravity else { return }
+            let g = 9.8 * self.gravityStrength
+            self.physicsWorld.gravity = CGVector(dx: gravity.x * g, dy: gravity.y * g)
         }
         #endif
     }
+}
+
+// MARK: - Geometry (scales with sizeScale; the label font stays fixed so the
+// control reads as tag padding)
+
+extension PhysicsTagScene {
+    private static let tagNodeName = "physicsTag"
+    private static let tagFont = UIFont.systemFont(ofSize: 14, weight: .bold)
+
+    private var tagHeight: CGFloat { 36 * sizeScale }
+    private var dotDiameter: CGFloat { 10 * sizeScale }
+    private var leftPadding: CGFloat { 8 * sizeScale }
+    private var dotTextGap: CGFloat { 6 * sizeScale }
+    private var rightPadding: CGFloat { 10 * sizeScale }
+    private var textWidth: CGFloat {
+        ceil(NSAttributedString(string: "example", attributes: [.font: Self.tagFont]).size().width)
+    }
+    private var tagWidth: CGFloat { leftPadding + dotDiameter + dotTextGap + textWidth + rightPadding }
+    private var enclosingRadius: CGFloat { 0.5 * hypot(tagWidth, tagHeight) }
 }
 
 // MARK: - Spawn
 
 extension PhysicsTagScene {
     private static let spawnInterval: TimeInterval = 0.15
-    private static let tagCount = 20
-    private static let tagNodeName = "physicsTag"
     private static let maxSpawnZRotation: CGFloat = .pi / 2.2
     private static let spawnWallPadding: CGFloat = 2
     private static let spawnBandAboveScreen: CGFloat = 4
@@ -142,14 +218,12 @@ extension PhysicsTagScene {
         var rotation: CGFloat
     }
 
-    private static var enclosingRadius: CGFloat { 0.5 * hypot(tagWidth, tagHeight) }
-
     private func physicsWorldTotalHeight() -> CGFloat {
-        size.height + Self.physicsTopExtension(for: size)
+        size.height + physicsTopExtension(for: size)
     }
 
     private func buildSpawnSpecifications() -> [SpawnSpecification] {
-        let r = Self.enclosingRadius
+        let r = enclosingRadius
         let d = 2 * r
         let pad = Self.spawnWallPadding
         let xMin = r + pad
@@ -161,9 +235,9 @@ extension PhysicsTagScene {
 
         for _ in 0 ..< Self.spawnBatchRetries {
             var centers: [CGPoint] = []
-            centers.reserveCapacity(Self.tagCount)
+            centers.reserveCapacity(tagCount)
             var success = true
-            for _ in 0 ..< Self.tagCount {
+            for _ in 0 ..< tagCount {
                 var placed = false
                 for _ in 0 ..< Self.spawnAttemptsPerTag {
                     let cx = CGFloat.random(in: xMin ... xMax)
@@ -193,27 +267,28 @@ extension PhysicsTagScene {
         return []
     }
 
-    private static func physicsTopExtension(for sceneSize: CGSize) -> CGFloat {
+    private func physicsTopExtension(for sceneSize: CGSize) -> CGFloat {
         let r = enclosingRadius
-        let pad = spawnWallPadding
+        let pad = Self.spawnWallPadding
         let xRange = sceneSize.width - 2 * (r + pad)
         guard xRange > 0 else { return 4 * r }
         let totalCircleArea = CGFloat(tagCount) * .pi * r * r
         let targetPackingFraction: CGFloat = 0.25
         let yRange = totalCircleArea / (targetPackingFraction * xRange)
-        return yRange + 2 * r + pad + spawnBandAboveScreen
+        return yRange + 2 * r + pad + Self.spawnBandAboveScreen
     }
 
     private func spawnTagsIfLayoutReady() {
         guard !hasSpawnedInitially else { return }
-        guard size.width > Self.tagWidth, size.height > Self.tagHeight else { return }
+        guard size.width > tagWidth, size.height > tagHeight else { return }
         hasSpawnedInitially = true
         spawnTags()
     }
 
     private func spawnTags() {
         let specs = buildSpawnSpecifications().shuffled()
-        let colors = PhysicsTagColor.allCases.flatMap { [$0, $0] }.shuffled()
+        let all = PhysicsTagColor.allCases
+        let colors = (0 ..< tagCount).map { all[$0 % all.count] }.shuffled()
         let actions: [SKAction] = colors.enumerated().map { index, color in
             .sequence([
                 .wait(forDuration: Self.spawnInterval),
@@ -231,23 +306,24 @@ extension PhysicsTagScene {
         spawnRunner.removeAllActions()
         removeAllActions()
         releaseDraggedNode()
+        hasSpawnedInitially = false
         enumerateChildNodes(withName: Self.tagNodeName) { node, _ in node.removeFromParent() }
+        updatePhysicsBounds()
         if usesDeviceMotion {
             #if targetEnvironment(simulator)
-            physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
+            physicsWorld.gravity = CGVector(dx: 0, dy: -9.8 * gravityStrength)
             #else
             startMotionUpdates()
             #endif
         } else {
             motionManager.stopDeviceMotionUpdates()
-            physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
+            physicsWorld.gravity = CGVector(dx: 0, dy: -9.8 * gravityStrength)
         }
-        hasSpawnedInitially = true
-        spawnTags()
+        spawnTagsIfLayoutReady()
     }
 
     private func addTagNode(color: PhysicsTagColor, zOrder: Int, position: CGPoint, rotation: CGFloat) {
-        guard size.width > Self.tagWidth, size.height > Self.tagHeight else { return }
+        guard size.width > tagWidth, size.height > tagHeight else { return }
         let node = makeTagNode(color: color)
         node.position = position
         node.zRotation = rotation
@@ -259,33 +335,19 @@ extension PhysicsTagScene {
 // MARK: - Tag Node
 
 extension PhysicsTagScene {
-    private static let tagHeight: CGFloat = 36
-    private static let dotDiameter: CGFloat = 10
-    private static let leftPadding: CGFloat = 8
-    private static let dotTextGap: CGFloat = 6
-    private static let rightPadding: CGFloat = 10
-    private static let font = UIFont.systemFont(ofSize: 14, weight: .bold)
-    private static let textWidth: CGFloat = {
-        let attr = NSAttributedString(string: "example", attributes: [.font: font])
-        return ceil(attr.size().width)
-    }()
-
-    private static let tagWidth: CGFloat = leftPadding + dotDiameter + dotTextGap + textWidth + rightPadding
-
-    private static var textureCache: [PhysicsTagColor: SKTexture] = [:]
-
     private func makeTagNode(color: PhysicsTagColor) -> SKSpriteNode {
-        let texture = Self.textureCache[color] ?? {
+        let key = TextureKey(color: color, scale: sizeScale)
+        let texture = textureCache[key] ?? {
             let tex = SKTexture(image: renderTagImage(color: color))
-            Self.textureCache[color] = tex
+            textureCache[key] = tex
             return tex
         }()
-        let tagSize = CGSize(width: Self.tagWidth, height: Self.tagHeight)
+        let tagSize = CGSize(width: tagWidth, height: tagHeight)
         let node = SKSpriteNode(texture: texture, size: tagSize)
         node.name = Self.tagNodeName
         node.physicsBody = {
             let body = SKPhysicsBody(rectangleOf: tagSize)
-            body.restitution = 0.2
+            body.restitution = bounciness
             body.friction = 0.3
             body.linearDamping = 0.1
             body.angularDamping = 0.3
@@ -297,7 +359,7 @@ extension PhysicsTagScene {
     }
 
     private func renderTagImage(color: PhysicsTagColor) -> UIImage {
-        let size = CGSize(width: Self.tagWidth, height: Self.tagHeight)
+        let size = CGSize(width: tagWidth, height: tagHeight)
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { ctx in
             let cgCtx = ctx.cgContext
@@ -310,23 +372,23 @@ extension PhysicsTagScene {
             cgCtx.restoreGState()
 
             let dotRect = CGRect(
-                x: Self.leftPadding,
-                y: (size.height - Self.dotDiameter) / 2,
-                width: Self.dotDiameter, height: Self.dotDiameter
+                x: leftPadding,
+                y: (size.height - dotDiameter) / 2,
+                width: dotDiameter, height: dotDiameter
             )
             color.foregroundColor.setFill()
             UIBezierPath(ovalIn: dotRect).fill()
 
             let attr = NSAttributedString(
                 string: "example",
-                attributes: [.font: Self.font, .foregroundColor: color.foregroundColor]
+                attributes: [.font: Self.tagFont, .foregroundColor: color.foregroundColor]
             )
             let textSize = attr.boundingRect(
                 with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude),
                 options: [.usesLineFragmentOrigin], context: nil
             ).size
             let textOrigin = CGPoint(
-                x: Self.leftPadding + Self.dotDiameter + Self.dotTextGap,
+                x: leftPadding + dotDiameter + dotTextGap,
                 y: (size.height - textSize.height) / 2
             )
             attr.draw(at: textOrigin)
@@ -406,6 +468,13 @@ extension PhysicsTagScene {
         let y = min(max(position.y, hh), size.height - hh)
         return CGPoint(x: x, y: y)
     }
+}
+
+// MARK: - Texture cache key
+
+private struct TextureKey: Hashable {
+    let color: PhysicsTagColor
+    let scale: CGFloat
 }
 
 // MARK: - TagColor
