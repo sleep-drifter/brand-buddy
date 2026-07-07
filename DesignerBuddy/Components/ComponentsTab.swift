@@ -181,6 +181,22 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Sheet Detents",         section: "Reference",   tab: "Playgrounds", icon: "rectangle.bottomhalf.inset.filled"),
     ]
 
+    // MARK: - Shaders
+
+    /// Metal/GPU-effect pages, surfaced as their own Home section. These reference
+    /// the existing playground entries (not copies), so pins and search stay unified.
+    static let shaders: [AppEntry] = [
+        "Shaders",
+        "Fluid Gradient",
+        "Stable Fluid",
+        "Flow Distortion",
+        "Implicit Equation",
+        "Random Metaball 2D",
+        "Circle SDF 1",
+        "Circle SDF 2",
+        "Smooth Min 2D",
+    ].compactMap { name in playgrounds.first { $0.name == name } }
+
     // MARK: - Legacy aliases (used by old tab views)
 
     static var components: [AppEntry]  { elements.filter { !["Materials"].contains($0.section) } }
