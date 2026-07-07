@@ -1,15 +1,5 @@
 import SwiftUI
 
-// MARK: - Palette
-
-enum FluidPalette: String, CaseIterable {
-    case sunset = "Sunset"
-    case aurora = "Aurora"
-    case candy  = "Candy"
-
-    var index: Float { Float(FluidPalette.allCases.firstIndex(of: self) ?? 0) }
-}
-
 // MARK: - View
 
 struct FluidGradientView: View {
@@ -17,11 +7,9 @@ struct FluidGradientView: View {
     // into a 32-bit Float quantizes to ~64s steps, freezing the animation.
     private let startDate = Date()
 
-    @State private var blobSize:   Float = 0.5
-    @State private var speed:      Float = 0.4
-    @State private var grain:      Float = 0.35
-    @State private var saturation: Float = 0.85
-    @State private var palette:    FluidPalette = .sunset
+    @State private var speed: Float = 0.5
+    @State private var grain: Float = 0.4
+    @State private var zoom:  Float = 0.5
 
     var body: some View {
         ScrollView {
@@ -44,14 +32,11 @@ struct FluidGradientView: View {
             let t = Float(tl.date.timeIntervalSince(startDate))
             GeometryReader { geo in
                 Color.black
-                    .colorEffect(ShaderLibrary.fluidGradientArt(
+                    .colorEffect(ShaderLibrary.chromaGradientArt(
                         .float2(geo.size),
-                        .float(t),
-                        .float(0.05 + blobSize * 0.6),
-                        .float(0.1 + speed * 1.6),
-                        .float(grain * 0.35),
-                        .float(saturation * 1.4),
-                        .float(palette.index)
+                        .float(t * (speed * 2)),
+                        .float(grain * 0.2),
+                        .float(0.5 + zoom)
                     ))
             }
         }
@@ -64,35 +49,20 @@ struct FluidGradientView: View {
 
     private var controls: some View {
         VStack(spacing: 0) {
-            row {
-                HStack {
-                    Text("Palette").frame(width: 96, alignment: .leading)
-                    Spacer()
-                    Picker("Palette", selection: $palette) {
-                        ForEach(FluidPalette.allCases, id: \.self) { p in
-                            Text(p.rawValue).tag(p)
-                        }
-                    }
-                    .labelsHidden()
-                }
-            }
+            sliderRow("Speed", $speed)
             divider
-            sliderRow("Blob Size",  $blobSize)
+            sliderRow("Grain", $grain)
             divider
-            sliderRow("Speed",      $speed)
-            divider
-            sliderRow("Grain",      $grain)
-            divider
-            sliderRow("Saturation", $saturation)
+            sliderRow("Zoom",  $zoom)
         }
         .background(Color(.secondarySystemGroupedBackground),
                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     private var caption: some View {
-        Text("A generative, self-contained Metal shader: five drifting metaball blobs blended "
-             + "into a soft field, dusted with film grain, animated with TimelineView. "
-             + "Inspired by iShader's FluidGradient.")
+        Text("A generative, self-contained Metal shader: orange and purple blobs warped by "
+             + "simplex noise over a grainy near-white field, animated with TimelineView. "
+             + "Ports iShader's ChromaGradients (ShaderToy mtKfDG).")
             .font(.footnote)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 4)
