@@ -165,6 +165,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Blur Stack",            section: "Playgrounds", tab: "Playgrounds", icon: "square.stack.3d.up"),
         .init(name: "Mesh Gradient",         section: "Playgrounds", tab: "Playgrounds", icon: "mosaic",                  keywords: ["mesh", "gradient", "color", "animation", "mask", "blend"]),
         .init(name: "Fluid Gradient",        section: "Playgrounds", tab: "Playgrounds", icon: "drop.halffull",          keywords: ["fluid", "gradient", "generative", "metaball", "blob", "grain", "noise", "animated", "background", "ishader", "mesh"]),
+        .init(name: "Random Metaball 2D",    section: "Playgrounds", tab: "Playgrounds", icon: "circle.hexagongrid.fill", keywords: ["metaball", "blob", "goo", "liquid", "merge", "fuse", "field", "generative", "shader", "organic", "lava", "mercury", "ishader"]),
         .init(name: "Safe Areas",            section: "Reference",   tab: "Playgrounds", icon: "iphone",                  keywords: ["insets", "home indicator", "notch", "status bar"]),
         .init(name: "Sheet Detents",         section: "Reference",   tab: "Playgrounds", icon: "rectangle.bottomhalf.inset.filled"),
     ]
