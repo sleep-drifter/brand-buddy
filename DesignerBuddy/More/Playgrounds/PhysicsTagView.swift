@@ -20,12 +20,12 @@ struct PhysicsTagView: View {
     @State private var gravity: Double = 1.0
     @State private var bounciness: Double = 0.2
     @State private var tagSize: Double = 1.0
+    @State private var showControls = false
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         SpriteView(scene: scene)
             .ignoresSafeArea(edges: .bottom)
-            .overlay(alignment: .bottom) { panel }
             .modifier(ParamSync(scene: scene,
                                 usesDeviceMotion: usesDeviceMotion,
                                 gravity: gravity,
@@ -36,10 +36,23 @@ struct PhysicsTagView: View {
             .tint(.blue)
             .navigationTitle("Physics Tag")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showControls = true } label: {
+                        Image(systemName: "slider.horizontal.3")
+                    }
+                }
+            }
+            .sheet(isPresented: $showControls) {
+                controlsSheet
+                    .presentationDetents([.height(320)])
+                    .presentationBackgroundInteraction(.enabled)
+                    .presentationDragIndicator(.visible)
+            }
     }
 
-    private var panel: some View {
-        VStack(spacing: 10) {
+    private var controlsSheet: some View {
+        VStack(spacing: 14) {
             HStack {
                 Toggle("Gyroscope", isOn: $usesDeviceMotion).fixedSize()
                 Spacer()
@@ -55,10 +68,10 @@ struct PhysicsTagView: View {
             slider("Size", $tagSize, 0.5...2, text: String(format: "%.1f", tagSize)) {
                 scene.resetSimulation()
             }
+            Spacer(minLength: 0)
         }
         .padding()
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
-        .padding()
+        .presentationBackground(.regularMaterial)
     }
 
     private func slider(_ label: String,

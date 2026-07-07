@@ -581,45 +581,41 @@ static float cg_blob(float2 u, float n, float s, float z) {
     float time,
     float grainAmt,
     float zoom,
-    float3 colorA,
-    float3 colorB,
     float3 bg,
     float saturation,
     float softness,
     float warp,
     float blobCount,
-    float contrast
+    float4 c0,
+    float4 c1,
+    float4 c2,
+    float4 c3,
+    float4 c4
 ) {
     float2 uv = (position - 0.5 * size) / min(size.x, size.y);
     uv *= zoom;
 
-    // Per-blob params; indices 0 and 1 reproduce the original two blobs exactly.
-    const float os[4] = { 1.0, 3.0, 5.0, 7.0 };
-    const float ws[4] = { 0.6, 0.5, 0.42, 0.35 };
-    const float ss[4] = { 1.2, 1.5, 1.8, 2.1 };
-    const float zs[4] = { 1.1, 1.4, 1.7, 2.0 };
-
-    int count = clamp(int(blobCount + 0.5), 1, 4);
-    float coverage = 0.0;
-    float colorField = 0.0;
-    for (int i = 0; i < 4; i++) {
-        if (i >= count) { break; }
-        float wv = cg_warp(uv * ws[i], os[i], time) * warp;
-        float b = cg_blob(uv, wv, ss[i] * softness, zs[i]);
-        coverage += b;
-        colorField += (i % 2 == 0) ? b : -b;
-    }
+    // Per-slot shape params (warp offset / warp scale / softness / squish).
+    const float os[5] = { 1.0, 3.0, 5.0, 7.0, 9.0 };
+    const float ws[5] = { 0.6, 0.5, 0.42, 0.35, 0.30 };
+    const float ss[5] = { 1.2, 1.5, 1.8, 2.1, 2.4 };
+    const float zs[5] = { 1.1, 1.4, 1.7, 2.0, 2.3 };
+    float4 cols[5] = { c0, c1, c2, c3, c4 };
 
     float n = grainAmt * cg_snoise(float3(uv * 300.0, time * 0.2));
 
-    // Gentle positional gradient so flat picker colours still read as organic.
-    half3 cA = half3(colorA) * half(1.0 - 0.25 * uv.y);
-    half3 cB = half3(colorB) * half(1.0 + 0.20 * uv.x);
-
-    // clamp arg order kept verbatim from the source: min(0.9, x) and min(1, x).
-    half3 blobColor = half3(n) + mix(cA, cB, half(clamp(-0.14, 0.9, colorField * contrast)));
-    half3 bgColor = half3(bg) + half3(n * 0.1);
-    half3 outc = mix(bgColor, blobColor, half(clamp(0.0, 1.0, coverage)));
+    // Composite each blob as its own coloured layer, in draw order, over the
+    // grainy background. Each blob's own alpha controls how much shows through.
+    int count = clamp(int(blobCount + 0.5), 1, 5);
+    half3 outc = half3(bg) + half3(n * 0.1);
+    for (int i = 0; i < 5; i++) {
+        if (i >= count) { break; }
+        float wv = cg_warp(uv * ws[i], os[i], time) * warp;
+        float b = clamp(cg_blob(uv, wv, ss[i] * softness, zs[i]), 0.0, 1.0);
+        float4 ci = cols[i];
+        half a = half(b) * half(ci.a);
+        outc = mix(outc, half3(ci.rgb) + half3(n), a);
+    }
 
     // Saturation around luma.
     half luma = dot(outc, half3(0.299, 0.587, 0.114));

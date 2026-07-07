@@ -1,6 +1,13 @@
 import SwiftUI
 import UIKit
 
+// MARK: - Model
+
+private struct FluidBlob: Identifiable {
+    let id = UUID()
+    var color: Color
+}
+
 // MARK: - View
 
 struct FluidGradientView: View {
@@ -14,12 +21,14 @@ struct FluidGradientView: View {
     @State private var saturation: Float = 1.0
     @State private var softness:   Float = 1.0
     @State private var warp:       Float = 1.0
-    @State private var contrast:   Float = 1.0
-    @State private var blobCount:  Float = 2
-    @State private var colorA = Color(red: 1.0,  green: 0.5, blue: 0.0)
-    @State private var colorB = Color(red: 0.55, green: 0.2, blue: 0.95)
     @State private var darkBackground = false
     @State private var isPaused = false
+    @State private var blobs: [FluidBlob] = FluidGradientView.defaultBlobs
+
+    private static var defaultBlobs: [FluidBlob] {
+        [.init(color: Color(red: 1.0, green: 0.5, blue: 0.0)),
+         .init(color: Color(red: 0.55, green: 0.2, blue: 0.95, opacity: 0.9))]
+    }
 
     var body: some View {
         ScrollView {
@@ -40,25 +49,8 @@ struct FluidGradientView: View {
     private var preview: some View {
         TimelineView(.animation(paused: isPaused)) { tl in
             let t = Float(tl.date.timeIntervalSince(startDate))
-            let a = Self.rgb(colorA)
-            let b = Self.rgb(colorB)
-            let bg: (Float, Float, Float) = darkBackground ? (0.05, 0.05, 0.06) : (0.90, 0.90, 0.90)
             GeometryReader { geo in
-                Color.black
-                    .colorEffect(ShaderLibrary.chromaGradientArt(
-                        .float2(geo.size),
-                        .float(t * (speed * 2)),
-                        .float(grain * 0.2),
-                        .float(0.5 + zoom),
-                        .float3(a.0, a.1, a.2),
-                        .float3(b.0, b.1, b.2),
-                        .float3(bg.0, bg.1, bg.2),
-                        .float(saturation),
-                        .float(softness),
-                        .float(warp),
-                        .float(blobCount.rounded()),
-                        .float(contrast)
-                    ))
+                Color.black.colorEffect(fluidShader(size: geo.size, time: t))
             }
         }
         .frame(height: 340)
@@ -66,18 +58,34 @@ struct FluidGradientView: View {
         .shadow(color: .black.opacity(0.18), radius: 16, y: 6)
     }
 
+    private func fluidShader(size: CGSize, time: Float) -> Shader {
+        let bg: (Float, Float, Float) = darkBackground ? (0.05, 0.05, 0.06) : (0.90, 0.90, 0.90)
+        let c = (0..<5).map { i -> (Float, Float, Float, Float) in
+            i < blobs.count ? Self.rgba(blobs[i].color) : (0, 0, 0, 0)
+        }
+        return ShaderLibrary.chromaGradientArt(
+            .float2(size),
+            .float(time * (speed * 2)),
+            .float(grain * 0.2),
+            .float(0.5 + zoom),
+            .float3(bg.0, bg.1, bg.2),
+            .float(saturation),
+            .float(softness),
+            .float(warp),
+            .float(Float(blobs.count)),
+            .float4(c[0].0, c[0].1, c[0].2, c[0].3),
+            .float4(c[1].0, c[1].1, c[1].2, c[1].3),
+            .float4(c[2].0, c[2].1, c[2].2, c[2].3),
+            .float4(c[3].0, c[3].1, c[3].2, c[3].3),
+            .float4(c[4].0, c[4].1, c[4].2, c[4].3)
+        )
+    }
+
     // MARK: - Controls
 
     private var controls: some View {
         VStack(spacing: 0) {
-            row {
-                ColorPicker("Color A", selection: $colorA, supportsOpacity: false)
-            }
-            divider
-            row {
-                ColorPicker("Color B", selection: $colorB, supportsOpacity: false)
-            }
-            divider
+            blobList
             row {
                 HStack {
                     Text("Background").frame(width: 96, alignment: .leading)
@@ -103,24 +111,9 @@ struct FluidGradientView: View {
             divider
             sliderRow("Warp",       $warp,       range: 0...2)
             divider
-            sliderRow("Contrast",   $contrast,   range: 0.5...2)
-            divider
-            row {
-                HStack(spacing: 12) {
-                    Text("Blobs").frame(width: 96, alignment: .leading)
-                    Slider(value: $blobCount, in: 1...4, step: 1)
-                    Text("\(Int(blobCount.rounded()))")
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .frame(width: 20, alignment: .trailing)
-                }
-            }
-            divider
             row {
                 HStack(spacing: 16) {
-                    Button {
-                        isPaused.toggle()
-                    } label: {
+                    Button { isPaused.toggle() } label: {
                         Label(isPaused ? "Play" : "Pause",
                               systemImage: isPaused ? "play.fill" : "pause.fill")
                     }
@@ -135,10 +128,41 @@ struct FluidGradientView: View {
                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
+    @ViewBuilder
+    private var blobList: some View {
+        ForEach($blobs) { $blob in
+            blobRow($blob)
+            divider
+        }
+        if blobs.count < 5 {
+            row {
+                Button(action: addBlob) { Label("Add Blob", systemImage: "plus.circle") }
+            }
+            divider
+        }
+    }
+
+    private func blobRow(_ blob: Binding<FluidBlob>) -> some View {
+        let idx = blobs.firstIndex { $0.id == blob.wrappedValue.id } ?? 0
+        return HStack(spacing: 8) {
+            ColorPicker("Blob \(idx + 1)", selection: blob.color, supportsOpacity: true)
+            Spacer(minLength: 8)
+            Button { move(blob.wrappedValue.id, by: -1) } label: { Image(systemName: "chevron.up") }
+                .disabled(idx == 0)
+            Button { move(blob.wrappedValue.id, by: 1) } label: { Image(systemName: "chevron.down") }
+                .disabled(idx == blobs.count - 1)
+            Button(role: .destructive) { delete(blob.wrappedValue.id) } label: { Image(systemName: "trash") }
+                .disabled(blobs.count <= 1)
+        }
+        .buttonStyle(.borderless)
+        .padding(.horizontal, 16).padding(.vertical, 8)
+    }
+
     private var caption: some View {
-        Text("A generative Metal shader: soft blobs warped by simplex noise over a grainy field. "
-             + "Colours, background, saturation, blob softness/warp/contrast and count are all "
-             + "tunable. Ports iShader's ChromaGradients (ShaderToy mtKfDG).")
+        Text("A generative Metal shader: soft blobs warped by simplex noise. Each blob is its own "
+             + "colour layer (with opacity), composited in list order — blobs lower in the list "
+             + "paint on top. Reorder with the arrows, add/remove blobs, and tune background, "
+             + "saturation, softness and warp. Ports iShader's ChromaGradients (ShaderToy mtKfDG).")
             .font(.footnote)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 4)
@@ -147,21 +171,37 @@ struct FluidGradientView: View {
 
     // MARK: - Actions
 
+    private func addBlob() {
+        guard blobs.count < 5 else { return }
+        let hue = Double(blobs.count) / 5.0
+        blobs.append(.init(color: Color(hue: hue, saturation: 0.8, brightness: 1.0)))
+    }
+
+    private func move(_ id: UUID, by offset: Int) {
+        guard let i = blobs.firstIndex(where: { $0.id == id }) else { return }
+        let j = i + offset
+        guard blobs.indices.contains(j) else { return }
+        blobs.swapAt(i, j)
+    }
+
+    private func delete(_ id: UUID) {
+        guard blobs.count > 1 else { return }
+        blobs.removeAll { $0.id == id }
+    }
+
     private func reset() {
         speed = 0.5; grain = 0.4; zoom = 0.5
-        saturation = 1.0; softness = 1.0; warp = 1.0; contrast = 1.0
-        blobCount = 2
-        colorA = Color(red: 1.0,  green: 0.5, blue: 0.0)
-        colorB = Color(red: 0.55, green: 0.2, blue: 0.95)
+        saturation = 1.0; softness = 1.0; warp = 1.0
         darkBackground = false
+        blobs = Self.defaultBlobs
     }
 
     // MARK: - Helpers
 
-    private static func rgb(_ color: Color) -> (Float, Float, Float) {
+    private static func rgba(_ color: Color) -> (Float, Float, Float, Float) {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a)
-        return (Float(r), Float(g), Float(b))
+        return (Float(r), Float(g), Float(b), Float(a))
     }
 
     private func sliderRow(_ label: String,
