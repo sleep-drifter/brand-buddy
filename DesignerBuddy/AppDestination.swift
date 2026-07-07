@@ -74,6 +74,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Flow Distortion":        FlowDistortionView()
     case "Physics Tag":            PhysicsTagView()
     case "Stable Fluid":           StableFluidView()
+    case "Liquid Wallet":          LiquidWalletView()
     case "Safe Areas":             SafeAreasView()
     case "Dynamic Type Scale":     DynamicTypeScaleView()
     case "Permission Requests":        PermissionRequestView()
