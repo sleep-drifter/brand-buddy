@@ -31,9 +31,12 @@ private struct RadialRingLayout: Layout {
             return
         }
 
+        // The centre item is emitted LAST by the view (so it draws on top — zIndex
+        // isn't honoured inside a custom Layout), so ring items are the first
+        // `ringCount` subviews and the centre is the final one.
         let hasCenter = centerItem && subviews.count >= 2
-        let ringStart = hasCenter ? 1 : 0
-        let ringCount = subviews.count - ringStart
+        let ringCount = hasCenter ? subviews.count - 1 : subviews.count
+        let centerIndex = subviews.count - 1
 
         let m = max(ringCount, 2)
         let angle = Double.pi / Double(m)
@@ -46,13 +49,13 @@ private struct RadialRingLayout: Layout {
 
         if hasCenter {
             let cd = min(2 * itemRadius * centerScale, side * 0.6)
-            place(subviews[0], at: CGPoint(x: cx, y: cy), diameter: max(cd, side * 0.1))
+            place(subviews[centerIndex], at: CGPoint(x: cx, y: cy), diameter: max(cd, side * 0.1))
         }
 
         if ringCount == 1 {
             let a = startAngle - .pi / 2
             let r = side * 0.30
-            place(subviews[ringStart],
+            place(subviews[0],
                   at: CGPoint(x: cx + r * cos(a), y: cy + r * sin(a)),
                   diameter: side * 0.30 * gap)
             return
@@ -62,7 +65,7 @@ private struct RadialRingLayout: Layout {
             let rot = step * Double(j) + startAngle
             var p = CGPoint(x: 0, y: -baseR).applying(CGAffineTransform(rotationAngle: rot))
             p.x += cx; p.y += cy
-            place(subviews[ringStart + j], at: p, diameter: diameter)
+            place(subviews[j], at: p, diameter: diameter)
         }
     }
 
@@ -130,8 +133,12 @@ struct RadialLayoutView: View {
                          startAngle: startAngle * .pi / 180,
                          centerItem: centerItem,
                          centerScale: CGFloat(1.3 - centerGap * 0.9)) {
-            ForEach(0..<Int(count), id: \.self) { i in
-                itemView(i)
+            if centerItem {
+                // Ring items first, centre item last so it renders on top.
+                ForEach(1..<Int(count), id: \.self) { i in itemView(i) }
+                itemView(0)
+            } else {
+                ForEach(0..<Int(count), id: \.self) { i in itemView(i) }
             }
         }
         .aspectRatio(1, contentMode: .fit)
@@ -149,7 +156,6 @@ struct RadialLayoutView: View {
     private func itemView(_ i: Int) -> some View {
         shapeView(for: i)
             .contentShape(shape(for: i))
-            .zIndex(isCenter(i) ? 1 : 0)   // keep the centre item above the ring
             .onTapGesture {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { focused = i }
             }
