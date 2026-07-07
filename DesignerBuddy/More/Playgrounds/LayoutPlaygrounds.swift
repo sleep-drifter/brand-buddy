@@ -16,6 +16,14 @@ private struct RadialRingLayout: Layout {
     func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: Subviews, cache _: inout Void) {
         guard !subviews.isEmpty else { return }
         let side = min(bounds.size.width, bounds.size.height)
+        // A single item has no ring to sit on (sin(π) ≈ 0 → zero radius); centre it.
+        if subviews.count == 1 {
+            let d = side * 0.6
+            subviews[0].place(at: CGPoint(x: bounds.midX, y: bounds.midY),
+                              anchor: .center,
+                              proposal: ProposedViewSize(width: d, height: d))
+            return
+        }
         let angle = Double.pi / Double(subviews.count)
         let itemRadius = (side / 2.0) * sin(angle) / (1.0 + sin(angle))
         let ringRadius = (side / 2.0) * (1.0 + sin(angle)).rounded(.down)
@@ -55,7 +63,7 @@ struct RadialLayoutView: View {
                 VStack(spacing: 0) {
                     HStack(spacing: 12) {
                         Text("Items").frame(width: 90, alignment: .leading)
-                        Slider(value: $count, in: 2...24, step: 1)
+                        Slider(value: $count, in: 1...24, step: 1)
                         Text("\(Int(count))")
                             .font(.subheadline.monospacedDigit())
                             .foregroundStyle(.secondary)
