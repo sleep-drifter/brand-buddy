@@ -22,7 +22,7 @@ struct PhysicsTagView: View {
             .ignoresSafeArea(edges: .bottom)
             .overlay(alignment: .topTrailing) {
                 VStack(alignment: .leading, spacing: 10) {
-                    Toggle(isOn: $usesDeviceMotion) { Text("Motion") }
+                    Toggle(isOn: $usesDeviceMotion) { Text("Gyroscope") }
                     Button {
                         scene.resetSimulation()
                     } label: {
