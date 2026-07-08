@@ -1,65 +1,8 @@
 import SwiftUI
 import UIKit
 
-struct HapticsView: View {
-    var body: some View {
-        List {
-            Section("Impact Feedback") {
-                ForEach(ImpactItem.all) { item in
-                    HapticButton(label: item.name, subtitle: item.description) {
-                        let g = UIImpactFeedbackGenerator(style: item.style)
-                        g.prepare()
-                        g.impactOccurred()
-                    }
-                }
-            }
-
-            Section("Notification Feedback") {
-                ForEach(NotificationItem.all) { item in
-                    HapticButton(label: item.name, subtitle: item.description) {
-                        let g = UINotificationFeedbackGenerator()
-                        g.prepare()
-                        g.notificationOccurred(item.type)
-                    }
-                }
-            }
-
-            Section("Selection Feedback") {
-                HapticButton(
-                    label: "Selection Changed",
-                    subtitle: "Light tick — use when moving through a picker or list selection."
-                ) {
-                    let g = UISelectionFeedbackGenerator()
-                    g.prepare()
-                    g.selectionChanged()
-                }
-            }
-
-            Section("Usage Guidelines") {
-                ForEach(HapticGuideline.all) { guide in
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
-                            Image(systemName: guide.icon)
-                                .foregroundStyle(guide.positive ? .green : .red)
-                                .font(.caption)
-                                .frame(width: 16)
-                            Text(guide.title)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                        }
-                        Text(guide.detail)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.leading, 22)
-                    }
-                    .padding(.vertical, 2)
-                }
-            }
-        }
-        .navigationTitle("Haptics")
-        .navigationBarTitleDisplayMode(.large)
-    }
-}
+// Standard UIKit feedback presets, buttons, and guideline data.
+// Surfaced through the Custom Haptics page (Device & Sensors).
 
 struct HapticButton: View {
     let label: String
@@ -150,6 +93,6 @@ struct HapticGuideline: Identifiable {
 
 #Preview {
     NavigationStack {
-        HapticsView()
+        CustomHapticsView()
     }
 }

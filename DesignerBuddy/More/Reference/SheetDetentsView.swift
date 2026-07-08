@@ -1,102 +1,6 @@
 import SwiftUI
 
-struct SheetDetentsView: View {
-    @State private var showSheet = false
-    @State private var showScrollSheet = false
-    @State private var selectedDetent: PresentationDetent = .medium
-    @State private var availableDetents: Set<PresentationDetent> = [.medium, .large]
-    @State private var showDragIndicator = true
-    @State private var customFraction: Double = 0.4
-    @State private var customHeight: Double = 300
-
-    private let presetDetents: [(name: String, detent: PresentationDetent)] = [
-        ("medium", .medium),
-        ("large", .large),
-    ]
-
-    var body: some View {
-        List {
-            Section("Live Demo") {
-                Button("Show Interactive Sheet") { showSheet = true }
-                Button("Show Scrolling Content Sheet") { showScrollSheet = true }
-                Toggle("Show drag indicator", isOn: $showDragIndicator)
-            }
-
-            Section("Active Detents") {
-                Toggle(".medium", isOn: Binding(
-                    get: { availableDetents.contains(.medium) },
-                    set: { if $0 { availableDetents.insert(.medium) } else { availableDetents.remove(.medium) } }
-                ))
-                Toggle(".large", isOn: Binding(
-                    get: { availableDetents.contains(.large) },
-                    set: { if $0 { availableDetents.insert(.large) } else { availableDetents.remove(.large) } }
-                ))
-                VStack(alignment: .leading, spacing: 6) {
-                    Toggle(".fraction(\(customFraction, specifier: "%.2f"))", isOn: Binding(
-                        get: { availableDetents.contains(.fraction(customFraction)) },
-                        set: { if $0 { availableDetents.insert(.fraction(customFraction)) } else { availableDetents.remove(.fraction(customFraction)) } }
-                    ))
-                    Slider(value: $customFraction, in: 0.1...0.9)
-                        .padding(.leading, 4)
-                }
-                VStack(alignment: .leading, spacing: 6) {
-                    Toggle(".height(\(Int(customHeight)))", isOn: Binding(
-                        get: { availableDetents.contains(.height(customHeight)) },
-                        set: { if $0 { availableDetents.insert(.height(customHeight)) } else { availableDetents.remove(.height(customHeight)) } }
-                    ))
-                    Slider(value: $customHeight, in: 100...700)
-                        .padding(.leading, 4)
-                }
-            }
-
-            Section("Detent Reference") {
-                ForEach(DetentReferenceItem.all) { item in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(item.token)
-                            .font(.mono(.subheadline))
-                            .fontWeight(.medium)
-                        Text(item.description)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        if let example = item.example {
-                            Text("e.g. \(example)")
-                                .font(.caption)
-                                .foregroundStyle(.tint)
-                                .italic()
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-
-            Section("Sheet Modifiers") {
-                ForEach(SheetModifierItem.all) { item in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(item.modifier)
-                            .font(.mono(.caption))
-                            .foregroundStyle(.tint)
-                        Text(item.description)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 2)
-                }
-            }
-        }
-        .navigationTitle("Sheet Detents")
-        .navigationBarTitleDisplayMode(.large)
-        .sheet(isPresented: $showSheet) {
-            SheetDetentsDemo(
-                selectedDetent: $selectedDetent,
-                availableDetents: availableDetents.isEmpty ? [.large] : availableDetents,
-                showDragIndicator: showDragIndicator
-            )
-        }
-        .sheet(isPresented: $showScrollSheet) {
-            ScrollingSheetDemo(showDragIndicator: showDragIndicator)
-        }
-    }
-}
+// Detent demos and reference data — surfaced through Sheets & Modals.
 
 struct SheetDetentsDemo: View {
     @Binding var selectedDetent: PresentationDetent
@@ -219,6 +123,6 @@ struct SheetModifierItem: Identifiable {
 
 #Preview {
     NavigationStack {
-        SheetDetentsView()
+        SheetsModalsView()
     }
 }

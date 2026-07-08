@@ -27,7 +27,7 @@ struct MenusView: View {
             }
 
             Section {
-                // Basic context menu
+                // Basic context menu with a custom preview
                 HStack {
                     Image(systemName: "photo")
                         .font(.system(size: 32))
@@ -52,119 +52,78 @@ struct MenusView: View {
                         .padding(24)
                         .background(.tint.opacity(0.1))
                 }
-
-                // iMessage-style: preview reveals hidden content
-                ForEach(InlineMessageItem.samples) { msg in
-                    MessageContextRow(msg: msg)
-                }
-
-                // Spotify-style: preview shows rich album art
-                ForEach(InlineTrackItem.samples) { track in
-                    TrackContextRow(track: track)
-                }
             } header: {
                 Text("Context Menu (long press)")
             } footer: {
                 Text("Use contextMenu(menuItems:preview:) to show a custom preview — it can reveal content not visible in the list.")
             }
 
+            Section("iMessage-style") {
+                ForEach(MessageThread.samples) { thread in
+                    MessageRow(thread: thread)
+                        .contextMenu {
+                            Button("Reply", systemImage: "arrowshape.turn.up.left") {}
+                            Button("React", systemImage: "face.smiling") {}
+                            Button("Copy", systemImage: "doc.on.doc") {}
+                            Button("Forward", systemImage: "arrowshape.turn.up.right") {}
+                            Divider()
+                            Button("Delete", systemImage: "trash", role: .destructive) {}
+                        } preview: {
+                            MessagePreview(thread: thread)
+                        }
+                }
+            }
+
+            Section("Spotify-style") {
+                ForEach(Track.samples) { track in
+                    TrackRow(track: track)
+                        .contextMenu {
+                            Button("Play Next", systemImage: "text.line.first.and.arrowtriangle.forward") {}
+                            Button("Add to Queue", systemImage: "text.badge.plus") {}
+                            Button("Save to Library", systemImage: "heart") {}
+                            Divider()
+                            Menu("Add to Playlist") {
+                                Button("Chill Vibes") {}
+                                Button("Morning Run") {}
+                                Button("Focus") {}
+                            }
+                            Divider()
+                            Button("Share Song", systemImage: "square.and.arrow.up") {}
+                        } preview: {
+                            TrackPreview(track: track)
+                        }
+                }
+            }
+
+            Section("Link / Rich Preview") {
+                ForEach(LinkItem.samples) { link in
+                    LinkRow(link: link)
+                        .contextMenu {
+                            Button("Open", systemImage: "safari") {}
+                            Button("Copy Link", systemImage: "link") {}
+                            Button("Share", systemImage: "square.and.arrow.up") {}
+                            Divider()
+                            Button("Remove", systemImage: "xmark.circle", role: .destructive) {}
+                        } preview: {
+                            LinkPreview(link: link)
+                        }
+                }
+            }
+
+            Section("API") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(".contextMenu { actions } preview: { customView }")
+                        .font(.mono(.caption)).fontWeight(.medium)
+                    Text("The preview can be any SwiftUI view — completely different from the source. It scales in from the tap point and shows above the action menu.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text("Use previews to surface detail that wouldn't fit in the list row: full message bodies, album art + metadata, link thumbnails, contact cards.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
+            }
         }
         .navigationTitle("Menus & Context Menus")
         .navigationBarTitleDisplayMode(.large)
-    }
-}
-
-// MARK: - Inline context menu models & rows
-
-private struct InlineMessageItem: Identifiable {
-    let id = UUID()
-    let sender: String
-    let snippet: String
-    let fullMessage: String
-    let time: String
-
-    static let samples = [
-        InlineMessageItem(sender: "Sarah K.", snippet: "Are you free tomorrow?", fullMessage: "Hey! Are you free tomorrow afternoon? Thinking of grabbing coffee and catching up — it's been ages. Let me know!", time: "2m ago"),
-        InlineMessageItem(sender: "Team iOS", snippet: "Build passed ✓", fullMessage: "🎉 Build #1042 passed all checks. Ready to submit to TestFlight. Great work everyone on shipping the new camera module!", time: "14m ago"),
-    ]
-}
-
-private struct MessageContextRow: View {
-    let msg: InlineMessageItem
-    var body: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(Color.accentColor.opacity(0.2))
-                .frame(width: 36, height: 36)
-                .overlay(Text(String(msg.sender.prefix(1))).font(.subheadline.bold()).foregroundStyle(.tint))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(msg.sender).font(.subheadline).fontWeight(.semibold)
-                Text(msg.snippet).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-            }
-            Spacer()
-            Text(msg.time).font(.caption2).foregroundStyle(.tertiary)
-        }
-        .padding(.vertical, 2)
-        .contextMenu {
-            Button("Reply", systemImage: "arrowshape.turn.up.left") {}
-            Button("Copy", systemImage: "doc.on.doc") {}
-            Button("Delete", systemImage: "trash", role: .destructive) {}
-        } preview: {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(msg.sender).font(.headline)
-                Text(msg.fullMessage).font(.body).fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(16)
-            .frame(width: 300, alignment: .leading)
-        }
-    }
-}
-
-private struct InlineTrackItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let artist: String
-    let color: Color
-
-    static let samples = [
-        InlineTrackItem(title: "Midnight City", artist: "M83", color: .indigo),
-        InlineTrackItem(title: "Redbone",       artist: "Childish Gambino", color: .orange),
-    ]
-}
-
-private struct TrackContextRow: View {
-    let track: InlineTrackItem
-    var body: some View {
-        HStack(spacing: 10) {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(track.color.gradient)
-                .frame(width: 40, height: 40)
-                .overlay(Image(systemName: "music.note").foregroundStyle(.white))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(track.title).font(.subheadline).fontWeight(.medium)
-                Text(track.artist).font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer()
-            Image(systemName: "ellipsis").foregroundStyle(.secondary)
-        }
-        .padding(.vertical, 2)
-        .contextMenu {
-            Button("Play Next", systemImage: "text.line.first.and.arrowtriangle.forward") {}
-            Button("Add to Playlist", systemImage: "plus") {}
-            Button("Share Song", systemImage: "square.and.arrow.up") {}
-        } preview: {
-            VStack(spacing: 12) {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(track.color.gradient)
-                    .frame(width: 200, height: 200)
-                    .overlay(Image(systemName: "music.note").font(.system(size: 64)).foregroundStyle(.white.opacity(0.8)))
-                VStack(spacing: 4) {
-                    Text(track.title).font(.title3.bold())
-                    Text(track.artist).font(.subheadline).foregroundStyle(.secondary)
-                }
-            }
-            .padding(20)
-        }
     }
 }
 
@@ -743,9 +702,32 @@ struct ImagesView: View {
     }
 }
 
-struct NavigationBarsView: View {
+struct TabBarsView: View {
     var body: some View {
         List {
+            Section {
+                Text("Tab bars are shown in the app's main TabView (ContentView). This reference covers tab bar specifications.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 4)
+            }
+            Section("Specs") {
+                LabeledContent("Height", value: "49pt (83pt with home indicator)")
+                LabeledContent("Icon size", value: "25×25pt (50×50 @2x)")
+                LabeledContent("Max tabs", value: "5 visible (overflow moves to More)")
+                LabeledContent("Badge position", value: "Top-right of icon")
+            }
+        }
+        .navigationTitle("Tab Bars")
+        .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+struct NavigationBarsAndToolbarsView: View {
+    var body: some View {
+        List {
+
+            // MARK: Navigation bar titles
             Section {
                 NavigationLink("Large title (default)") {
                     List { ForEach(0..<5) { Text("Row \($0)") } }
@@ -769,37 +751,11 @@ struct NavigationBarsView: View {
                             }
                         }
                 }
+            } header: {
+                Text("Navigation bar titles")
+            } footer: {
+                Text("navigationBarTitleDisplayMode controls large vs. inline titles. Toolbar items attach via the .toolbar modifier.")
             }
-        }
-        .navigationTitle("Navigation Bars")
-        .navigationBarTitleDisplayMode(.large)
-    }
-}
-
-struct TabBarsView: View {
-    var body: some View {
-        List {
-            Section {
-                Text("Tab bars are shown in the app's main TabView (ContentView). This reference covers tab bar specifications.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 4)
-            }
-            Section("Specs") {
-                LabeledContent("Height", value: "49pt (83pt with home indicator)")
-                LabeledContent("Icon size", value: "25×25pt (50×50 @2x)")
-                LabeledContent("Max tabs", value: "5 visible (overflow moves to More)")
-                LabeledContent("Badge position", value: "Top-right of icon")
-            }
-        }
-        .navigationTitle("Tab Bars")
-        .navigationBarTitleDisplayMode(.large)
-    }
-}
-
-struct ToolbarsView: View {
-    var body: some View {
-        List {
 
             // MARK: iOS 26 Glass Button Groups
             Section {
@@ -851,8 +807,8 @@ struct ToolbarsView: View {
                 Text("Visibility")
             }
         }
-        .navigationTitle("Toolbars")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Navigation Bars & Toolbars")
+        .navigationBarTitleDisplayMode(.large)
     }
 }
 
@@ -1309,13 +1265,43 @@ struct SearchComponentView: View {
     @State private var query = ""
     @State private var scope = "All"
 
+    private let items = ["Apple", "Banana", "Cherry", "Date", "Elderberry"]
+    private let recent = ["Glass Effect", "Typography", "Buttons"]
+    private let suggested = ["Materials", "Spring Physics"]
+
+    private var results: [String] {
+        items.filter { $0.localizedCaseInsensitiveContains(query) }
+    }
+
     var body: some View {
         List {
-            Section { Text("Using .searchable() modifier") }
-            ForEach(["Apple", "Banana", "Cherry", "Date", "Elderberry"].filter {
-                query.isEmpty || $0.localizedCaseInsensitiveContains(query)
-            }, id: \.self) { item in
-                Text(item)
+            if query.isEmpty {
+                Section {
+                    Text("Attach .searchable() to a List or ScrollView. When the query is empty, surface recent and suggested entries; while typing, show filtered results.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Section("Recent") {
+                    ForEach(recent, id: \.self) { item in
+                        Label(item, systemImage: "clock")
+                    }
+                }
+                Section("Suggested") {
+                    ForEach(suggested, id: \.self) { item in
+                        Label(item, systemImage: "sparkles")
+                    }
+                }
+                Section("All Items") {
+                    ForEach(items, id: \.self) { item in
+                        Text(item)
+                    }
+                }
+            } else {
+                Section("Results") {
+                    ForEach(results, id: \.self) { item in
+                        Text(item)
+                    }
+                }
             }
         }
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search items")
@@ -1350,84 +1336,6 @@ struct SteppersView: View {
             }
         }
         .navigationTitle("Steppers")
-        .navigationBarTitleDisplayMode(.large)
-    }
-}
-
-struct ContextMenusView: View {
-    var body: some View {
-        List {
-            Section {
-                Text("Long-press each row. The preview reveals content that isn't visible in the list — the key capability of contextMenu(preview:).")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("iMessage-style") {
-                ForEach(MessageThread.samples) { thread in
-                    MessageRow(thread: thread)
-                        .contextMenu {
-                            Button("Reply", systemImage: "arrowshape.turn.up.left") {}
-                            Button("React", systemImage: "face.smiling") {}
-                            Button("Copy", systemImage: "doc.on.doc") {}
-                            Button("Forward", systemImage: "arrowshape.turn.up.right") {}
-                            Divider()
-                            Button("Delete", systemImage: "trash", role: .destructive) {}
-                        } preview: {
-                            MessagePreview(thread: thread)
-                        }
-                }
-            }
-
-            Section("Spotify-style") {
-                ForEach(Track.samples) { track in
-                    TrackRow(track: track)
-                        .contextMenu {
-                            Button("Play Next", systemImage: "text.line.first.and.arrowtriangle.forward") {}
-                            Button("Add to Queue", systemImage: "text.badge.plus") {}
-                            Button("Save to Library", systemImage: "heart") {}
-                            Divider()
-                            Menu("Add to Playlist") {
-                                Button("Chill Vibes") {}
-                                Button("Morning Run") {}
-                                Button("Focus") {}
-                            }
-                            Divider()
-                            Button("Share Song", systemImage: "square.and.arrow.up") {}
-                        } preview: {
-                            TrackPreview(track: track)
-                        }
-                }
-            }
-
-            Section("Link / Rich Preview") {
-                ForEach(LinkItem.samples) { link in
-                    LinkRow(link: link)
-                        .contextMenu {
-                            Button("Open", systemImage: "safari") {}
-                            Button("Copy Link", systemImage: "link") {}
-                            Button("Share", systemImage: "square.and.arrow.up") {}
-                            Divider()
-                            Button("Remove", systemImage: "xmark.circle", role: .destructive) {}
-                        } preview: {
-                            LinkPreview(link: link)
-                        }
-                }
-            }
-
-            Section("API") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(".contextMenu { actions } preview: { customView }")
-                        .font(.mono(.caption)).fontWeight(.medium)
-                    Text("The preview can be any SwiftUI view — completely different from the source. It scales in from the tap point and shows above the action menu.")
-                        .font(.caption).foregroundStyle(.secondary)
-                    Text("Use previews to surface detail that wouldn't fit in the list row: full message bodies, album art + metadata, link thumbnails, contact cards.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 4)
-            }
-        }
-        .navigationTitle("Context Menus")
         .navigationBarTitleDisplayMode(.large)
     }
 }

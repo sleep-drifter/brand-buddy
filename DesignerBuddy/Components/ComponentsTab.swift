@@ -38,15 +38,13 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Images & Icons",        section: "Visual",          tab: "Elements", icon: "photo"),
         // Actions
         .init(name: "Buttons",               section: "Actions",         tab: "Elements", icon: "hand.tap"),
-        .init(name: "Menus & Context Menus", section: "Actions",         tab: "Elements", icon: "list.bullet.rectangle"),
-        .init(name: "Context Menus",         section: "Actions",         tab: "Elements", icon: "contextualmenu.and.cursorarrow"),
+        .init(name: "Menus & Context Menus", section: "Actions",         tab: "Elements", icon: "list.bullet.rectangle", keywords: ["context menu", "pull-down", "long press", "preview", "imessage", "spotify"]),
         // Inputs & Forms
         .init(name: "Text Fields",           section: "Inputs & Forms",  tab: "Elements", icon: "character.cursor.ibeam"),
         .init(name: "Toggles & Switches",    section: "Inputs & Forms",  tab: "Elements", icon: "switch.2"),
         .init(name: "Sliders",               section: "Inputs & Forms",  tab: "Elements", icon: "slider.horizontal.3"),
         .init(name: "Steppers",              section: "Inputs & Forms",  tab: "Elements", icon: "plus.forwardslash.minus"),
         .init(name: "Grouped Forms",         section: "Inputs & Forms",  tab: "Elements", icon: "rectangle.grid.1x2"),
-        .init(name: "Search Patterns",       section: "Inputs & Forms",  tab: "Elements", icon: "magnifyingglass"),
         .init(name: "Form Patterns",         section: "Inputs & Forms",  tab: "Elements", icon: "list.clipboard"),
         // Selection
         .init(name: "Pickers",               section: "Selection",       tab: "Elements", icon: "checklist"),
@@ -65,13 +63,14 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Carousels",             section: "Layout",          tab: "Elements", icon: "rectangle.portrait.on.rectangle.portrait.angled", keywords: ["carousel", "cover flow", "coverflow", "snap", "paging", "horizontal scroll", "peeking", "page control", "swipe", "gallery", "3d", "rotation", "auto advance", "infinite", "loop", "wallet", "stacked deck", "stories", "reels", "banner"]),
         .init(name: "Grids",                 section: "Layout",          tab: "Elements", icon: "grid"),
         .init(name: "Cards",                 section: "Layout",          tab: "Elements", icon: "rectangle.on.rectangle"),
+        .init(name: "Reorderable List",      section: "Layout",          tab: "Elements", icon: "list.number", keywords: ["reorder", "move", "drag", "onMove", "EditMode", "sort", "rearrange"]),
+        .init(name: "Safe Areas",            section: "Layout",          tab: "Elements", icon: "iphone", keywords: ["insets", "home indicator", "notch", "status bar", "safe area"]),
         // Navigation
-        .init(name: "Navigation Bars",       section: "Navigation",      tab: "Elements", icon: "chevron.left"),
+        .init(name: "Navigation Bars & Toolbars", section: "Navigation", tab: "Elements", icon: "menubar.rectangle", keywords: ["navigation bar", "nav bar", "toolbar", "title", "large title", "inline", "bottom bar", "placement", "button group", "glass"]),
         .init(name: "Tab Bars",              section: "Navigation",      tab: "Elements", icon: "rectangle.bottomthird.inset.filled"),
-        .init(name: "Toolbars",              section: "Navigation",      tab: "Elements", icon: "menubar.rectangle"),
-        .init(name: "Search",                section: "Navigation",      tab: "Elements", icon: "magnifyingglass"),
+        .init(name: "Search",                section: "Navigation",      tab: "Elements", icon: "magnifyingglass", keywords: ["searchable", "search bar", "scopes", "recent", "suggested", "results", "filter"]),
         // Overlays
-        .init(name: "Sheets & Modals",       section: "Overlays",        tab: "Elements", icon: "rectangle.topthird.inset.filled"),
+        .init(name: "Sheets & Modals",       section: "Overlays",        tab: "Elements", icon: "rectangle.topthird.inset.filled", keywords: ["sheet", "modal", "detent", "medium", "large", "fraction", "height", "presentationDetents", "drag indicator", "full screen cover"]),
         .init(name: "Alerts & Dialogs",      section: "Overlays",        tab: "Elements", icon: "exclamationmark.triangle"),
         .init(name: "Action Sheets",         section: "Overlays",        tab: "Elements", icon: "filemenu.and.selection"),
         .init(name: "Popovers",              section: "Overlays",        tab: "Elements", icon: "rectangle.connected.to.line.below"),
@@ -89,13 +88,11 @@ struct AppEntry: Identifiable, Hashable {
         // Navigation & Flows
         .init(name: "Navigation Patterns",   section: "Navigation & Flows", tab: "Patterns & System", icon: "arrow.triangle.turn.up.right.diamond"),
         .init(name: "Tab Bar Patterns",      section: "Navigation & Flows", tab: "Patterns & System", icon: "rectangle.bottomthird.inset.filled"),
-        .init(name: "Modal Patterns",        section: "Navigation & Flows", tab: "Patterns & System", icon: "rectangle.topthird.inset.filled"),
-        .init(name: "Sheet Flows",           section: "Navigation & Flows", tab: "Patterns & System", icon: "arrow.up.and.down.square"),
+        .init(name: "Modal Patterns",        section: "Navigation & Flows", tab: "Patterns & System", icon: "rectangle.topthird.inset.filled", keywords: ["modal", "sheet", "full screen cover", "confirmation dialog", "alert", "multi-step", "sheet flow", "wizard"]),
         // Content States
         .init(name: "Empty States",          section: "Content States",     tab: "Patterns & System", icon: "tray"),
         .init(name: "Loading States",        section: "Content States",     tab: "Patterns & System", icon: "progress.indicator"),
         .init(name: "Error States",          section: "Content States",     tab: "Patterns & System", icon: "exclamationmark.triangle"),
-        .init(name: "Reorderable List",      section: "Content States",     tab: "Patterns & System", icon: "list.number"),
         // Settings & Onboarding
         .init(name: "Settings Patterns",     section: "Settings & Onboarding", tab: "Patterns & System", icon: "gear"),
         .init(name: "Onboarding Flows",      section: "Settings & Onboarding", tab: "Patterns & System", icon: "hand.wave"),
@@ -145,7 +142,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Image Generation",           section: "AI & Generation", tab: "Patterns & System", icon: "photo.badge.plus",     keywords: ["image generation", "skeleton", "shimmer", "loading", "AI", "placeholder"]),
         .init(name: "Prompt Input Patterns",      section: "AI & Generation", tab: "Patterns & System", icon: "text.bubble",          keywords: ["prompt", "input", "chat", "multi-line", "grow", "attachment", "send button"]),
         // Device & Sensors
-        .init(name: "Custom Haptics",            section: "Device & Sensors", tab: "Patterns & System", icon: "waveform.path.ecg.rectangle", keywords: ["haptics", "CHHapticEngine", "taptic", "vibration", "pattern", "transient", "continuous"]),
+        .init(name: "Custom Haptics",            section: "Device & Sensors", tab: "Patterns & System", icon: "waveform.path.ecg.rectangle", keywords: ["haptics", "CHHapticEngine", "taptic", "vibration", "pattern", "transient", "continuous", "impact", "notification", "selection", "UIFeedbackGenerator", "feedback"]),
         .init(name: "Haptic Studio",             section: "Device & Sensors", tab: "Patterns & System", icon: "slider.horizontal.below.rectangle", keywords: ["haptic", "ahap", "editor", "timeline", "pattern", "waveform", "CoreHaptics", "keyframe"]),
         .init(name: "Accelerometer & Gyroscope", section: "Device & Sensors", tab: "Patterns & System", icon: "gyroscope",                  keywords: ["accelerometer", "gyroscope", "CMMotionManager", "CoreMotion", "tilt", "motion"]),
         .init(name: "Barometer",                 section: "Device & Sensors", tab: "Patterns & System", icon: "thermometer.medium",          keywords: ["barometer", "CMAltimeter", "altitude", "pressure", "sensor"]),
@@ -158,7 +155,6 @@ struct AppEntry: Identifiable, Hashable {
     static let playgrounds: [AppEntry] = [
         .init(name: "Shaders",               section: "Playgrounds", tab: "Playgrounds", icon: "sparkles.rectangle.stack", keywords: ["metal", "shader", "filter", "effect", "ripple", "pixelate", "distortion", "gpu", "grain", "vignette", "chromatic", "emboss", "swirl", "wave", "holographic", "foil", "duotone", "halftone", "solarize", "frosted", "glass", "lens", "refract", "color grade", "lut", "cinematic", "topographic", "contour", "stack", "layers", "preset", "photo", "metaball", "liquid", "blobs"]),
         .init(name: "Spring Physics",        section: "Playgrounds", tab: "Playgrounds", icon: "waveform.path.ecg",       keywords: ["animation", "bounce", "easing", "motion", "damping", "stiffness"]),
-        .init(name: "Haptics",               section: "Playgrounds", tab: "Playgrounds", icon: "hand.tap",                keywords: ["vibration", "feedback", "taptic", "impact", "selection"]),
         .init(name: "Corner Radius",         section: "Playgrounds", tab: "Playgrounds", icon: "square.on.square",        keywords: ["rounded", "border radius", "roundrectangle"]),
         .init(name: "Concentric Radius",     section: "Playgrounds", tab: "Playgrounds", icon: "square.inset.filled"),
         .init(name: "Shadow Explorer",       section: "Playgrounds", tab: "Playgrounds", icon: "shadow"),
@@ -177,8 +173,6 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Physics Tag",           section: "Playgrounds", tab: "Playgrounds", icon: "tag.circle",              keywords: ["physics", "spritekit", "gravity", "motion", "tilt", "coremotion", "tag cloud", "drag", "throw", "collision", "my-toybox", "toybox"]),
         .init(name: "Stable Fluid",          section: "Playgrounds", tab: "Playgrounds", icon: "drop.degreesign",        keywords: ["fluid", "stable fluid", "navier stokes", "simulation", "smoke", "ink", "metal", "compute", "gpu", "jos stam", "my-toybox", "toybox"]),
         .init(name: "Liquid Wallet",         section: "Playgrounds", tab: "Playgrounds", icon: "wallet.pass",             keywords: ["glass", "liquid glass", "wallet", "carousel", "stack", "deck", "merge", "union", "morph", "metaball", "glasseffect", "glasseffectcontainer", "ios 26"]),
-        .init(name: "Safe Areas",            section: "Reference",   tab: "Playgrounds", icon: "iphone",                  keywords: ["insets", "home indicator", "notch", "status bar"]),
-        .init(name: "Sheet Detents",         section: "Reference",   tab: "Playgrounds", icon: "rectangle.bottomhalf.inset.filled"),
     ]
 
     // MARK: - Shaders
@@ -196,18 +190,6 @@ struct AppEntry: Identifiable, Hashable {
         "Circle SDF 2",
         "Smooth Min 2D",
     ].compactMap { name in playgrounds.first { $0.name == name } }
-
-    // MARK: - Legacy aliases (used by old tab views)
-
-    static var components: [AppEntry]  { elements.filter { !["Materials"].contains($0.section) } }
-    static var materials: [AppEntry]   { elements.filter { $0.section == "Materials" } }
-    static var patterns: [AppEntry]    { patternsAndSystem.filter { ["Navigation & Flows", "Content States", "Settings & Onboarding"].contains($0.section) } }
-    static var native: [AppEntry]      { patternsAndSystem.filter { ["Permissions", "Media", "Maps"].contains($0.section) } }
-    static var more: [AppEntry]        { playgrounds }
-    static var exploreA: [AppEntry]    { patternsAndSystem.filter { ["Gestures", "Animations", "Accessibility"].contains($0.section) } }
-    static var exploreB: [AppEntry]    { patternsAndSystem.filter { $0.section == "System" } }
-    static var exploreC: [AppEntry]    { patternsAndSystem.filter { $0.section == "AI & Generation" } }
-    static var exploreD: [AppEntry]    { patternsAndSystem.filter { $0.section == "Device & Sensors" } }
 }
 
 // Keep old name working in ComponentSearchView
@@ -239,49 +221,3 @@ func pinnableRow(_ entry: AppEntry, pinsStore: PinsStore) -> some View {
     }
 }
 
-// MARK: - Components Tab
-
-struct ComponentsTab: View {
-    @EnvironmentObject var pinsStore: PinsStore
-
-    private let tabEntries: [AppEntry] = AppEntry.components + AppEntry.materials + AppEntry.more
-    private let sectionOrder = ["Visual", "Actions", "Inputs", "Selection", "Display", "Layout",
-                                "Navigation", "Overlays", "Glass", "Surfaces", "Vibrancy",
-                                "Playgrounds", "Reference"]
-
-    private var pinnedEntries: [AppEntry] {
-        tabEntries.filter { pinsStore.isPinned($0) }
-    }
-
-    var body: some View {
-        NavigationStack {
-            List {
-                if !pinnedEntries.isEmpty {
-                    Section("Pinned") {
-                        ForEach(pinnedEntries) { entry in
-                            pinnableRow(entry, pinsStore: pinsStore)
-                        }
-                    }
-                }
-
-                ForEach(sectionOrder, id: \.self) { section in
-                    let entries = tabEntries.filter { $0.section == section }
-                    if !entries.isEmpty {
-                        Section(section) {
-                            ForEach(entries) { entry in
-                                pinnableRow(entry, pinsStore: pinsStore)
-                            }
-                        }
-                    }
-                }
-            }
-            .navigationTitle("Components")
-            .navigationDestination(for: AppEntry.self) { appDestination(for: $0) }
-        }
-    }
-}
-
-#Preview {
-    ComponentsTab()
-        .environmentObject(PinsStore())
-}
