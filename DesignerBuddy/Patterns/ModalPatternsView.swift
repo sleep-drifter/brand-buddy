@@ -7,6 +7,7 @@ struct ModalPatternsView: View {
     @State private var showFullScreen = false
     @State private var showConfirmation = false
     @State private var showAlert = false
+    @State private var showFlowSheet = false
 
     var body: some View {
         List {
@@ -64,6 +65,23 @@ struct ModalPatternsView: View {
                     action: { showAlert = true }
                 )
             }
+
+            Section {
+                Button("Show multi-step sheet flow") { showFlowSheet = true }
+            } header: {
+                Text("Multi-Step Sheet Flow")
+            } footer: {
+                Text("A guided flow presented in a single sheet — steps advance in place with a progress indicator.")
+            }
+
+            Section("Sheet Flow Rules") {
+                Text("• Each step in a sheet flow should have a clear title and progress indicator if there are 3+ steps.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Text("• The final step should have a prominent completion action, not just 'Next'.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Text("• Cancel should always be available on the first step.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
         }
         .navigationTitle("Modal Patterns")
         .navigationBarTitleDisplayMode(.large)
@@ -101,6 +119,9 @@ struct ModalPatternsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This is an alert message with OK and Cancel.")
+        }
+        .sheet(isPresented: $showFlowSheet) {
+            MultiStepSheetDemo()
         }
     }
 }
@@ -167,31 +188,6 @@ struct ModalTypeItem: Identifiable {
             avoidWhen: "More than 2 options — use confirmationDialog instead."
         ),
     ]
-}
-
-struct SheetFlowsView: View {
-    @State private var showSheet = false
-
-    var body: some View {
-        List {
-            Section {
-                Button("Show multi-step sheet flow") { showSheet = true }
-            }
-            Section("Rules") {
-                Text("• Each step in a sheet flow should have a clear title and progress indicator if there are 3+ steps.")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                Text("• The final step should have a prominent completion action, not just 'Next'.")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                Text("• Cancel should always be available on the first step.")
-                    .font(.subheadline).foregroundStyle(.secondary)
-            }
-        }
-        .navigationTitle("Sheet Flows")
-        .navigationBarTitleDisplayMode(.large)
-        .sheet(isPresented: $showSheet) {
-            MultiStepSheetDemo()
-        }
-    }
 }
 
 struct MultiStepSheetDemo: View {

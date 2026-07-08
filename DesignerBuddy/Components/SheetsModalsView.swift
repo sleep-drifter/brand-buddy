@@ -1,29 +1,89 @@
 import SwiftUI
 
 struct SheetsModalsView: View {
-    @State private var showSheet = false
     @State private var showHalfSheet = false
     @State private var showFullSheet = false
     @State private var showFullScreenCover = false
     @State private var showScrollSheet = false
-    @State private var detent: PresentationDetent = .medium
+
+    // Interactive detent playground
+    @State private var showSheet = false
+    @State private var selectedDetent: PresentationDetent = .medium
+    @State private var availableDetents: Set<PresentationDetent> = [.medium, .large]
+    @State private var showDragIndicator = true
+    @State private var customFraction: Double = 0.4
+    @State private var customHeight: Double = 300
 
     var body: some View {
         List {
             Section("Sheets") {
                 Button("Present Sheet (medium)") { showHalfSheet = true }
                 Button("Present Sheet (large)") { showFullSheet = true }
-                Button("Present Sheet (interactive detents)") { showSheet = true }
                 Button("Scrolling content in sheet") { showScrollSheet = true }
             }
             Section("Full Screen") {
                 Button("Full Screen Cover") { showFullScreenCover = true }
             }
+
+            Section("Interactive Detents") {
+                Button("Show Interactive Sheet") { showSheet = true }
+                Button("Show Scrolling Content Sheet") { showScrollSheet = true }
+                Toggle("Show drag indicator", isOn: $showDragIndicator)
+            }
+
+            Section("Active Detents") {
+                Toggle(".medium", isOn: Binding(
+                    get: { availableDetents.contains(.medium) },
+                    set: { if $0 { availableDetents.insert(.medium) } else { availableDetents.remove(.medium) } }
+                ))
+                Toggle(".large", isOn: Binding(
+                    get: { availableDetents.contains(.large) },
+                    set: { if $0 { availableDetents.insert(.large) } else { availableDetents.remove(.large) } }
+                ))
+                VStack(alignment: .leading, spacing: 6) {
+                    Toggle(".fraction(\(customFraction, specifier: "%.2f"))", isOn: Binding(
+                        get: { availableDetents.contains(.fraction(customFraction)) },
+                        set: { if $0 { availableDetents.insert(.fraction(customFraction)) } else { availableDetents.remove(.fraction(customFraction)) } }
+                    ))
+                    Slider(value: $customFraction, in: 0.1...0.9)
+                        .padding(.leading, 4)
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    Toggle(".height(\(Int(customHeight)))", isOn: Binding(
+                        get: { availableDetents.contains(.height(customHeight)) },
+                        set: { if $0 { availableDetents.insert(.height(customHeight)) } else { availableDetents.remove(.height(customHeight)) } }
+                    ))
+                    Slider(value: $customHeight, in: 100...700)
+                        .padding(.leading, 4)
+                }
+            }
+
             Section("Detent Reference") {
-                ForEach(DetentInfo.all) { item in
-                    VStack(alignment: .leading, spacing: 2) {
+                ForEach(DetentReferenceItem.all) { item in
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(item.token)
                             .font(.mono(.subheadline))
+                            .fontWeight(.medium)
+                        Text(item.description)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if let example = item.example {
+                            Text("e.g. \(example)")
+                                .font(.caption)
+                                .foregroundStyle(.tint)
+                                .italic()
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+
+            Section("Sheet Modifiers") {
+                ForEach(SheetModifierItem.all) { item in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.modifier)
+                            .font(.mono(.caption))
+                            .foregroundStyle(.tint)
                         Text(item.description)
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -43,15 +103,17 @@ struct SheetsModalsView: View {
                 .presentationDetents([.large])
         }
         .sheet(isPresented: $showSheet) {
-            SampleSheetContent(title: "Interactive Detents")
-                .presentationDetents([.medium, .large], selection: $detent)
-                .presentationDragIndicator(.visible)
+            SheetDetentsDemo(
+                selectedDetent: $selectedDetent,
+                availableDetents: availableDetents.isEmpty ? [.large] : availableDetents,
+                showDragIndicator: showDragIndicator
+            )
         }
         .fullScreenCover(isPresented: $showFullScreenCover) {
             SampleSheetContent(title: "Full Screen Cover", isFullScreen: true)
         }
         .sheet(isPresented: $showScrollSheet) {
-            ScrollingSheetDemo(showDragIndicator: true)
+            ScrollingSheetDemo(showDragIndicator: showDragIndicator)
         }
     }
 }
@@ -85,20 +147,6 @@ struct SampleSheetContent: View {
             }
         }
     }
-}
-
-struct DetentInfo: Identifiable {
-    let id = UUID()
-    let token: String
-    let description: String
-
-    static let all: [DetentInfo] = [
-        DetentInfo(token: ".medium", description: "Approximately half the screen height"),
-        DetentInfo(token: ".large", description: "Full available height (default)"),
-        DetentInfo(token: ".fraction(0.3)", description: "Custom fraction of screen height"),
-        DetentInfo(token: ".height(300)", description: "Fixed point height"),
-        DetentInfo(token: "Custom (Context)", description: "Height derived from content or environment"),
-    ]
 }
 
 struct ActionSheetsView: View {

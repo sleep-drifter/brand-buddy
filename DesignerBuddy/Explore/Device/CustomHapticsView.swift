@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreHaptics
 import Combine
+import UIKit
 
 // MARK: - Custom Haptics View
 
@@ -13,9 +14,11 @@ struct CustomHapticsView: View {
                 #if targetEnvironment(simulator)
                 simulatorBanner
                 #endif
+                standardFeedbackCard
                 transientCard
                 continuousCard
                 patternCard
+                guidelinesCard
                 referenceCard
             }
             .padding(16)
@@ -24,6 +27,90 @@ struct CustomHapticsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { hapticsEngine.start() }
         .onDisappear { hapticsEngine.stop() }
+    }
+
+    // MARK: Standard Feedback Card (UIKit generators)
+
+    private var standardFeedbackCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Label("Standard Feedback", systemImage: "hand.tap").font(.headline)
+                Spacer()
+                Text("UIFeedbackGenerator")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Text("Impact")
+                .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            ForEach(ImpactItem.all) { item in
+                HapticButton(label: item.name, subtitle: item.description) {
+                    let g = UIImpactFeedbackGenerator(style: item.style)
+                    g.prepare()
+                    g.impactOccurred()
+                }
+            }
+
+            Divider()
+
+            Text("Notification")
+                .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            ForEach(NotificationItem.all) { item in
+                HapticButton(label: item.name, subtitle: item.description) {
+                    let g = UINotificationFeedbackGenerator()
+                    g.prepare()
+                    g.notificationOccurred(item.type)
+                }
+            }
+
+            Divider()
+
+            Text("Selection")
+                .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            HapticButton(
+                label: "Selection Changed",
+                subtitle: "Light tick — use when moving through a picker or list selection."
+            ) {
+                let g = UISelectionFeedbackGenerator()
+                g.prepare()
+                g.selectionChanged()
+            }
+
+            Text("Built-in generators cover most needs. Reach for CoreHaptics (below) only when you need custom intensity, sharpness, or timed patterns.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .padding(16)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    // MARK: Usage Guidelines Card
+
+    private var guidelinesCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Usage Guidelines", systemImage: "checklist").font(.headline)
+                Spacer()
+            }
+            ForEach(HapticGuideline.all) { guide in
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Image(systemName: guide.icon)
+                            .foregroundStyle(guide.positive ? .green : .red)
+                            .font(.caption)
+                            .frame(width: 16)
+                        Text(guide.title)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+                    Text(guide.detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 22)
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .padding(16)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: Simulator Banner

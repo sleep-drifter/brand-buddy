@@ -98,7 +98,7 @@ struct HomeView: View {
                     CategoryListView(
                         title: "Playgrounds",
                         entries: AppEntry.playgrounds,
-                        sectionOrder: ["Playgrounds", "Reference"]
+                        sectionOrder: ["Playgrounds"]
                     )
                 case .shaders:
                     ShaderListView()

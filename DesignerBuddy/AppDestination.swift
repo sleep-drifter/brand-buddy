@@ -39,7 +39,6 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Navigation Patterns":    NavigationPatternsView()
     case "Tab Bar Patterns":       TabPatternView()
     case "Modal Patterns":         ModalPatternsView()
-    case "Sheet Flows":            SheetFlowsView()
     case "Form Patterns":          FormPatternView()
     case "Empty States":           EmptyStatesView()
     case "Loading States":         LoadingStatesView()
@@ -53,7 +52,6 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Vibrancy":               VibrancyPlayground()
     case "Shaders":                ShadersPlaygroundView()
     case "Spring Physics":         SpringPhysicsView()
-    case "Haptics":                HapticsView()
     case "Corner Radius":          CornerRadiusView()
     case "Concentric Radius":      ConcentricRadiusView()
     case "Shadow Explorer":        ShadowExplorerView()
@@ -73,7 +71,6 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Stable Fluid":           StableFluidView()
     case "Liquid Wallet":          LiquidWalletView()
     case "Safe Areas":             SafeAreasView()
-    case "Dynamic Type Scale":     DynamicTypeScaleView()
     case "Permission Requests":        PermissionRequestView()
     case "Permission Denied Recovery": PermissionDeniedRecoveryView()
     case "Push Notifications":         PushPermissionView()
@@ -117,7 +114,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Barometer":                  BarometerView()
     case "Proximity & Ambient Light":  ProximityLightView()
     case "Battery State":              BatteryStateView()
-    default:                       SheetDetentsView()
+    default:                       SheetsModalsView()
     }
 }
 

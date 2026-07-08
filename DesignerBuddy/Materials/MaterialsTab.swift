@@ -1,40 +1,5 @@
 import SwiftUI
 
-struct MaterialsTab: View {
-    @State private var selectedSection: MaterialSection = .glass
-
-    enum MaterialSection: String, CaseIterable {
-        case glass = "Glass"
-        case surfaces = "Surfaces"
-        case vibrancy = "Vibrancy"
-    }
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                Picker("Section", selection: $selectedSection) {
-                    ForEach(MaterialSection.allCases, id: \.self) {
-                        Text($0.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding()
-
-                switch selectedSection {
-                case .glass:
-                    CombinedGlassTab()
-                case .surfaces:
-                    SurfacesPlayground()
-                case .vibrancy:
-                    VibrancyPlayground()
-                }
-            }
-            .navigationTitle("Materials")
-            .navigationBarTitleDisplayMode(.large)
-        }
-    }
-}
-
 // MARK: - Combined Glass Tab
 
 struct CombinedGlassTab: View {
@@ -683,5 +648,7 @@ struct BlobBackground: View {
 }
 
 #Preview {
-    MaterialsTab()
+    NavigationStack {
+        CombinedGlassTab()
+    }
 }
