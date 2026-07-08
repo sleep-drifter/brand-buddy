@@ -264,38 +264,6 @@ struct MultiStepSheetDemo: View {
     }
 }
 
-struct SearchPatternView: View {
-    @State private var query = ""
-
-    private let results = ["Buttons", "Colors", "Typography", "Materials", "Glass Effect", "Spring Physics", "Haptics", "Safe Areas"]
-
-    var body: some View {
-        List {
-            if !query.isEmpty {
-                Section("Results") {
-                    ForEach(results.filter { $0.localizedCaseInsensitiveContains(query) }, id: \.self) {
-                        Text($0)
-                    }
-                }
-            } else {
-                Section("Recent") {
-                    ForEach(["Glass Effect", "Typography", "Buttons"], id: \.self) { item in
-                        Label(item, systemImage: "clock")
-                    }
-                }
-                Section("Suggested") {
-                    ForEach(["Materials", "Spring Physics"], id: \.self) { item in
-                        Label(item, systemImage: "sparkles")
-                    }
-                }
-            }
-        }
-        .searchable(text: $query, prompt: "Search Designer Buddy")
-        .navigationTitle("Search Patterns")
-        .navigationBarTitleDisplayMode(.large)
-    }
-}
-
 struct FormPatternView: View {
     @State private var name = ""
     @State private var email = ""

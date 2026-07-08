@@ -38,15 +38,13 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Images & Icons",        section: "Visual",          tab: "Elements", icon: "photo"),
         // Actions
         .init(name: "Buttons",               section: "Actions",         tab: "Elements", icon: "hand.tap"),
-        .init(name: "Menus & Context Menus", section: "Actions",         tab: "Elements", icon: "list.bullet.rectangle"),
-        .init(name: "Context Menus",         section: "Actions",         tab: "Elements", icon: "contextualmenu.and.cursorarrow"),
+        .init(name: "Menus & Context Menus", section: "Actions",         tab: "Elements", icon: "list.bullet.rectangle", keywords: ["context menu", "pull-down", "long press", "preview", "imessage", "spotify"]),
         // Inputs & Forms
         .init(name: "Text Fields",           section: "Inputs & Forms",  tab: "Elements", icon: "character.cursor.ibeam"),
         .init(name: "Toggles & Switches",    section: "Inputs & Forms",  tab: "Elements", icon: "switch.2"),
         .init(name: "Sliders",               section: "Inputs & Forms",  tab: "Elements", icon: "slider.horizontal.3"),
         .init(name: "Steppers",              section: "Inputs & Forms",  tab: "Elements", icon: "plus.forwardslash.minus"),
         .init(name: "Grouped Forms",         section: "Inputs & Forms",  tab: "Elements", icon: "rectangle.grid.1x2"),
-        .init(name: "Search Patterns",       section: "Inputs & Forms",  tab: "Elements", icon: "magnifyingglass"),
         .init(name: "Form Patterns",         section: "Inputs & Forms",  tab: "Elements", icon: "list.clipboard"),
         // Selection
         .init(name: "Pickers",               section: "Selection",       tab: "Elements", icon: "checklist"),
@@ -66,10 +64,9 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Grids",                 section: "Layout",          tab: "Elements", icon: "grid"),
         .init(name: "Cards",                 section: "Layout",          tab: "Elements", icon: "rectangle.on.rectangle"),
         // Navigation
-        .init(name: "Navigation Bars",       section: "Navigation",      tab: "Elements", icon: "chevron.left"),
+        .init(name: "Navigation Bars & Toolbars", section: "Navigation", tab: "Elements", icon: "menubar.rectangle", keywords: ["navigation bar", "nav bar", "toolbar", "title", "large title", "inline", "bottom bar", "placement", "button group", "glass"]),
         .init(name: "Tab Bars",              section: "Navigation",      tab: "Elements", icon: "rectangle.bottomthird.inset.filled"),
-        .init(name: "Toolbars",              section: "Navigation",      tab: "Elements", icon: "menubar.rectangle"),
-        .init(name: "Search",                section: "Navigation",      tab: "Elements", icon: "magnifyingglass"),
+        .init(name: "Search",                section: "Navigation",      tab: "Elements", icon: "magnifyingglass", keywords: ["searchable", "search bar", "scopes", "recent", "suggested", "results", "filter"]),
         // Overlays
         .init(name: "Sheets & Modals",       section: "Overlays",        tab: "Elements", icon: "rectangle.topthird.inset.filled"),
         .init(name: "Alerts & Dialogs",      section: "Overlays",        tab: "Elements", icon: "exclamationmark.triangle"),
