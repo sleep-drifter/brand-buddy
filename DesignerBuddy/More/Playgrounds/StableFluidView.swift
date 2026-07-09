@@ -15,7 +15,7 @@ import UIKit
 // MARK: - Model
 
 enum StableFluidDisplayMode: String, CaseIterable {
-    case image, ink, velocity
+    case image, ink, velocity, cool
 }
 
 enum StableFluidImageContentMode: String, CaseIterable {
@@ -86,6 +86,7 @@ struct MetalStableFluidView: UIViewRepresentable {
 
         private var inkRenderPSO: (any MTLRenderPipelineState)!
         private var velRenderPSO: (any MTLRenderPipelineState)!
+        private var velCoolRenderPSO: (any MTLRenderPipelineState)!
         private var imageFitRenderPSO: (any MTLRenderPipelineState)!
         private var imageFillRenderPSO: (any MTLRenderPipelineState)!
 
@@ -159,6 +160,7 @@ struct MetalStableFluidView: UIViewRepresentable {
 
             inkRenderPSO = renderPSO("fluidInkFS")
             velRenderPSO = renderPSO("fluidVelocityFS")
+            velCoolRenderPSO = renderPSO("fluidVelocityCoolFS")
 
             func imageRenderPSO(fill: Bool) -> any MTLRenderPipelineState {
                 let fcv = MTLFunctionConstantValues()
@@ -359,6 +361,9 @@ struct MetalStableFluidView: UIViewRepresentable {
                 enc.setFragmentTexture(inkTex[inkIndex], index: 0)
             case .velocity:
                 enc.setRenderPipelineState(velRenderPSO)
+                enc.setFragmentTexture(velTex[velIndex], index: 0)
+            case .cool:
+                enc.setRenderPipelineState(velCoolRenderPSO)
                 enc.setFragmentTexture(velTex[velIndex], index: 0)
             }
             enc.setFragmentSamplerState(linearSampler, index: 0)

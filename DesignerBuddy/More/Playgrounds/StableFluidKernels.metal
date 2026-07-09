@@ -329,6 +329,33 @@ fragment half4 fluidVelocityFS(
 }
 
 // ============================================================================
+// Fragment: Velocity visualization, cool-tone variant
+// ============================================================================
+
+// Same direction encoding as fluidVelocityFS, but instead of writing velocity
+// straight into RGB, the direction bilinearly blends four cool anchor colors
+// (green / cyan / iOS blue / light violet) and speed lifts toward icy white.
+fragment half4 fluidVelocityCoolFS(
+    FluidVSOut                      in   [[stage_in]],
+    texture2d<half, access::sample> tex  [[texture(0)]],
+    sampler                         samp [[sampler(0)]]
+) {
+    float2 vel = float2(tex.sample(samp, in.uv).xy);
+    float u = clamp((vel.x + 1.0) * 0.5, 0.0, 1.0);
+    float v = clamp((vel.y + 1.0) * 0.5, 0.0, 1.0);
+    float mag = length(vel);
+
+    const float3 green  = float3(0.204, 0.780, 0.349); // systemGreen
+    const float3 cyan   = float3(0.200, 0.830, 0.930);
+    const float3 blue   = float3(0.000, 0.478, 1.000); // systemBlue
+    const float3 violet = float3(0.720, 0.620, 0.980);
+
+    float3 color = mix(mix(green, cyan, u), mix(blue, violet, u), v);
+    color = mix(color, float3(0.92, 0.97, 1.0), clamp(mag * 0.35, 0.0, 0.6));
+    return half4(half3(color), 1.0h);
+}
+
+// ============================================================================
 // Fragment: Image distortion via ink density gradient (aspect fit / fill)
 // ============================================================================
 
