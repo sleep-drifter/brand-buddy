@@ -15,11 +15,15 @@ import UIKit
 // MARK: - Model
 
 enum StableFluidDisplayMode: String, CaseIterable {
-    case image, ink, velocity
+    case image, ink, velocity, cool
 }
 
 enum StableFluidImageContentMode: String, CaseIterable {
     case aspectFit, aspectFill
+}
+
+enum StableFluidCoolSource: String, CaseIterable {
+    case ink, field
 }
 
 struct BrushState {
@@ -36,6 +40,11 @@ final class StableFluidViewModel {
     var jacobiIterations: Int = 10
     var displayMode: StableFluidDisplayMode = .image
     var imageContentMode: StableFluidImageContentMode = .aspectFit
+    var coolSource: StableFluidCoolSource = .ink
+    var coolGlow: Float = 0.35
+    var inkExposure: Float = 3.0
+    var brushRadiusFraction: Float = 1.0 / 16.0
+    var brushInkAmount: Float = 0.02
     var paused: Bool = false
     var gridSize: Int = 256
 
@@ -62,11 +71,10 @@ struct MetalStableFluidView: UIViewRepresentable {
             var inkAmount: Float
         }
         struct ImageParamsBuffer { var pixelStep: Float; var imageAspect: Float }
+        struct CoolParamsBuffer { var glow: Float; var exposure: Float }
 
         private enum BrushDefaults {
-            static let radiusFraction: Float = 1.0 / 16.0
             static let forceScale: Float = 1.0
-            static let inkAmount: Float = 0.02
         }
 
         private let viewModel: StableFluidViewModel
@@ -86,6 +94,8 @@ struct MetalStableFluidView: UIViewRepresentable {
 
         private var inkRenderPSO: (any MTLRenderPipelineState)!
         private var velRenderPSO: (any MTLRenderPipelineState)!
+        private var velCoolRenderPSO: (any MTLRenderPipelineState)!
+        private var inkCoolRenderPSO: (any MTLRenderPipelineState)!
         private var imageFitRenderPSO: (any MTLRenderPipelineState)!
         private var imageFillRenderPSO: (any MTLRenderPipelineState)!
 
@@ -159,6 +169,8 @@ struct MetalStableFluidView: UIViewRepresentable {
 
             inkRenderPSO = renderPSO("fluidInkFS")
             velRenderPSO = renderPSO("fluidVelocityFS")
+            velCoolRenderPSO = renderPSO("fluidVelocityCoolFS")
+            inkCoolRenderPSO = renderPSO("fluidInkCoolFS")
 
             func imageRenderPSO(fill: Bool) -> any MTLRenderPipelineState {
                 let fcv = MTLFunctionConstantValues()
@@ -260,9 +272,9 @@ struct MetalStableFluidView: UIViewRepresentable {
                 var brushParams = BrushParamsBuffer(
                     pos: viewModel.brush.pos,
                     delta: viewModel.brush.delta,
-                    radius: Float(gridSize) * BrushDefaults.radiusFraction,
+                    radius: Float(gridSize) * viewModel.brushRadiusFraction,
                     forceScale: BrushDefaults.forceScale,
-                    inkAmount: BrushDefaults.inkAmount
+                    inkAmount: viewModel.brushInkAmount
                 )
                 enc.setComputePipelineState(brushPSO)
                 enc.setTexture(forceTex, index: 0)
@@ -360,6 +372,21 @@ struct MetalStableFluidView: UIViewRepresentable {
             case .velocity:
                 enc.setRenderPipelineState(velRenderPSO)
                 enc.setFragmentTexture(velTex[velIndex], index: 0)
+            case .cool:
+                var coolParams = CoolParamsBuffer(
+                    glow: viewModel.coolGlow,
+                    exposure: viewModel.inkExposure
+                )
+                switch viewModel.coolSource {
+                case .ink:
+                    enc.setRenderPipelineState(inkCoolRenderPSO)
+                    enc.setFragmentTexture(velTex[velIndex], index: 0)
+                    enc.setFragmentTexture(inkTex[inkIndex], index: 1)
+                case .field:
+                    enc.setRenderPipelineState(velCoolRenderPSO)
+                    enc.setFragmentTexture(velTex[velIndex], index: 0)
+                }
+                enc.setFragmentBytes(&coolParams, length: MemoryLayout<CoolParamsBuffer>.stride, index: 0)
             }
             enc.setFragmentSamplerState(linearSampler, index: 0)
             enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
@@ -454,6 +481,43 @@ struct StableFluidView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+            }
+
+            if viewModel.displayMode == .cool {
+                HStack {
+                    Text("Source").font(.subheadline.weight(.semibold))
+                    Picker("Source", selection: $viewModel.coolSource) {
+                        Text("Ink").tag(StableFluidCoolSource.ink)
+                        Text("Field").tag(StableFluidCoolSource.field)
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                LabeledContent {
+                    Text("Glow: \(String(format: "%.2f", viewModel.coolGlow))")
+                } label: {
+                    Slider(value: $viewModel.coolGlow, in: 0 ... 1, step: 0.01)
+                }
+
+                if viewModel.coolSource == .ink {
+                    LabeledContent {
+                        Text("Exposure: \(String(format: "%.1f", viewModel.inkExposure))")
+                    } label: {
+                        Slider(value: $viewModel.inkExposure, in: 0.5 ... 8, step: 0.1)
+                    }
+                }
+            }
+
+            LabeledContent {
+                Text("Brush Size: \(String(format: "%.3f", viewModel.brushRadiusFraction))")
+            } label: {
+                Slider(value: $viewModel.brushRadiusFraction, in: 0.02 ... 0.2, step: 0.001)
+            }
+
+            LabeledContent {
+                Text("Ink Amount: \(String(format: "%.3f", viewModel.brushInkAmount))")
+            } label: {
+                Slider(value: $viewModel.brushInkAmount, in: 0.005 ... 0.08, step: 0.001)
             }
 
             LabeledContent {

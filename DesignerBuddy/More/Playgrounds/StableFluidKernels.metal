@@ -329,6 +329,62 @@ fragment half4 fluidVelocityFS(
 }
 
 // ============================================================================
+// Fragment: Cool-tone visualization (velocity field or ink dye)
+// ============================================================================
+
+struct CoolParams {
+    float glow;     // how strongly speed lifts the color toward icy white
+    float exposure; // ink density gain (ink source only)
+};
+
+// Flow direction bilinearly blends four cool anchor colors:
+// green / cyan on the left-right axis, iOS blue / light violet on top.
+static inline float3 coolDirectionColor(float2 vel) {
+    const float3 green  = float3(0.204, 0.780, 0.349); // systemGreen
+    const float3 cyan   = float3(0.200, 0.830, 0.930);
+    const float3 blue   = float3(0.000, 0.478, 1.000); // systemBlue
+    const float3 violet = float3(0.720, 0.620, 0.980);
+
+    float u = clamp((vel.x + 1.0) * 0.5, 0.0, 1.0);
+    float v = clamp((vel.y + 1.0) * 0.5, 0.0, 1.0);
+    return mix(mix(green, cyan, u), mix(blue, violet, u), v);
+}
+
+// Same direction encoding as fluidVelocityFS, but mapped into the cool
+// anchors instead of raw RGB. The whole field stays colored.
+fragment half4 fluidVelocityCoolFS(
+    FluidVSOut                      in     [[stage_in]],
+    texture2d<half, access::sample> tex    [[texture(0)]],
+    sampler                         samp   [[sampler(0)]],
+    constant CoolParams&            params [[buffer(0)]]
+) {
+    float2 vel = float2(tex.sample(samp, in.uv).xy);
+    float3 color = coolDirectionColor(vel);
+    float lift = clamp(length(vel) * params.glow, 0.0, 0.6);
+    color = mix(color, float3(0.92, 0.97, 1.0), lift);
+    return half4(half3(color), 1.0h);
+}
+
+// Ink-driven variant: hue still comes from flow direction, but brightness
+// comes from dye density, so trails glow in cool tones on black.
+fragment half4 fluidInkCoolFS(
+    FluidVSOut                      in     [[stage_in]],
+    texture2d<half, access::sample> velTex [[texture(0)]],
+    texture2d<half, access::sample> inkTex [[texture(1)]],
+    sampler                         samp   [[sampler(0)]],
+    constant CoolParams&            params [[buffer(0)]]
+) {
+    float2 vel = float2(velTex.sample(samp, in.uv).xy);
+    float d = float(inkTex.sample(samp, in.uv).x);
+    float density = 1.0 - exp(-max(d, 0.0) * params.exposure);
+
+    float3 color = coolDirectionColor(vel) * density;
+    float lift = clamp(length(vel) * params.glow, 0.0, 0.6) * density;
+    color = mix(color, float3(0.92, 0.97, 1.0), lift);
+    return half4(half3(color), 1.0h);
+}
+
+// ============================================================================
 // Fragment: Image distortion via ink density gradient (aspect fit / fill)
 // ============================================================================
 
