@@ -26,6 +26,65 @@ enum StableFluidCoolSource: String, CaseIterable {
     case ink, field
 }
 
+enum StableFluidPalette: String, CaseIterable {
+    case cool, sunset, mono, neon
+
+    var ink: Color {
+        switch self {
+        case .cool: Color(red: 0.55, green: 0.88, blue: 1.0)
+        case .sunset: Color(red: 1.0, green: 0.62, blue: 0.30)
+        case .mono: .white
+        case .neon: Color(red: 0.30, green: 1.0, blue: 0.50)
+        }
+    }
+
+    var background: Color {
+        switch self {
+        case .cool, .mono: .black
+        case .sunset: Color(red: 0.09, green: 0.04, blue: 0.14)
+        case .neon: Color(red: 0.02, green: 0.02, blue: 0.05)
+        }
+    }
+
+    var anchors: (Color, Color, Color, Color) {
+        switch self {
+        case .cool: (
+            Color(red: 0.204, green: 0.780, blue: 0.349),
+            Color(red: 0.200, green: 0.830, blue: 0.930),
+            Color(red: 0.000, green: 0.478, blue: 1.000),
+            Color(red: 0.720, green: 0.620, blue: 0.980)
+        )
+        case .sunset: (
+            Color(red: 1.00, green: 0.35, blue: 0.55),
+            Color(red: 1.00, green: 0.58, blue: 0.20),
+            Color(red: 0.55, green: 0.30, blue: 0.85),
+            Color(red: 1.00, green: 0.80, blue: 0.40)
+        )
+        case .mono: (
+            Color(red: 0.25, green: 0.25, blue: 0.25),
+            Color(red: 0.85, green: 0.85, blue: 0.85),
+            Color(red: 0.55, green: 0.55, blue: 0.55),
+            .white
+        )
+        case .neon: (
+            Color(red: 1.00, green: 0.10, blue: 0.80),
+            Color(red: 0.10, green: 0.50, blue: 1.00),
+            Color(red: 0.40, green: 1.00, blue: 0.20),
+            Color(red: 0.00, green: 1.00, blue: 1.00)
+        )
+        }
+    }
+
+    var glow: Float {
+        switch self {
+        case .cool: 0.35
+        case .sunset: 0.3
+        case .mono: 0.15
+        case .neon: 0.5
+        }
+    }
+}
+
 struct BrushState {
     var pos: SIMD2<Int32> = .zero
     var delta: SIMD2<Float> = .zero
@@ -45,6 +104,22 @@ final class StableFluidViewModel {
     var inkExposure: Float = 3.0
     var brushRadiusFraction: Float = 1.0 / 16.0
     var brushInkAmount: Float = 0.02
+    var inkFade: Float = 0.0
+    var vorticityStrength: Float = 0.0
+    var palette: StableFluidPalette = .cool
+    var inkColor: Color = StableFluidPalette.cool.ink
+    var backgroundColor: Color = StableFluidPalette.cool.background
+    var coolAnchorA: Color = StableFluidPalette.cool.anchors.0
+    var coolAnchorB: Color = StableFluidPalette.cool.anchors.1
+    var coolAnchorC: Color = StableFluidPalette.cool.anchors.2
+    var coolAnchorD: Color = StableFluidPalette.cool.anchors.3
+
+    func apply(_ palette: StableFluidPalette) {
+        inkColor = palette.ink
+        backgroundColor = palette.background
+        (coolAnchorA, coolAnchorB, coolAnchorC, coolAnchorD) = palette.anchors
+        coolGlow = palette.glow
+    }
     var paused: Bool = false
     var gridSize: Int = 256
 
@@ -55,6 +130,14 @@ final class StableFluidViewModel {
     func notifyGridSizeChanged() { onGridSizeChanged?(gridSize) }
 }
 
+private extension Color {
+    var rgbSIMD3: SIMD3<Float> {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a)
+        return SIMD3<Float>(Float(r), Float(g), Float(b))
+    }
+}
+
 // MARK: - Metal view
 
 struct MetalStableFluidView: UIViewRepresentable {
@@ -62,7 +145,7 @@ struct MetalStableFluidView: UIViewRepresentable {
 
     @MainActor
     final class Coordinator: NSObject, MTKViewDelegate {
-        struct SimParamsBuffer { var deltaTime: Float; var viscosity: Float }
+        struct SimParamsBuffer { var deltaTime: Float; var viscosity: Float; var inkFade: Float; var vorticity: Float }
         struct BrushParamsBuffer {
             var pos: SIMD2<Int32>
             var delta: SIMD2<Float>
@@ -71,7 +154,16 @@ struct MetalStableFluidView: UIViewRepresentable {
             var inkAmount: Float
         }
         struct ImageParamsBuffer { var pixelStep: Float; var imageAspect: Float }
-        struct CoolParamsBuffer { var glow: Float; var exposure: Float }
+        struct CoolParamsBuffer {
+            var glow: Float
+            var exposure: Float
+            var backgroundColor: SIMD3<Float>
+            var anchorA: SIMD3<Float>
+            var anchorB: SIMD3<Float>
+            var anchorC: SIMD3<Float>
+            var anchorD: SIMD3<Float>
+        }
+        struct InkParamsBuffer { var inkColor: SIMD3<Float>; var backgroundColor: SIMD3<Float> }
 
         private enum BrushDefaults {
             static let forceScale: Float = 1.0
@@ -90,6 +182,8 @@ struct MetalStableFluidView: UIViewRepresentable {
         private var divergencePSO: (any MTLComputePipelineState)!
         private var pressurePSO: (any MTLComputePipelineState)!
         private var projectPSO: (any MTLComputePipelineState)!
+        private var curlPSO: (any MTLComputePipelineState)!
+        private var vorticityPSO: (any MTLComputePipelineState)!
         private var advectInkPSO: (any MTLComputePipelineState)!
 
         private var inkRenderPSO: (any MTLRenderPipelineState)!
@@ -107,6 +201,7 @@ struct MetalStableFluidView: UIViewRepresentable {
         private var forceTex: (any MTLTexture)!
         private var newInkTex: (any MTLTexture)!
         private var divergenceTex: (any MTLTexture)!
+        private var curlTex: (any MTLTexture)!
         private var simulationHeap: (any MTLHeap)?
 
         private var velIndex = 0
@@ -154,6 +249,8 @@ struct MetalStableFluidView: UIViewRepresentable {
             divergencePSO = computePSO("fluidDivergence")
             pressurePSO = computePSO("fluidPressure")
             projectPSO = computePSO("fluidProject")
+            curlPSO = computePSO("fluidCurl")
+            vorticityPSO = computePSO("fluidVorticity")
             advectInkPSO = computePSO("fluidAdvectInk")
 
             let vs = library.makeFunction(name: "fluidFullscreenVS")!
@@ -203,7 +300,7 @@ struct MetalStableFluidView: UIViewRepresentable {
             texDesc.usage = [.shaderRead, .shaderWrite]
             texDesc.storageMode = .private
 
-            let texCount = 9
+            let texCount = 10
             let sizeAndAlign = device.heapTextureSizeAndAlign(descriptor: texDesc)
             let alignedSize = (sizeAndAlign.size + sizeAndAlign.align - 1) & ~(sizeAndAlign.align - 1)
 
@@ -221,6 +318,7 @@ struct MetalStableFluidView: UIViewRepresentable {
                 forceTex = heapTexture()
                 newInkTex = heapTexture()
                 divergenceTex = heapTexture()
+                curlTex = heapTexture()
             } else {
                 simulationHeap = nil
                 func deviceTexture() -> any MTLTexture { device.makeTexture(descriptor: texDesc)! }
@@ -230,6 +328,7 @@ struct MetalStableFluidView: UIViewRepresentable {
                 forceTex = deviceTexture()
                 newInkTex = deviceTexture()
                 divergenceTex = deviceTexture()
+                curlTex = deviceTexture()
             }
 
             velIndex = 0
@@ -266,7 +365,12 @@ struct MetalStableFluidView: UIViewRepresentable {
                 depth: 1
             )
 
-            var simParams = SimParamsBuffer(deltaTime: viewModel.deltaTime, viscosity: viewModel.viscosity)
+            var simParams = SimParamsBuffer(
+                deltaTime: viewModel.deltaTime,
+                viscosity: viewModel.viscosity,
+                inkFade: viewModel.inkFade,
+                vorticity: viewModel.vorticityStrength
+            )
 
             if viewModel.brush.isDown {
                 var brushParams = BrushParamsBuffer(
@@ -310,6 +414,21 @@ struct MetalStableFluidView: UIViewRepresentable {
                 enc.setComputePipelineState(diffusionPSO)
                 enc.setTexture(velTex[velIndex], index: 0)
                 enc.setTexture(velTex[1 - velIndex], index: 1)
+                enc.setBytes(&simParams, length: MemoryLayout<SimParamsBuffer>.stride, index: 0)
+                enc.dispatchThreadgroups(numGroups, threadsPerThreadgroup: threadsPerGroup)
+                velIndex = 1 - velIndex
+            }
+
+            if viewModel.vorticityStrength > 0 {
+                enc.setComputePipelineState(curlPSO)
+                enc.setTexture(velTex[velIndex], index: 0)
+                enc.setTexture(curlTex, index: 1)
+                enc.dispatchThreadgroups(numGroups, threadsPerThreadgroup: threadsPerGroup)
+
+                enc.setComputePipelineState(vorticityPSO)
+                enc.setTexture(velTex[velIndex], index: 0)
+                enc.setTexture(curlTex, index: 1)
+                enc.setTexture(velTex[1 - velIndex], index: 2)
                 enc.setBytes(&simParams, length: MemoryLayout<SimParamsBuffer>.stride, index: 0)
                 enc.dispatchThreadgroups(numGroups, threadsPerThreadgroup: threadsPerGroup)
                 velIndex = 1 - velIndex
@@ -369,13 +488,23 @@ struct MetalStableFluidView: UIViewRepresentable {
             case .ink:
                 enc.setRenderPipelineState(inkRenderPSO)
                 enc.setFragmentTexture(inkTex[inkIndex], index: 0)
+                var inkParams = InkParamsBuffer(
+                    inkColor: viewModel.inkColor.rgbSIMD3,
+                    backgroundColor: viewModel.backgroundColor.rgbSIMD3
+                )
+                enc.setFragmentBytes(&inkParams, length: MemoryLayout<InkParamsBuffer>.stride, index: 0)
             case .velocity:
                 enc.setRenderPipelineState(velRenderPSO)
                 enc.setFragmentTexture(velTex[velIndex], index: 0)
             case .cool:
                 var coolParams = CoolParamsBuffer(
                     glow: viewModel.coolGlow,
-                    exposure: viewModel.inkExposure
+                    exposure: viewModel.inkExposure,
+                    backgroundColor: viewModel.backgroundColor.rgbSIMD3,
+                    anchorA: viewModel.coolAnchorA.rgbSIMD3,
+                    anchorB: viewModel.coolAnchorB.rgbSIMD3,
+                    anchorC: viewModel.coolAnchorC.rgbSIMD3,
+                    anchorD: viewModel.coolAnchorD.rgbSIMD3
                 )
                 switch viewModel.coolSource {
                 case .ink:
@@ -426,8 +555,10 @@ struct StableFluidView: View {
             .aspectRatio(1, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
 
-            controls
-                .padding(.horizontal)
+            ScrollView {
+                controls
+                    .padding(.horizontal)
+            }
         }
         .padding(.vertical)
         .tint(.blue)
@@ -483,6 +614,21 @@ struct StableFluidView: View {
                 }
             }
 
+            if viewModel.displayMode == .ink || viewModel.displayMode == .cool {
+                HStack {
+                    Text("Palette").font(.subheadline.weight(.semibold))
+                    Picker("Palette", selection: $viewModel.palette) {
+                        ForEach(StableFluidPalette.allCases, id: \.self) { palette in
+                            Text(palette.rawValue.capitalized).tag(palette)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .onChange(of: viewModel.palette) { _, newValue in
+                    viewModel.apply(newValue)
+                }
+            }
+
             if viewModel.displayMode == .cool {
                 HStack {
                     Text("Source").font(.subheadline.weight(.semibold))
@@ -491,6 +637,15 @@ struct StableFluidView: View {
                         Text("Field").tag(StableFluidCoolSource.field)
                     }
                     .pickerStyle(.segmented)
+                }
+
+                HStack(spacing: 24) {
+                    ColorPicker("Anchor A", selection: $viewModel.coolAnchorA, supportsOpacity: false)
+                    ColorPicker("Anchor B", selection: $viewModel.coolAnchorB, supportsOpacity: false)
+                }
+                HStack(spacing: 24) {
+                    ColorPicker("Anchor C", selection: $viewModel.coolAnchorC, supportsOpacity: false)
+                    ColorPicker("Anchor D", selection: $viewModel.coolAnchorD, supportsOpacity: false)
                 }
 
                 LabeledContent {
@@ -518,6 +673,29 @@ struct StableFluidView: View {
                 Text("Ink Amount: \(String(format: "%.3f", viewModel.brushInkAmount))")
             } label: {
                 Slider(value: $viewModel.brushInkAmount, in: 0.005 ... 0.08, step: 0.001)
+            }
+
+            LabeledContent {
+                Text("Ink Fade: \(String(format: "%.3f", viewModel.inkFade))")
+            } label: {
+                Slider(value: $viewModel.inkFade, in: 0 ... 0.05, step: 0.001)
+            }
+
+            LabeledContent {
+                Text("Swirl: \(String(format: "%.1f", viewModel.vorticityStrength))")
+            } label: {
+                Slider(value: $viewModel.vorticityStrength, in: 0 ... 5, step: 0.1)
+            }
+
+            if viewModel.displayMode == .ink
+                || (viewModel.displayMode == .cool && viewModel.coolSource == .ink) {
+                HStack(spacing: 24) {
+                    if viewModel.displayMode == .ink {
+                        ColorPicker("Ink", selection: $viewModel.inkColor, supportsOpacity: false)
+                    }
+                    ColorPicker("Background", selection: $viewModel.backgroundColor, supportsOpacity: false)
+                }
+                .font(.subheadline.weight(.semibold))
             }
 
             LabeledContent {

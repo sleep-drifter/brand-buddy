@@ -13,6 +13,8 @@ using namespace metal;
 struct SimParams {
     float deltaTime;
     float viscosity;
+    float inkFade;
+    float vorticity;
 };
 
 struct BrushParams {
@@ -253,6 +255,67 @@ kernel void fluidProject(
 }
 
 // ============================================================================
+// Compute: Curl of velocity field
+// ============================================================================
+
+kernel void fluidCurl(
+    texture2d<float, access::read>  vel   [[texture(0)]],
+    texture2d<float, access::write> curl  [[texture(1)]],
+    uint2                           gid   [[thread_position_in_grid]],
+    uint2                           ltid  [[thread_position_in_threadgroup]],
+    uint2                           lsize [[threads_per_threadgroup]]
+) {
+    threadgroup float4 tile[18][18];
+    int2 size = int2(vel.get_width(), vel.get_height());
+    loadTile4(tile, vel, ltid, lsize, gid, size);
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    if (int(gid.x) >= size.x || int(gid.y) >= size.y) return;
+
+    const uint lx = ltid.x + 1, ly = ltid.y + 1;
+    float leftVy  = tile[ly][lx - 1].y;
+    float rightVy = tile[ly][lx + 1].y;
+    float upVx    = tile[ly - 1][lx].x;
+    float downVx  = tile[ly + 1][lx].x;
+
+    float c = 0.5 * ((rightVy - leftVy) - (downVx - upVx));
+    curl.write(float4(c, 0.0, 0.0, 1.0), gid);
+}
+
+// ============================================================================
+// Compute: Vorticity confinement – re-inject the small swirls that the
+// solver's numerical diffusion smooths away (Fedkiw et al.)
+// ============================================================================
+
+kernel void fluidVorticity(
+    texture2d<float, access::read>  vel   [[texture(0)]],
+    texture2d<float, access::read>  curl  [[texture(1)]],
+    texture2d<float, access::write> out   [[texture(2)]],
+    constant SimParams&             p     [[buffer(0)]],
+    uint2                           gid   [[thread_position_in_grid]],
+    uint2                           ltid  [[thread_position_in_threadgroup]],
+    uint2                           lsize [[threads_per_threadgroup]]
+) {
+    threadgroup float4 tile[18][18];
+    int2 size = int2(vel.get_width(), vel.get_height());
+    loadTile4(tile, curl, ltid, lsize, gid, size);
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    if (int(gid.x) >= size.x || int(gid.y) >= size.y) return;
+
+    const uint lx = ltid.x + 1, ly = ltid.y + 1;
+    float c = tile[ly][lx].x;
+    float2 grad = 0.5 * float2(
+        abs(tile[ly][lx + 1].x) - abs(tile[ly][lx - 1].x),
+        abs(tile[ly + 1][lx].x) - abs(tile[ly - 1][lx].x)
+    );
+    float2 n = grad / (length(grad) + 1e-5);
+    float2 force = p.vorticity * c * float2(n.y, -n.x);
+    float2 v = vel.read(gid).xy + p.deltaTime * force;
+    out.write(float4(v, 0.0, 1.0), gid);
+}
+
+// ============================================================================
 // Compute: Advect ink density using velocity field
 // ============================================================================
 
@@ -272,6 +335,7 @@ kernel void fluidAdvectInk(
     float2 clamped = clamp(prevPos, float2(-0.5), float2(float(w), float(h)) - 0.5);
     float2 uv = (clamped + 0.5) / float2(float(w), float(h));
     float4 sampled = float4(src.sample(samp, uv));
+    sampled.x *= clamp(1.0 - p.inkFade * p.deltaTime, 0.0, 1.0);
     dst.write(sampled, gid);
 }
 
@@ -305,13 +369,20 @@ vertex FluidVSOut fluidFullscreenVS(uint vid [[vertex_id]]) {
 // Fragment: Ink visualization
 // ============================================================================
 
+struct InkParams {
+    float3 inkColor;
+    float3 backgroundColor;
+};
+
 fragment half4 fluidInkFS(
-    FluidVSOut                      in   [[stage_in]],
-    texture2d<half, access::sample> tex  [[texture(0)]],
-    sampler                         samp [[sampler(0)]]
+    FluidVSOut                      in     [[stage_in]],
+    texture2d<half, access::sample> tex    [[texture(0)]],
+    sampler                         samp   [[sampler(0)]],
+    constant InkParams&             params [[buffer(0)]]
 ) {
-    half d = tex.sample(samp, in.uv).x;
-    return half4(d, d * 0.8h, d * 0.5h, 1.0h);
+    float d = saturate(float(tex.sample(samp, in.uv).x));
+    float3 color = mix(params.backgroundColor, params.inkColor, d);
+    return half4(half3(color), 1.0h);
 }
 
 // ============================================================================
@@ -333,21 +404,21 @@ fragment half4 fluidVelocityFS(
 // ============================================================================
 
 struct CoolParams {
-    float glow;     // how strongly speed lifts the color toward icy white
-    float exposure; // ink density gain (ink source only)
+    float glow;             // how strongly speed lifts the color toward icy white
+    float exposure;         // ink density gain (ink source only)
+    float3 backgroundColor; // canvas color behind the dye (ink source only)
+    float3 anchorA;         // leftward flow  (u = 0, v = 0)
+    float3 anchorB;         // rightward flow (u = 1, v = 0)
+    float3 anchorC;         // leftward flow  (u = 0, v = 1)
+    float3 anchorD;         // rightward flow (u = 1, v = 1)
 };
 
-// Flow direction bilinearly blends four cool anchor colors:
-// green / cyan on the left-right axis, iOS blue / light violet on top.
-static inline float3 coolDirectionColor(float2 vel) {
-    const float3 green  = float3(0.204, 0.780, 0.349); // systemGreen
-    const float3 cyan   = float3(0.200, 0.830, 0.930);
-    const float3 blue   = float3(0.000, 0.478, 1.000); // systemBlue
-    const float3 violet = float3(0.720, 0.620, 0.980);
-
+// Flow direction bilinearly blends the four anchor colors:
+// A / B on the left-right axis, C / D on top.
+static inline float3 coolDirectionColor(float2 vel, constant CoolParams& p) {
     float u = clamp((vel.x + 1.0) * 0.5, 0.0, 1.0);
     float v = clamp((vel.y + 1.0) * 0.5, 0.0, 1.0);
-    return mix(mix(green, cyan, u), mix(blue, violet, u), v);
+    return mix(mix(p.anchorA, p.anchorB, u), mix(p.anchorC, p.anchorD, u), v);
 }
 
 // Same direction encoding as fluidVelocityFS, but mapped into the cool
@@ -359,7 +430,7 @@ fragment half4 fluidVelocityCoolFS(
     constant CoolParams&            params [[buffer(0)]]
 ) {
     float2 vel = float2(tex.sample(samp, in.uv).xy);
-    float3 color = coolDirectionColor(vel);
+    float3 color = coolDirectionColor(vel, params);
     float lift = clamp(length(vel) * params.glow, 0.0, 0.6);
     color = mix(color, float3(0.92, 0.97, 1.0), lift);
     return half4(half3(color), 1.0h);
@@ -378,7 +449,7 @@ fragment half4 fluidInkCoolFS(
     float d = float(inkTex.sample(samp, in.uv).x);
     float density = 1.0 - exp(-max(d, 0.0) * params.exposure);
 
-    float3 color = coolDirectionColor(vel) * density;
+    float3 color = mix(params.backgroundColor, coolDirectionColor(vel, params), density);
     float lift = clamp(length(vel) * params.glow, 0.0, 0.6) * density;
     color = mix(color, float3(0.92, 0.97, 1.0), lift);
     return half4(half3(color), 1.0h);
