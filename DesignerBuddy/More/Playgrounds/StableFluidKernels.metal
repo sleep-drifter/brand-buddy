@@ -13,6 +13,7 @@ using namespace metal;
 struct SimParams {
     float deltaTime;
     float viscosity;
+    float inkFade;
 };
 
 struct BrushParams {
@@ -272,6 +273,7 @@ kernel void fluidAdvectInk(
     float2 clamped = clamp(prevPos, float2(-0.5), float2(float(w), float(h)) - 0.5);
     float2 uv = (clamped + 0.5) / float2(float(w), float(h));
     float4 sampled = float4(src.sample(samp, uv));
+    sampled.x *= clamp(1.0 - p.inkFade * p.deltaTime, 0.0, 1.0);
     dst.write(sampled, gid);
 }
 
@@ -305,13 +307,20 @@ vertex FluidVSOut fluidFullscreenVS(uint vid [[vertex_id]]) {
 // Fragment: Ink visualization
 // ============================================================================
 
+struct InkParams {
+    float3 inkColor;
+    float3 backgroundColor;
+};
+
 fragment half4 fluidInkFS(
-    FluidVSOut                      in   [[stage_in]],
-    texture2d<half, access::sample> tex  [[texture(0)]],
-    sampler                         samp [[sampler(0)]]
+    FluidVSOut                      in     [[stage_in]],
+    texture2d<half, access::sample> tex    [[texture(0)]],
+    sampler                         samp   [[sampler(0)]],
+    constant InkParams&             params [[buffer(0)]]
 ) {
-    half d = tex.sample(samp, in.uv).x;
-    return half4(d, d * 0.8h, d * 0.5h, 1.0h);
+    float d = saturate(float(tex.sample(samp, in.uv).x));
+    float3 color = mix(params.backgroundColor, params.inkColor, d);
+    return half4(half3(color), 1.0h);
 }
 
 // ============================================================================
@@ -333,8 +342,9 @@ fragment half4 fluidVelocityFS(
 // ============================================================================
 
 struct CoolParams {
-    float glow;     // how strongly speed lifts the color toward icy white
-    float exposure; // ink density gain (ink source only)
+    float glow;             // how strongly speed lifts the color toward icy white
+    float exposure;         // ink density gain (ink source only)
+    float3 backgroundColor; // canvas color behind the dye (ink source only)
 };
 
 // Flow direction bilinearly blends four cool anchor colors:
@@ -378,7 +388,7 @@ fragment half4 fluidInkCoolFS(
     float d = float(inkTex.sample(samp, in.uv).x);
     float density = 1.0 - exp(-max(d, 0.0) * params.exposure);
 
-    float3 color = coolDirectionColor(vel) * density;
+    float3 color = mix(params.backgroundColor, coolDirectionColor(vel), density);
     float lift = clamp(length(vel) * params.glow, 0.0, 0.6) * density;
     color = mix(color, float3(0.92, 0.97, 1.0), lift);
     return half4(half3(color), 1.0h);

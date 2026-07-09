@@ -45,6 +45,9 @@ final class StableFluidViewModel {
     var inkExposure: Float = 3.0
     var brushRadiusFraction: Float = 1.0 / 16.0
     var brushInkAmount: Float = 0.02
+    var inkFade: Float = 0.0
+    var inkColor: Color = Color(red: 1.0, green: 0.8, blue: 0.5)
+    var backgroundColor: Color = .black
     var paused: Bool = false
     var gridSize: Int = 256
 
@@ -55,6 +58,14 @@ final class StableFluidViewModel {
     func notifyGridSizeChanged() { onGridSizeChanged?(gridSize) }
 }
 
+private extension Color {
+    var rgbSIMD3: SIMD3<Float> {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a)
+        return SIMD3<Float>(Float(r), Float(g), Float(b))
+    }
+}
+
 // MARK: - Metal view
 
 struct MetalStableFluidView: UIViewRepresentable {
@@ -62,7 +73,7 @@ struct MetalStableFluidView: UIViewRepresentable {
 
     @MainActor
     final class Coordinator: NSObject, MTKViewDelegate {
-        struct SimParamsBuffer { var deltaTime: Float; var viscosity: Float }
+        struct SimParamsBuffer { var deltaTime: Float; var viscosity: Float; var inkFade: Float }
         struct BrushParamsBuffer {
             var pos: SIMD2<Int32>
             var delta: SIMD2<Float>
@@ -71,7 +82,8 @@ struct MetalStableFluidView: UIViewRepresentable {
             var inkAmount: Float
         }
         struct ImageParamsBuffer { var pixelStep: Float; var imageAspect: Float }
-        struct CoolParamsBuffer { var glow: Float; var exposure: Float }
+        struct CoolParamsBuffer { var glow: Float; var exposure: Float; var backgroundColor: SIMD3<Float> }
+        struct InkParamsBuffer { var inkColor: SIMD3<Float>; var backgroundColor: SIMD3<Float> }
 
         private enum BrushDefaults {
             static let forceScale: Float = 1.0
@@ -266,7 +278,11 @@ struct MetalStableFluidView: UIViewRepresentable {
                 depth: 1
             )
 
-            var simParams = SimParamsBuffer(deltaTime: viewModel.deltaTime, viscosity: viewModel.viscosity)
+            var simParams = SimParamsBuffer(
+                deltaTime: viewModel.deltaTime,
+                viscosity: viewModel.viscosity,
+                inkFade: viewModel.inkFade
+            )
 
             if viewModel.brush.isDown {
                 var brushParams = BrushParamsBuffer(
@@ -369,13 +385,19 @@ struct MetalStableFluidView: UIViewRepresentable {
             case .ink:
                 enc.setRenderPipelineState(inkRenderPSO)
                 enc.setFragmentTexture(inkTex[inkIndex], index: 0)
+                var inkParams = InkParamsBuffer(
+                    inkColor: viewModel.inkColor.rgbSIMD3,
+                    backgroundColor: viewModel.backgroundColor.rgbSIMD3
+                )
+                enc.setFragmentBytes(&inkParams, length: MemoryLayout<InkParamsBuffer>.stride, index: 0)
             case .velocity:
                 enc.setRenderPipelineState(velRenderPSO)
                 enc.setFragmentTexture(velTex[velIndex], index: 0)
             case .cool:
                 var coolParams = CoolParamsBuffer(
                     glow: viewModel.coolGlow,
-                    exposure: viewModel.inkExposure
+                    exposure: viewModel.inkExposure,
+                    backgroundColor: viewModel.backgroundColor.rgbSIMD3
                 )
                 switch viewModel.coolSource {
                 case .ink:
@@ -518,6 +540,23 @@ struct StableFluidView: View {
                 Text("Ink Amount: \(String(format: "%.3f", viewModel.brushInkAmount))")
             } label: {
                 Slider(value: $viewModel.brushInkAmount, in: 0.005 ... 0.08, step: 0.001)
+            }
+
+            LabeledContent {
+                Text("Ink Fade: \(String(format: "%.3f", viewModel.inkFade))")
+            } label: {
+                Slider(value: $viewModel.inkFade, in: 0 ... 0.05, step: 0.001)
+            }
+
+            if viewModel.displayMode == .ink
+                || (viewModel.displayMode == .cool && viewModel.coolSource == .ink) {
+                HStack(spacing: 24) {
+                    if viewModel.displayMode == .ink {
+                        ColorPicker("Ink", selection: $viewModel.inkColor, supportsOpacity: false)
+                    }
+                    ColorPicker("Background", selection: $viewModel.backgroundColor, supportsOpacity: false)
+                }
+                .font(.subheadline.weight(.semibold))
             }
 
             LabeledContent {
