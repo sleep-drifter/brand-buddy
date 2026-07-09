@@ -26,6 +26,28 @@ enum StableFluidCoolSource: String, CaseIterable {
     case ink, field
 }
 
+enum StableFluidObstacle: String, CaseIterable {
+    case none, card, pill, logo
+
+    var halfSize: SIMD2<Float>? {
+        switch self {
+        case .none: nil
+        case .card: SIMD2(0.30, 0.06)
+        case .pill: SIMD2(0.22, 0.045)
+        case .logo: SIMD2(0.09, 0.09)
+        }
+    }
+
+    var cornerRadius: Float {
+        switch self {
+        case .none: 0
+        case .card: 0.035
+        case .pill: 0.045
+        case .logo: 0.03
+        }
+    }
+}
+
 enum StableFluidPalette: String, CaseIterable {
     case cool, sunset, mono, neon
 
@@ -106,6 +128,9 @@ final class StableFluidViewModel {
     var brushInkAmount: Float = 0.02
     var inkFade: Float = 0.0
     var vorticityStrength: Float = 0.0
+    var obstacle: StableFluidObstacle = .none
+    var softenBlur: Float = 0.0
+    var frostAmount: Float = 0.0
     var palette: StableFluidPalette = .cool
     var inkColor: Color = StableFluidPalette.cool.ink
     var backgroundColor: Color = StableFluidPalette.cool.background
@@ -164,6 +189,7 @@ struct MetalStableFluidView: UIViewRepresentable {
             var anchorD: SIMD3<Float>
         }
         struct InkParamsBuffer { var inkColor: SIMD3<Float>; var backgroundColor: SIMD3<Float> }
+        struct ObstacleParamsBuffer { var center: SIMD2<Float>; var halfSize: SIMD2<Float>; var cornerRadius: Float }
 
         private enum BrushDefaults {
             static let forceScale: Float = 1.0
@@ -184,6 +210,7 @@ struct MetalStableFluidView: UIViewRepresentable {
         private var projectPSO: (any MTLComputePipelineState)!
         private var curlPSO: (any MTLComputePipelineState)!
         private var vorticityPSO: (any MTLComputePipelineState)!
+        private var obstaclePSO: (any MTLComputePipelineState)!
         private var advectInkPSO: (any MTLComputePipelineState)!
 
         private var inkRenderPSO: (any MTLRenderPipelineState)!
@@ -251,6 +278,7 @@ struct MetalStableFluidView: UIViewRepresentable {
             projectPSO = computePSO("fluidProject")
             curlPSO = computePSO("fluidCurl")
             vorticityPSO = computePSO("fluidVorticity")
+            obstaclePSO = computePSO("fluidObstacle")
             advectInkPSO = computePSO("fluidAdvectInk")
 
             let vs = library.makeFunction(name: "fluidFullscreenVS")!
@@ -456,6 +484,23 @@ struct MetalStableFluidView: UIViewRepresentable {
             enc.dispatchThreadgroups(numGroups, threadsPerThreadgroup: threadsPerGroup)
             velIndex = 1 - velIndex
 
+            if let halfSize = viewModel.obstacle.halfSize {
+                var obstacleParams = ObstacleParamsBuffer(
+                    center: SIMD2<Float>(0.5, 0.5),
+                    halfSize: halfSize,
+                    cornerRadius: viewModel.obstacle.cornerRadius
+                )
+                enc.setComputePipelineState(obstaclePSO)
+                enc.setTexture(velTex[velIndex], index: 0)
+                enc.setTexture(velTex[1 - velIndex], index: 1)
+                enc.setTexture(inkTex[inkIndex], index: 2)
+                enc.setTexture(inkTex[1 - inkIndex], index: 3)
+                enc.setBytes(&obstacleParams, length: MemoryLayout<ObstacleParamsBuffer>.stride, index: 0)
+                enc.dispatchThreadgroups(numGroups, threadsPerThreadgroup: threadsPerGroup)
+                velIndex = 1 - velIndex
+                inkIndex = 1 - inkIndex
+            }
+
             enc.setComputePipelineState(advectInkPSO)
             enc.setTexture(velTex[velIndex], index: 0)
             enc.setTexture(inkTex[inkIndex], index: 1)
@@ -550,6 +595,16 @@ struct StableFluidView: View {
         VStack(spacing: 16) {
             GeometryReader { geometry in
                 MetalStableFluidView(viewModel: viewModel)
+                    .blur(radius: CGFloat(viewModel.softenBlur))
+                    .overlay {
+                        if viewModel.frostAmount > 0 {
+                            Rectangle()
+                                .fill(.ultraThinMaterial)
+                                .opacity(Double(viewModel.frostAmount))
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .overlay { obstacleOverlay(size: geometry.size) }
                     .gesture(brushGesture(size: geometry.size))
             }
             .aspectRatio(1, contentMode: .fit)
@@ -564,6 +619,25 @@ struct StableFluidView: View {
         .tint(.blue)
         .navigationTitle("Stable Fluid")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder
+    private func obstacleOverlay(size: CGSize) -> some View {
+        if let halfSize = viewModel.obstacle.halfSize {
+            let cornerRadius = size.width * CGFloat(viewModel.obstacle.cornerRadius)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .strokeBorder(.white.opacity(0.25), lineWidth: 1)
+                }
+                .frame(
+                    width: size.width * CGFloat(halfSize.x) * 2,
+                    height: size.height * CGFloat(halfSize.y) * 2
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .allowsHitTesting(false)
+        }
     }
 
     private func brushGesture(size: CGSize) -> some Gesture {
@@ -612,6 +686,16 @@ struct StableFluidView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+            }
+
+            HStack {
+                Text("Shape").font(.subheadline.weight(.semibold))
+                Picker("Shape", selection: $viewModel.obstacle) {
+                    ForEach(StableFluidObstacle.allCases, id: \.self) { shape in
+                        Text(shape.rawValue.capitalized).tag(shape)
+                    }
+                }
+                .pickerStyle(.segmented)
             }
 
             if viewModel.displayMode == .ink || viewModel.displayMode == .cool {
@@ -685,6 +769,18 @@ struct StableFluidView: View {
                 Text("Swirl: \(String(format: "%.1f", viewModel.vorticityStrength))")
             } label: {
                 Slider(value: $viewModel.vorticityStrength, in: 0 ... 5, step: 0.1)
+            }
+
+            LabeledContent {
+                Text("Soften: \(String(format: "%.1f", viewModel.softenBlur))")
+            } label: {
+                Slider(value: $viewModel.softenBlur, in: 0 ... 12, step: 0.5)
+            }
+
+            LabeledContent {
+                Text("Frost: \(String(format: "%.2f", viewModel.frostAmount))")
+            } label: {
+                Slider(value: $viewModel.frostAmount, in: 0 ... 1, step: 0.01)
             }
 
             if viewModel.displayMode == .ink

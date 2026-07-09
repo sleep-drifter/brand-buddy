@@ -316,6 +316,44 @@ kernel void fluidVorticity(
 }
 
 // ============================================================================
+// Compute: Obstacle – solid rounded rectangle the fluid flows around.
+// Velocity is zeroed inside the shape and ink is kept out, so the sim treats
+// it like a wall (e.g. an input field or logo sitting on the fluid).
+// ============================================================================
+
+struct ObstacleParams {
+    float2 center;   // normalized [0,1] grid coords
+    float2 halfSize; // normalized half extents
+    float  cornerRadius;
+};
+
+static inline float sdRoundedRect(float2 p, float2 b, float r) {
+    float2 q = abs(p) - b + r;
+    return length(max(q, float2(0.0))) + min(max(q.x, q.y), 0.0) - r;
+}
+
+kernel void fluidObstacle(
+    texture2d<float, access::read>  velSrc [[texture(0)]],
+    texture2d<float, access::write> velDst [[texture(1)]],
+    texture2d<float, access::read>  inkSrc [[texture(2)]],
+    texture2d<float, access::write> inkDst [[texture(3)]],
+    constant ObstacleParams&        ob     [[buffer(0)]],
+    uint2                           gid    [[thread_position_in_grid]]
+) {
+    float2 size = float2(velSrc.get_width(), velSrc.get_height());
+    float2 p = (float2(gid) + 0.5) / size - ob.center;
+    float sd = sdRoundedRect(p, ob.halfSize, ob.cornerRadius);
+
+    float4 v = velSrc.read(gid);
+    v.xy *= smoothstep(0.0, 0.01, sd);
+    velDst.write(v, gid);
+
+    float4 ink = inkSrc.read(gid);
+    ink.x *= smoothstep(0.0, 0.015, sd);
+    inkDst.write(ink, gid);
+}
+
+// ============================================================================
 // Compute: Advect ink density using velocity field
 // ============================================================================
 
