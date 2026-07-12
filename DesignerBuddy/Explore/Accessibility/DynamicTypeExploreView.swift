@@ -1,8 +1,9 @@
 import SwiftUI
 
 struct DynamicTypeExploreView: View {
-    @Environment(\.dynamicTypeSize) private var currentSize
-    @State private var simulatedCategory: ContentSizeCategory = .large
+    @Environment(\.dynamicTypeSize) private var systemSize
+    @State private var followSystem = true
+    @State private var sizeIndex: Double = 3
 
     private let toolbarItems = [("square.and.arrow.up", "Share"), ("heart", "Like"), ("bookmark", "Save")]
     private let gridItems = ["Photos", "Videos", "Music", "Podcasts", "Books", "News"]
@@ -26,86 +27,106 @@ struct DynamicTypeExploreView: View {
         ("Caption 2", .caption2),
     ]
 
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
+    private var selectedSize: DynamicTypeSize {
+        followSystem ? systemSize : allSizes[Int(sizeIndex)]
+    }
 
-                // MARK: - Current system size
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Label("Current System Size", systemImage: "textformat.size")
-                            .font(.headline)
-                        Spacer()
-                    }
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Your device is set to:")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            Text(currentSize.label)
-                                .font(.title2.weight(.bold))
-                                .foregroundStyle(currentSize.isAccessibilitySize ? .orange : .primary)
-                        }
-                        Spacer()
-                        if currentSize.isAccessibilitySize {
-                            Label("Accessibility size", systemImage: "accessibility")
-                                .font(.caption)
-                                .foregroundStyle(.orange)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color.orange.opacity(0.15), in: Capsule())
-                        }
-                    }
-                    Text("Change in Settings → Accessibility → Display & Text Size → Larger Text, or drag the slider in Control Center.")
-                        .font(.caption)
+    private var simulatedCategory: ContentSizeCategory {
+        switch selectedSize {
+        case .xSmall:         return .extraSmall
+        case .small:          return .small
+        case .medium:         return .medium
+        case .large:          return .large
+        case .xLarge:         return .extraLarge
+        case .xxLarge:        return .extraExtraLarge
+        case .xxxLarge:       return .extraExtraExtraLarge
+        case .accessibility1: return .accessibilityMedium
+        case .accessibility2: return .accessibilityLarge
+        case .accessibility3: return .accessibilityExtraLarge
+        case .accessibility4: return .accessibilityExtraExtraLarge
+        case .accessibility5: return .accessibilityExtraExtraExtraLarge
+        @unknown default:     return .large
+        }
+    }
+
+    var body: some View {
+        List {
+            Section {
+                VStack(spacing: 24) {
+                    sampleCard
+                        .dynamicTypeSize(selectedSize)
+                        .padding(20)
+                        .frame(maxWidth: .infinity, minHeight: 220)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(Color(.secondarySystemGroupedBackground))
+                        )
+
+                    Text(followSystem ? "\(selectedSize.label) — following system" : selectedSize.label)
+                        .font(.mono(.caption))
                         .foregroundStyle(.secondary)
                 }
-                .padding(16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .frame(maxWidth: .infinity)
+                .animation(.spring(duration: 0.3), value: selectedSize)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
 
-                // MARK: - Type scale simulator
-                VStack(alignment: .leading, spacing: 12) {
+            Section("Controls") {
+                Toggle("Follow system size", isOn: $followSystem)
+                LabeledContent("size: \(allSizes[Int(sizeIndex)].label)") {
+                    Slider(value: $sizeIndex, in: 0...Double(allSizes.count - 1), step: 1)
+                }
+                .disabled(followSystem)
+            }
+
+            Section("Current System Size") {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Your device is set to:")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text(systemSize.label)
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(systemSize.isAccessibilitySize ? .orange : .primary)
+                    }
+                    Spacer()
+                    if systemSize.isAccessibilitySize {
+                        Label("Accessibility size", systemImage: "accessibility")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.orange.opacity(0.15), in: Capsule())
+                    }
+                }
+                Text("Change in Settings → Accessibility → Display & Text Size → Larger Text, or drag the slider in Control Center.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Type Scale Simulator") {
+                Text("Point size per text style at the size chosen above — independent of your device setting when the slider drives it.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                ForEach(textStyles, id: \.name) { entry in
                     HStack {
-                        Label("Type Scale Simulator", systemImage: "slider.horizontal.3")
-                            .font(.headline)
+                        Text("Ag")
+                            .font(Font.system(entry.style))
+                            .dynamicTypeSize(selectedSize)
                         Spacer()
-                    }
-                    Text("Simulate any size category and read the resulting point size per text style — independent of your device setting.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Picker("Size category", selection: $simulatedCategory) {
-                        ForEach(ContentSizeCategory.allAccessibilitySizes, id: \.self) { cat in
-                            Text(cat.label).tag(cat)
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text(entry.name)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text("\(pointSize(for: entry.style, category: simulatedCategory))pt")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
                         }
                     }
-                    .pickerStyle(.menu)
-
-                    VStack(spacing: 0) {
-                        ForEach(textStyles, id: \.name) { entry in
-                            HStack {
-                                Text("Ag")
-                                    .font(Font.system(entry.style))
-                                    .environment(\.sizeCategory, simulatedCategory)
-                                Spacer()
-                                VStack(alignment: .trailing, spacing: 2) {
-                                    Text(entry.name)
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                    Text("\(pointSize(for: entry.style, category: simulatedCategory))pt")
-                                        .font(.caption2)
-                                        .foregroundStyle(.tertiary)
-                                }
-                            }
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 10)
-                            if entry.name != textStyles.last?.name {
-                                Divider().padding(.leading, 10)
-                            }
-                        }
-                    }
-                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
-
+                }
+                VStack(alignment: .leading, spacing: 8) {
                     Text("Body text across all sizes")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
@@ -127,250 +148,210 @@ struct DynamicTypeExploreView: View {
                         .padding(.vertical, 8)
                     }
                 }
-                .padding(16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+            }
 
-                // MARK: - Type scale reference
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Label("Type Scale Reference", systemImage: "list.number")
-                            .font(.headline)
-                        Spacer()
-                    }
-                    VStack(spacing: 0) {
-                        ForEach(allSizes, id: \.self) { size in
-                            HStack {
-                                Text(size.label)
-                                    .font(.caption2)
-                                    .foregroundStyle(size == currentSize ? .primary : .secondary)
-                                    .frame(width: 100, alignment: .leading)
-                                Text("The quick brown fox")
-                                    .dynamicTypeSize(size)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.5)
-                                    .foregroundStyle(size == currentSize ? .primary : .secondary)
-                                Spacer()
-                                if size == currentSize {
-                                    Image(systemName: "checkmark")
-                                        .font(.caption2)
-                                        .foregroundStyle(.blue)
-                                }
-                            }
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 10)
-                            .background(size == currentSize ? Color.blue.opacity(0.08) : Color.clear)
-                            if size != allSizes.last {
-                                Divider().padding(.leading, 10)
-                            }
+            Section("Truncation & Wrapping") {
+                truncationRow(
+                    label: "lineLimit(1)",
+                    text: "This long label will be truncated at the end",
+                    limit: 1
+                )
+                truncationRow(
+                    label: "lineLimit(2)",
+                    text: "This long label will wrap to a second line before truncating",
+                    limit: 2
+                )
+                truncationRow(
+                    label: "lineLimit(3)",
+                    text: "This long label has three lines to work with before it truncates at the end of the third line",
+                    limit: 3
+                )
+                Text("Use lineLimit(_:) to control wrapping. At accessibility sizes, prefer lineLimit(nil) or higher limits to avoid data loss.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Layout Tip: ViewThatFits") {
+                Text("ViewThatFits picks the first child that fits available space. These demos respond to your device's actual Dynamic Type setting.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                // Demo 1: HStack → VStack swap
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("HStack → VStack swap")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "photo")
+                                .foregroundStyle(.blue)
+                            Text("Sunset at the Beach")
+                                .lineLimit(1)
+                            Spacer()
+                            Button("Save") {}
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
                         }
-                    }
-                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
-                }
-                .padding(16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-
-                // MARK: - Truncation behavior
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Label("Truncation & Wrapping", systemImage: "text.word.spacing")
-                            .font(.headline)
-                        Spacer()
-                    }
-                    VStack(spacing: 10) {
-                        truncationRow(
-                            label: "lineLimit(1)",
-                            text: "This long label will be truncated at the end",
-                            limit: 1
-                        )
-                        truncationRow(
-                            label: "lineLimit(2)",
-                            text: "This long label will wrap to a second line before truncating",
-                            limit: 2
-                        )
-                        truncationRow(
-                            label: "lineLimit(3)",
-                            text: "This long label has three lines to work with before it truncates at the end of the third line",
-                            limit: 3
-                        )
-                    }
-                    Text("Use lineLimit(_:) to control wrapping. At accessibility sizes, prefer lineLimit(nil) or higher limits to avoid data loss.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-
-                // MARK: - Layout tip: ViewThatFits
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Label("Layout Tip: ViewThatFits", systemImage: "arrow.up.and.line.horizontal.and.arrow.down")
-                            .font(.headline)
-                        Spacer()
-                    }
-                    Text("ViewThatFits picks the first child that fits available space. These demos respond to your device's actual Dynamic Type setting.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    // Demo 1: HStack → VStack swap
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("HStack → VStack swap")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        ViewThatFits(in: .horizontal) {
+                        VStack(alignment: .leading, spacing: 8) {
                             HStack(spacing: 12) {
                                 Image(systemName: "photo")
                                     .foregroundStyle(.blue)
                                 Text("Sunset at the Beach")
-                                    .lineLimit(1)
-                                Spacer()
-                                Button("Save") {}
-                                    .buttonStyle(.bordered)
-                                    .controlSize(.small)
+                                    .lineLimit(2)
                             }
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack(spacing: 12) {
-                                    Image(systemName: "photo")
-                                        .foregroundStyle(.blue)
-                                    Text("Sunset at the Beach")
-                                        .lineLimit(2)
-                                }
-                                Button("Save") {}
-                                    .buttonStyle(.bordered)
-                                    .controlSize(.small)
-                                    .frame(maxWidth: .infinity)
-                            }
+                            Button("Save") {}
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .frame(maxWidth: .infinity)
                         }
-                        .padding(10)
-                        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
-                        Text("Switches from HStack → VStack at large accessibility sizes")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
                     }
-
-                    // Demo 2: Truncating label → multiline
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Badge: single-line → two-line")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        ViewThatFits(in: .horizontal) {
-                            // Compact: single line pill
-                            Text("New Feature Available")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .lineLimit(1)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color.blue, in: Capsule())
-                                .fixedSize(horizontal: true, vertical: false)
-                            // Fallback: two-line badge
-                            Text("New Feature Available")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Color.blue, in: RoundedRectangle(cornerRadius: 12))
-                        }
-                        Text("Badge switches from single-line pill to wrapped rectangle")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-
-                    // Demo 3: Toolbar icon+label → icon-only
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Toolbar: icon+label → icon-only")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        HStack(spacing: 8) {
-                            ForEach(toolbarItems, id: \.0) { icon, label in
-                                ViewThatFits(in: .horizontal) {
-                                    Button {} label: {
-                                        Label(label, systemImage: icon)
-                                            .labelStyle(.titleAndIcon)
-                                            .font(.caption.weight(.medium))
-                                    }
-                                    .buttonStyle(.bordered)
-                                    .controlSize(.small)
-                                    Button {} label: {
-                                        Image(systemName: icon)
-                                    }
-                                    .buttonStyle(.bordered)
-                                    .controlSize(.small)
-                                }
-                            }
-                            Spacer()
-                        }
-                        Text("Labels collapse to icon-only under space pressure")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-
-                    // Demo 4: 2-column grid → single column list
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Grid → list swap")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        ViewThatFits(in: .vertical) {
-                            // 2-column grid
-                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                                ForEach(gridItems, id: \.self) { item in
-                                    Text(item)
-                                        .font(.caption)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(8)
-                                        .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
-                                }
-                            }
-                            // Single column
-                            VStack(spacing: 4) {
-                                ForEach(gridItems, id: \.self) { item in
-                                    Text(item)
-                                        .font(.caption)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(8)
-                                        .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
-                                }
-                            }
-                        }
-                        .frame(maxHeight: 240)
-                        Text("2-column grid collapses to single-column list at accessibility sizes")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-
-                    Text("ViewThatFits picks the first child that fits in the specified axes. Combine it with .dynamicTypeSize(_:) overrides to test layouts.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    .padding(10)
+                    .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
+                    Text("Switches from HStack → VStack at large accessibility sizes")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                 }
-                .padding(16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+
+                // Demo 2: Truncating label → multiline
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Badge: single-line → two-line")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    ViewThatFits(in: .horizontal) {
+                        // Compact: single line pill
+                        Text("New Feature Available")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.blue, in: Capsule())
+                            .fixedSize(horizontal: true, vertical: false)
+                        // Fallback: two-line badge
+                        Text("New Feature Available")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.blue, in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    Text("Badge switches from single-line pill to wrapped rectangle")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+
+                // Demo 3: Toolbar icon+label → icon-only
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Toolbar: icon+label → icon-only")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        ForEach(toolbarItems, id: \.0) { icon, label in
+                            ViewThatFits(in: .horizontal) {
+                                Button {} label: {
+                                    Label(label, systemImage: icon)
+                                        .labelStyle(.titleAndIcon)
+                                        .font(.caption.weight(.medium))
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                Button {} label: {
+                                    Image(systemName: icon)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
+                        }
+                        Spacer()
+                    }
+                    Text("Labels collapse to icon-only under space pressure")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+
+                // Demo 4: 2-column grid → single column list
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Grid → list swap")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    ViewThatFits(in: .vertical) {
+                        // 2-column grid
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                            ForEach(gridItems, id: \.self) { item in
+                                Text(item)
+                                    .font(.caption)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(8)
+                                    .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+                            }
+                        }
+                        // Single column
+                        VStack(spacing: 4) {
+                            ForEach(gridItems, id: \.self) { item in
+                                Text(item)
+                                    .font(.caption)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(8)
+                                    .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 240)
+                    Text("2-column grid collapses to single-column list at accessibility sizes")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+
+                Text("ViewThatFits picks the first child that fits in the specified axes. Combine it with .dynamicTypeSize(_:) overrides to test layouts.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .padding(16)
+        }
+        .onChange(of: followSystem) { _, isOn in
+            if !isOn {
+                sizeIndex = Double(allSizes.firstIndex(of: systemSize) ?? 3)
+            }
         }
         .navigationTitle("Dynamic Type")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var sampleCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.largeTitle)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.blue)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Avery Chen")
+                        .font(.headline)
+                    Text("Design Systems Lead")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Text("Text styles scale together, so hierarchy survives at every size.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Button("Follow") {}
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func truncationRow(label: String, text: String, limit: Int) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.caption2.weight(.semibold))
+                .font(.mono(.caption2))
                 .foregroundStyle(.secondary)
             Text(text)
                 .lineLimit(limit)
+                .dynamicTypeSize(selectedSize)
         }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
-    }
-
-    private func sampleBadge(color: Color, label: String) -> some View {
-        Text(label)
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(color, in: Capsule())
+        .padding(.vertical, 2)
     }
 
     private func pointSize(for style: Font.TextStyle, category: ContentSizeCategory) -> Int {

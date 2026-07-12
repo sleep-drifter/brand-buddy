@@ -3,166 +3,183 @@ import SwiftUI
 struct ReduceMotionView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var overrideReduceMotion = false
-    @State private var animating = false
-    @State private var crossfadeTrigger = false
+    @State private var mode: DemoMode = .oneShot
     @State private var showAlt = false
+    @State private var animating = false
+
+    private enum DemoMode: String, CaseIterable {
+        case oneShot = "One-shot"
+        case looping = "Looping"
+    }
 
     private var effectiveReduceMotion: Bool {
         overrideReduceMotion || reduceMotion
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-
-                // MARK: - System status
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Label("System Setting", systemImage: "hand.raised")
-                            .font(.headline)
-                        Spacer()
-                    }
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Reduce Motion is:")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            Text(reduceMotion ? "On" : "Off")
-                                .font(.title2.weight(.bold))
-                                .foregroundStyle(reduceMotion ? .orange : .green)
-                        }
-                        Spacer()
-                        Image(systemName: reduceMotion ? "checkmark.shield.fill" : "xmark.shield")
-                            .font(.title)
-                            .foregroundStyle(reduceMotion ? .orange : .secondary)
-                    }
-                    Toggle("Simulate Reduce Motion for this demo", isOn: $overrideReduceMotion)
-                        .font(.subheadline)
-                    Text("Enable via Settings → Accessibility → Motion → Reduce Motion. Read with @Environment(\\.accessibilityReduceMotion).")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-
-                // MARK: - Swap animation for cross-fade
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Label("Animation → Cross-Fade Swap", systemImage: "arrow.2.squarepath")
-                            .font(.headline)
-                        Spacer()
-                    }
+        List {
+            Section {
+                VStack(spacing: 24) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.blue.opacity(0.08))
-                            .frame(height: 140)
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color(.secondarySystemGroupedBackground))
+                            .frame(height: 220)
 
-                        if showAlt {
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color.purple.gradient)
-                                .frame(width: 90, height: 80)
-                                .overlay(
-                                    Text("State B")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.white)
-                                )
-                                .transition(
-                                    effectiveReduceMotion
-                                        ? .opacity
-                                        : .asymmetric(insertion: .slide, removal: .scale.combined(with: .opacity))
-                                )
+                        if mode == .oneShot {
+                            oneShotTile
                         } else {
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color.blue.gradient)
-                                .frame(width: 90, height: 80)
-                                .overlay(
-                                    Text("State A")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.white)
-                                )
-                                .transition(
-                                    effectiveReduceMotion
-                                        ? .opacity
-                                        : .asymmetric(insertion: .slide, removal: .scale.combined(with: .opacity))
-                                )
+                            loopingTile
                         }
                     }
 
-                    HStack(spacing: 12) {
-                        Button("Toggle") {
-                            let animation: Animation = effectiveReduceMotion
-                                ? .easeInOut(duration: 0.2)
-                                : .spring(duration: 0.45, bounce: 0.3)
-                            withAnimation(animation) {
-                                showAlt.toggle()
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        Text(effectiveReduceMotion ? "Using cross-fade (no sliding)" : "Using slide + scale")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Text("When reduce motion is on, swap spring/slide animations for a simple .opacity or .easeInOut transition. The content still changes — just without spatial movement.")
-                        .font(.caption)
+                    Text(canvasCaption)
+                        .font(.mono(.caption))
                         .foregroundStyle(.secondary)
-                }
-                .padding(16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
 
-                // MARK: - Looping animation respect
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Label("Looping Animations", systemImage: "repeat")
-                            .font(.headline)
-                        Spacer()
-                        Button(animating ? "Stop" : "Start") {
-                            animating.toggle()
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
+                    Button {
+                        trigger()
+                    } label: {
+                        Label(triggerTitle, systemImage: triggerIcon)
                     }
-
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.orange.opacity(0.08))
-                            .frame(height: 100)
-
-                        if effectiveReduceMotion {
-                            // Static placeholder instead of animation
-                            Circle()
-                                .fill(Color.orange.opacity(0.4))
-                                .frame(width: 48, height: 48)
-                                .overlay(
-                                    Text("Paused")
-                                        .font(.caption2)
-                                        .foregroundStyle(.white)
-                                )
-                        } else if animating {
-                            Circle()
-                                .fill(Color.orange)
-                                .frame(width: 48, height: 48)
-                                .modifier(PulsingModifier())
-                        } else {
-                            Circle()
-                                .fill(Color.orange.opacity(0.5))
-                                .frame(width: 48, height: 48)
-                        }
-                    }
-
-                    Text(effectiveReduceMotion
-                         ? "Reduce Motion is on — looping animation replaced with a static placeholder."
-                         : "Looping animation plays normally. Press Stop to halt it.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    .buttonStyle(.borderedProminent)
                 }
-                .padding(16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .frame(maxWidth: .infinity)
             }
-            .padding(16)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            Section("Controls") {
+                Picker("Mode", selection: $mode) {
+                    ForEach(DemoMode.allCases, id: \.self) { Text($0.rawValue) }
+                }
+                .pickerStyle(.segmented)
+                Toggle("Simulate Reduce Motion for this demo", isOn: $overrideReduceMotion)
+            }
+
+            Section("System Setting") {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Reduce Motion is:")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text(reduceMotion ? "On" : "Off")
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(reduceMotion ? .orange : .green)
+                    }
+                    Spacer()
+                    Image(systemName: reduceMotion ? "checkmark.shield.fill" : "xmark.shield")
+                        .font(.title)
+                        .foregroundStyle(reduceMotion ? .orange : .secondary)
+                }
+                Text("Enable via Settings → Accessibility → Motion → Reduce Motion. Read with @Environment(\\.accessibilityReduceMotion).")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Guidance") {
+                Text("When reduce motion is on, swap spring/slide animations for a simple .opacity or .easeInOut transition. The content still changes — just without spatial movement.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("Replace looping or auto-playing animations with a static placeholder when reduce motion is on, so the same information is conveyed without continuous movement.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .navigationTitle("Reduce Motion")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    // MARK: - Canvas tiles
+
+    private var oneShotTile: some View {
+        ZStack {
+            if showAlt {
+                demoCircle(color: .purple, label: "B")
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .transition(oneShotTransition)
+            } else {
+                demoCircle(color: .blue, label: "A")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .transition(oneShotTransition)
+            }
+        }
+        .padding(.horizontal, 48)
+    }
+
+    private var loopingTile: some View {
+        Group {
+            if effectiveReduceMotion {
+                // Static placeholder instead of animation
+                Circle()
+                    .fill(Color.orange.opacity(0.4))
+                    .frame(width: 56, height: 56)
+                    .overlay(
+                        Text("Paused")
+                            .font(.caption2)
+                            .foregroundStyle(.white)
+                    )
+            } else if animating {
+                Circle()
+                    .fill(Color.orange)
+                    .frame(width: 56, height: 56)
+                    .modifier(PulsingModifier())
+            } else {
+                Circle()
+                    .fill(Color.orange.opacity(0.5))
+                    .frame(width: 56, height: 56)
+            }
+        }
+    }
+
+    private var oneShotTransition: AnyTransition {
+        effectiveReduceMotion
+            ? .opacity
+            : .asymmetric(insertion: .slide, removal: .scale.combined(with: .opacity))
+    }
+
+    private func demoCircle(color: Color, label: String) -> some View {
+        Circle()
+            .fill(color.gradient)
+            .frame(width: 72, height: 72)
+            .overlay(
+                Text(label)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white)
+            )
+    }
+
+    private func trigger() {
+        if mode == .oneShot {
+            let animation: Animation = effectiveReduceMotion
+                ? .easeInOut(duration: 0.2)
+                : .spring(duration: 0.45, bounce: 0.3)
+            withAnimation(animation) {
+                showAlt.toggle()
+            }
+        } else {
+            animating.toggle()
+        }
+    }
+
+    private var triggerTitle: String {
+        mode == .oneShot ? "Toggle" : (animating ? "Stop" : "Play")
+    }
+
+    private var triggerIcon: String {
+        mode == .oneShot ? "arrow.2.squarepath" : (animating ? "stop.fill" : "play.fill")
+    }
+
+    private var canvasCaption: String {
+        switch mode {
+        case .oneShot:
+            return effectiveReduceMotion
+                ? "transition: .opacity (cross-fade)"
+                : "transition: slide + scale (spring)"
+        case .looping:
+            if effectiveReduceMotion { return "loop replaced with static placeholder" }
+            return animating ? "animation: .easeInOut.repeatForever" : "loop stopped"
+        }
     }
 }
 
