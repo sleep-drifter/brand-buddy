@@ -1,58 +1,126 @@
 import SwiftUI
 
 struct PickersView: View {
-    @State private var selection1 = "Option A"
-    @State private var selection2 = "Option B"
-    @State private var selection3 = "Option A"
-    @State private var selection4 = "Option A"
+    private enum StyleChoice: String, CaseIterable {
+        case automatic, menu, segmented, wheel, inline
 
-    private let options = ["Option A", "Option B", "Option C", "Option D"]
+        var note: String {
+            switch self {
+            case .automatic: return "Context-dependent — resolves to a menu in most containers."
+            case .menu:      return "Compact popup button; the list and form default. Best for 5+ options."
+            case .segmented: return "All options visible at once. Use for 2–4 short, fixed choices."
+            case .wheel:     return "Scrolling drum in a fixed-height area. Good for long ordered sets."
+            case .inline:    return "Options render as checkmarked rows in the enclosing container."
+            }
+        }
+    }
+
+    @State private var selection = 1
+    @State private var style: StyleChoice = .automatic
+    @State private var optionCount = 3.0
+    @State private var tint = Color.blue
+
     private let selectionFeedback = UISelectionFeedbackGenerator()
+
+    private var optionTotal: Int { Int(optionCount) }
 
     var body: some View {
         List {
-            Section("Automatic (context-dependent)") {
-                Picker("Picker", selection: $selection1) {
-                    ForEach(options, id: \.self) { Text($0) }
-                }
-            }
+            Section {
+                VStack(spacing: 24) {
+                    VStack {
+                        Spacer(minLength: 0)
+                        specimen
+                            .tint(tint)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(20)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 220)
+                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-            Section("Segmented") {
-                Picker("Segmented", selection: $selection2) {
-                    ForEach(["Day", "Week", "Month"], id: \.self) { Text($0) }
+                    Text("selected: Option \(selection)")
+                        .font(.mono(.callout))
+                        .foregroundStyle(tint)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(tint.opacity(0.12), in: Capsule())
                 }
-                .pickerStyle(.segmented)
+                .frame(maxWidth: .infinity)
+                .animation(.spring(duration: 0.3), value: style)
             }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
 
-            Section("Wheel") {
-                Picker("Wheel", selection: $selection3) {
-                    ForEach(options, id: \.self) { Text($0) }
-                }
-                .pickerStyle(.wheel)
-                .frame(height: 120)
-            }
-
-            Section("Inline") {
-                Picker("Inline", selection: $selection4) {
-                    ForEach(options, id: \.self) { Text($0) }
-                }
-                .pickerStyle(.inline)
-            }
-
-            Section("Menu (compact)") {
-                Picker("Menu picker", selection: $selection1) {
-                    ForEach(options, id: \.self) { Text($0) }
+            Section("Controls") {
+                Picker("Style", selection: $style) {
+                    ForEach(StyleChoice.allCases, id: \.self) { s in
+                        Text(".\(s.rawValue)").tag(s)
+                    }
                 }
                 .pickerStyle(.menu)
+
+                LabeledContent("options: \(optionTotal)") {
+                    Slider(value: $optionCount, in: 2...6, step: 1)
+                }
+
+                ColorPicker("Tint", selection: $tint, supportsOpacity: false)
+            }
+
+            Section("Styles") {
+                ForEach(StyleChoice.allCases, id: \.self) { s in
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) { style = s }
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(".\(s.rawValue)")
+                                    .font(.mono(.subheadline))
+                                    .foregroundStyle(.primary)
+                                Text(s.note)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if style == s {
+                                Image(systemName: "checkmark")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.tint)
+                            }
+                        }
+                    }
+                }
             }
         }
         .navigationTitle("Pickers")
         .navigationBarTitleDisplayMode(.large)
         .onAppear { selectionFeedback.prepare() }
-        .onChange(of: selection1) { _, _ in selectionFeedback.selectionChanged() }
-        .onChange(of: selection2) { _, _ in selectionFeedback.selectionChanged() }
-        .onChange(of: selection3) { _, _ in selectionFeedback.selectionChanged() }
-        .onChange(of: selection4) { _, _ in selectionFeedback.selectionChanged() }
+        .onChange(of: selection) { _, _ in selectionFeedback.selectionChanged() }
+        .onChange(of: optionCount) { _, _ in
+            selection = min(selection, optionTotal)
+        }
+    }
+
+    @ViewBuilder private var specimen: some View {
+        let picker = Picker("Options", selection: $selection) {
+            ForEach(1...optionTotal, id: \.self) { i in
+                Text("Option \(i)").tag(i)
+            }
+        }
+        switch style {
+        case .automatic:
+            picker.pickerStyle(.automatic)
+        case .menu:
+            picker.pickerStyle(.menu)
+        case .segmented:
+            picker.pickerStyle(.segmented)
+        case .wheel:
+            picker.pickerStyle(.wheel)
+                .frame(height: 160)
+        case .inline:
+            picker.pickerStyle(.inline)
+        }
     }
 }
 
@@ -103,32 +171,137 @@ struct SegmentedControlsView: View {
 }
 
 struct DateTimePickersView: View {
+    private enum StyleChoice: String, CaseIterable {
+        case compact, graphical, wheel
+
+        var note: String {
+            switch self {
+            case .compact:   return "Label plus tappable capsules that expand a calendar or time popover. The iOS default."
+            case .graphical: return "Full inline calendar with a time field — the Calendar-app look."
+            case .wheel:     return "Classic scrolling drums with a fixed footprint."
+            }
+        }
+    }
+
+    private enum ComponentsChoice: String, CaseIterable {
+        case date = "Date"
+        case time = "Time"
+        case dateAndTime = "Date + Time"
+
+        var components: DatePickerComponents {
+            switch self {
+            case .date:        return [.date]
+            case .time:        return [.hourAndMinute]
+            case .dateAndTime: return [.date, .hourAndMinute]
+            }
+        }
+
+        var code: String {
+            switch self {
+            case .date:        return "[.date]"
+            case .time:        return "[.hourAndMinute]"
+            case .dateAndTime: return "[.date, .hourAndMinute]"
+            }
+        }
+    }
+
     @State private var date = Date()
-    @State private var time = Date()
-    @State private var dateTime = Date()
+    @State private var style: StyleChoice = .compact
+    @State private var componentsChoice: ComponentsChoice = .date
+
+    private var generatedCode: String {
+        "DatePicker(\"Select\", selection: $date,\n  displayedComponents: \(componentsChoice.code))\n.datePickerStyle(.\(style.rawValue))"
+    }
 
     var body: some View {
         List {
-            Section("Date only") {
-                DatePicker("Select date", selection: $date, displayedComponents: .date)
+            Section {
+                VStack(spacing: 24) {
+                    VStack {
+                        Spacer(minLength: 0)
+                        specimen
+                        Spacer(minLength: 0)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 340)
+                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                    Text(generatedCode)
+                        .font(.mono(.caption))
+                        .foregroundStyle(.secondary)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+                .frame(maxWidth: .infinity)
+                .animation(.spring(duration: 0.3), value: style)
+                .animation(.spring(duration: 0.3), value: componentsChoice)
             }
-            Section("Time only") {
-                DatePicker("Select time", selection: $time, displayedComponents: .hourAndMinute)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            Section("Controls") {
+                Picker("Style", selection: $style) {
+                    ForEach(StyleChoice.allCases, id: \.self) { s in
+                        Text(s.rawValue.capitalized).tag(s)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Picker("Shows", selection: $componentsChoice) {
+                    ForEach(ComponentsChoice.allCases, id: \.self) { c in
+                        Text(c.rawValue).tag(c)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                LabeledContent("Selected") {
+                    Text(date.formatted(date: .abbreviated, time: .shortened))
+                }
             }
-            Section("Date & Time") {
-                DatePicker("Select", selection: $dateTime)
-            }
-            Section("Inline (calendar)") {
-                DatePicker("Date", selection: $date, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-            }
-            Section("Wheel") {
-                DatePicker("Date", selection: $date)
-                    .datePickerStyle(.wheel)
+
+            Section("Styles") {
+                ForEach(StyleChoice.allCases, id: \.self) { s in
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) { style = s }
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(".\(s.rawValue)")
+                                    .font(.mono(.subheadline))
+                                    .foregroundStyle(.primary)
+                                Text(s.note)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if style == s {
+                                Image(systemName: "checkmark")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.tint)
+                            }
+                        }
+                    }
+                }
             }
         }
         .navigationTitle("Date & Time Pickers")
         .navigationBarTitleDisplayMode(.large)
+    }
+
+    @ViewBuilder private var specimen: some View {
+        let picker = DatePicker("Select", selection: $date, displayedComponents: componentsChoice.components)
+        switch style {
+        case .compact:
+            picker.datePickerStyle(.compact)
+        case .graphical:
+            picker.datePickerStyle(.graphical)
+        case .wheel:
+            picker.datePickerStyle(.wheel)
+                .labelsHidden()
+        }
     }
 }
 

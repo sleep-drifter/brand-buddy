@@ -1,39 +1,175 @@
 import SwiftUI
 
+private enum ButtonStyleKind: String, CaseIterable {
+    case borderedProminent = "Prominent"
+    case bordered = "Bordered"
+    case borderless = "Borderless"
+    case plain = "Plain"
+
+    var token: String {
+        switch self {
+        case .borderedProminent: return ".borderedProminent"
+        case .bordered: return ".bordered"
+        case .borderless: return ".borderless"
+        case .plain: return ".plain"
+        }
+    }
+}
+
+private enum ButtonLabelKind: String, CaseIterable {
+    case title = "Title"
+    case icon = "Icon"
+    case titleAndIcon = "Title + Icon"
+}
+
+private enum ButtonRoleKind: String, CaseIterable {
+    case none = "None"
+    case destructive = "Destructive"
+}
+
+private struct ButtonPreset: Identifiable {
+    let id = UUID()
+    let name: String
+    let description: String
+    var style: ButtonStyleKind = .borderedProminent
+    var size: ControlSize = .regular
+    var labelKind: ButtonLabelKind = .title
+    var roleKind: ButtonRoleKind = .none
+    var loading = false
+    var fullWidth = false
+
+    static let all: [ButtonPreset] = [
+        ButtonPreset(name: "Primary action", description: "The single most important action on screen"),
+        ButtonPreset(name: "Secondary", description: "Supporting actions beside a primary", style: .bordered),
+        ButtonPreset(name: "Toolbar icon", description: "Compact inline and bar actions", style: .borderless, size: .small, labelKind: .icon),
+        ButtonPreset(name: "Destructive", description: "Delete, remove, sign out", style: .bordered, roleKind: .destructive),
+        ButtonPreset(name: "Loading", description: "Async work in flight", loading: true),
+        ButtonPreset(name: "Full-width CTA", description: "Checkout, sign in, onboarding", size: .large, fullWidth: true),
+    ]
+}
+
 struct ButtonsView: View {
+    @State private var style: ButtonStyleKind = .borderedProminent
+    @State private var size: ControlSize = .regular
+    @State private var labelKind: ButtonLabelKind = .title
+    @State private var roleKind: ButtonRoleKind = .none
+    @State private var tint: Color = .blue
+    @State private var isDisabled = false
     @State private var isLoading = false
+    @State private var fullWidth = false
 
     var body: some View {
         List {
-            Section("Style Matrix") {
-                StyleMatrixSection()
+            Section {
+                VStack(spacing: 24) {
+                    // Preview
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color(.secondarySystemGroupedBackground))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .strokeBorder(.separator, lineWidth: 0.5)
+                            )
+                            .frame(height: 220)
+
+                        demoButton
+                            .padding(.horizontal, 32)
+                    }
+                    .animation(.spring(duration: 0.3), value: size)
+                    .animation(.spring(duration: 0.3), value: fullWidth)
+                    .animation(.spring(duration: 0.3), value: isLoading)
+
+                    // Code output
+                    Text(codeSnippet)
+                        .font(.mono(.caption))
+                        .foregroundStyle(.secondary)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+                .frame(maxWidth: .infinity)
             }
-            Section("Size Scale") {
-                SizeScaleSection()
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            Section("Style") {
+                Picker("Style", selection: $style) {
+                    ForEach(ButtonStyleKind.allCases, id: \.self) { kind in
+                        Text(kind.rawValue).tag(kind)
+                    }
+                }
+                .pickerStyle(.segmented)
             }
-            Section("States") {
-                StatesSection(isLoading: $isLoading)
+
+            Section("Size") {
+                Picker("Size", selection: $size) {
+                    ForEach([ControlSize.mini, .small, .regular, .large], id: \.self) { size in
+                        Text(size.label).tag(size)
+                    }
+                }
+                .pickerStyle(.segmented)
             }
-            Section("With Icons") {
-                IconButtonsSection()
+
+            Section("Label") {
+                Picker("Label", selection: $labelKind) {
+                    ForEach(ButtonLabelKind.allCases, id: \.self) { kind in
+                        Text(kind.rawValue).tag(kind)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Picker("Role", selection: $roleKind) {
+                    ForEach(ButtonRoleKind.allCases, id: \.self) { kind in
+                        Text(kind.rawValue).tag(kind)
+                    }
+                }
+                .pickerStyle(.segmented)
             }
-            Section("Destructive") {
-                Button("Delete Account", role: .destructive) {}
-                Button(role: .destructive) {} label: {
-                    Label("Remove Item", systemImage: "trash")
+
+            Section("Options") {
+                ColorPicker("Tint", selection: $tint, supportsOpacity: false)
+                Toggle("Disabled", isOn: $isDisabled)
+                Toggle("Loading", isOn: $isLoading)
+                Toggle("Full width", isOn: $fullWidth)
+            }
+
+            Section("Presets") {
+                ForEach(ButtonPreset.all) { preset in
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            style = preset.style
+                            size = preset.size
+                            labelKind = preset.labelKind
+                            roleKind = preset.roleKind
+                            isLoading = preset.loading
+                            fullWidth = preset.fullWidth
+                            isDisabled = false
+                        }
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(preset.name).font(.subheadline).foregroundStyle(.primary)
+                                Text(preset.description).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(preset.style.token)
+                                .font(.mono(.caption2)).foregroundStyle(.tertiary)
+                        }
+                    }
                 }
             }
-            Section("Full Width") {
-                VStack(spacing: 12) {
-                    Button("Full Width Filled") {}
-                        .buttonStyle(.borderedProminent)
-                        .frame(maxWidth: .infinity)
-                    Button("Full Width Bordered") {}
-                        .buttonStyle(.bordered)
-                        .frame(maxWidth: .infinity)
-                    Button("Full Width Borderless") {}
-                        .buttonStyle(.borderless)
-                        .frame(maxWidth: .infinity)
+
+            Section("Notes") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Button · .buttonStyle · .controlSize · .tint")
+                        .font(.mono(.caption)).fontWeight(.medium)
+                    Text("Use one .borderedProminent button per view — it marks the primary action. .bordered suits secondary actions; .borderless and .plain work inline and in bars.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text("role: .destructive turns the button red and positions it correctly in menus, confirmation dialogs, and swipe actions.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text("Full-width buttons need .frame(maxWidth: .infinity) inside the label — outside the style it widens the tap target but not the visible background.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 4)
             }
@@ -41,121 +177,79 @@ struct ButtonsView: View {
         .navigationTitle("Buttons")
         .navigationBarTitleDisplayMode(.large)
     }
-}
 
-private struct StyleMatrixSection: View {
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 16) {
-                styleItem("borderedProminent") { Button("Button") {}.buttonStyle(.borderedProminent) }
-                styleItem("bordered")          { Button("Button") {}.buttonStyle(.bordered) }
-                styleItem("borderless")        { Button("Button") {}.buttonStyle(.borderless) }
-                styleItem("plain")             { Button("Button") {}.buttonStyle(.plain) }
-            }
-            .padding(.vertical, 8)
+    // MARK: - Configured button
+
+    @ViewBuilder
+    private var demoButton: some View {
+        switch style {
+        case .borderedProminent: baseButton.buttonStyle(.borderedProminent)
+        case .bordered:          baseButton.buttonStyle(.bordered)
+        case .borderless:        baseButton.buttonStyle(.borderless)
+        case .plain:             baseButton.buttonStyle(.plain)
         }
     }
 
-    func styleItem<V: View>(_ name: String, @ViewBuilder content: () -> V) -> some View {
-        VStack(spacing: 8) {
-            content()
-            Text(name).font(.mono(.caption2)).foregroundStyle(.secondary)
+    private var baseButton: some View {
+        Button(role: roleKind == .destructive ? .destructive : nil) {
+        } label: {
+            demoLabel
+                .frame(maxWidth: fullWidth ? .infinity : nil)
+        }
+        .controlSize(size)
+        .tint(tint)
+        .disabled(isDisabled)
+    }
+
+    @ViewBuilder
+    private var demoLabel: some View {
+        if isLoading {
+            HStack(spacing: 8) {
+                ProgressView()
+                    .tint(style == .borderedProminent ? Color.white : nil)
+                if labelKind != .icon {
+                    Text("Loading")
+                }
+            }
+        } else {
+            switch labelKind {
+            case .title:
+                Label("Share", systemImage: "square.and.arrow.up")
+                    .labelStyle(.titleOnly)
+            case .icon:
+                Label("Share", systemImage: "square.and.arrow.up")
+                    .labelStyle(.iconOnly)
+            case .titleAndIcon:
+                Label("Share", systemImage: "square.and.arrow.up")
+                    .labelStyle(.titleAndIcon)
+            }
         }
     }
-}
 
-private struct SizeScaleSection: View {
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .bottom, spacing: 12) {
-                ForEach([ControlSize.mini, .small, .regular, .large], id: \.self) { size in
-                    VStack(spacing: 8) {
-                        Button("Button") {}
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(size)
-                        Text(size.label)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .padding(.vertical, 8)
+    private var codeSnippet: String {
+        let roleArg = roleKind == .destructive ? ", role: .destructive" : ""
+        var lines: [String] = []
+        switch labelKind {
+        case .title:
+            lines.append("Button(\"Share\"\(roleArg)) { }")
+        case .icon, .titleAndIcon:
+            lines.append("Button(\"Share\", systemImage: \"square.and.arrow.up\"\(roleArg)) { }")
         }
-    }
-}
-
-private struct StatesSection: View {
-    @Binding var isLoading: Bool
-
-    var body: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 12) {
-                VStack(spacing: 6) {
-                    Button("Normal") {}
-                        .buttonStyle(.borderedProminent)
-                    Text("normal").font(.mono(.caption2)).foregroundStyle(.secondary)
-                }
-                VStack(spacing: 6) {
-                    Button("Disabled") {}
-                        .buttonStyle(.borderedProminent)
-                        .disabled(true)
-                    Text("disabled").font(.mono(.caption2)).foregroundStyle(.secondary)
-                }
-                VStack(spacing: 6) {
-                    Button {
-                        isLoading.toggle()
-                    } label: {
-                        if isLoading {
-                            HStack(spacing: 6) {
-                                ProgressView().tint(.white)
-                                Text("Loading")
-                            }
-                        } else {
-                            Text("Tap me")
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    Text("loading").font(.mono(.caption2)).foregroundStyle(.secondary)
-                }
-            }
+        if labelKind == .icon {
+            lines.append("  .labelStyle(.iconOnly)")
         }
-        .padding(.vertical, 4)
-    }
-}
-
-private struct IconButtonsSection: View {
-    var body: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 12) {
-                Button { } label: { Label("Share", systemImage: "square.and.arrow.up") }
-                    .buttonStyle(.borderedProminent)
-                Button { } label: { Label("Add", systemImage: "plus") }
-                    .buttonStyle(.bordered)
-                Button { } label: { Image(systemName: "heart") }
-                    .buttonStyle(.bordered)
-            }
-            HStack(spacing: 12) {
-                VStack(spacing: 4) {
-                    Button { } label: { Label("Share", systemImage: "square.and.arrow.up") }
-                        .buttonStyle(.bordered)
-                        .labelStyle(.iconOnly)
-                    Text(".iconOnly").font(.mono(.caption2)).foregroundStyle(.secondary)
-                }
-                VStack(spacing: 4) {
-                    Button { } label: { Label("Share", systemImage: "square.and.arrow.up") }
-                        .buttonStyle(.bordered)
-                        .labelStyle(.titleOnly)
-                    Text(".titleOnly").font(.mono(.caption2)).foregroundStyle(.secondary)
-                }
-                VStack(spacing: 4) {
-                    Button { } label: { Label("Share", systemImage: "square.and.arrow.up") }
-                        .buttonStyle(.bordered)
-                        .labelStyle(.titleAndIcon)
-                    Text(".titleAndIcon").font(.mono(.caption2)).foregroundStyle(.secondary)
-                }
-            }
+        lines.append("  .buttonStyle(\(style.token))")
+        if size != .regular {
+            lines.append("  .controlSize(\(size.label))")
         }
-        .padding(.vertical, 4)
+        lines.append("  .tint(\(tint == .blue ? ".blue" : "tint"))")
+        if isDisabled {
+            lines.append("  .disabled(true)")
+        }
+        if fullWidth {
+            lines.append("  .frame(maxWidth: .infinity) // inside the label")
+        }
+        return lines.joined(separator: "\n")
     }
 }
 

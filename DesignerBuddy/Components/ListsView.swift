@@ -196,41 +196,98 @@ struct ListsView: View {
     }
 }
 
-// MARK: - GridsView (unchanged)
+// MARK: - GridsView
 
 struct GridsView: View {
+    private enum Mode: String, CaseIterable {
+        case fixed = "Fixed columns"
+        case adaptive = "Adaptive"
+    }
+
+    @State private var mode: Mode = .fixed
+    @State private var columnCount = 3.0
+    @State private var minWidth: CGFloat = 120
+    @State private var spacing: CGFloat = 8
+    @State private var itemCount = 9.0
+    @State private var tileHeight: CGFloat = 80
+
+    private var gridColumns: [GridItem] {
+        switch mode {
+        case .fixed:
+            return Array(repeating: GridItem(.flexible(), spacing: spacing), count: Int(columnCount))
+        case .adaptive:
+            return [GridItem(.adaptive(minimum: minWidth), spacing: spacing)]
+        }
+    }
+
+    private var generatedCode: String {
+        switch mode {
+        case .fixed:
+            return "LazyVGrid(columns: Array(\n  repeating: GridItem(.flexible(), spacing: \(Int(spacing))),\n  count: \(Int(columnCount))\n), spacing: \(Int(spacing)))"
+        case .adaptive:
+            return "LazyVGrid(columns: [GridItem(\n  .adaptive(minimum: \(Int(minWidth))),\n  spacing: \(Int(spacing))\n)], spacing: \(Int(spacing)))"
+        }
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                Text("LazyVGrid — 3 columns")
-                    .font(.headline)
-                    .padding(.horizontal)
-
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-                    ForEach(0..<9) { i in
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(.tint.opacity(0.2))
-                            .frame(height: 80)
-                            .overlay(Text("\(i + 1)").font(.caption))
+        List {
+            Section {
+                VStack(spacing: 24) {
+                    LazyVGrid(columns: gridColumns, spacing: spacing) {
+                        ForEach(0..<Int(itemCount), id: \.self) { i in
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(.tint.opacity(0.2))
+                                .frame(height: tileHeight)
+                                .overlay(Text("\(i + 1)").font(.caption))
+                        }
                     }
-                }
-                .padding(.horizontal)
+                    .padding(16)
+                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .animation(.spring(duration: 0.3), value: mode)
+                    .animation(.spring(duration: 0.3), value: Int(columnCount))
+                    .animation(.spring(duration: 0.3), value: Int(itemCount))
 
-                Text("LazyVGrid — 2 columns (adaptive)")
-                    .font(.headline)
-                    .padding(.horizontal)
-
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 8)], spacing: 8) {
-                    ForEach(0..<6) { i in
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(.tint.opacity(0.15))
-                            .frame(height: 100)
-                            .overlay(Text("Item \(i + 1)").font(.caption))
-                    }
+                    Text(generatedCode)
+                        .font(.mono(.caption))
+                        .foregroundStyle(.secondary)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
-                .padding(.horizontal)
+                .frame(maxWidth: .infinity)
             }
-            .padding(.vertical)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            Section("Controls") {
+                Picker("Mode", selection: $mode) {
+                    ForEach(Mode.allCases, id: \.self) { m in
+                        Text(m.rawValue).tag(m)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                if mode == .fixed {
+                    LabeledContent("columns: \(Int(columnCount))") {
+                        Slider(value: $columnCount, in: 2...5, step: 1)
+                    }
+                } else {
+                    LabeledContent("minimum: \(Int(minWidth))") {
+                        Slider(value: $minWidth, in: 80...200)
+                    }
+                }
+
+                LabeledContent("spacing: \(Int(spacing))") {
+                    Slider(value: $spacing, in: 0...24)
+                }
+                LabeledContent("items: \(Int(itemCount))") {
+                    Slider(value: $itemCount, in: 4...24, step: 1)
+                }
+                LabeledContent("tile height: \(Int(tileHeight))") {
+                    Slider(value: $tileHeight, in: 60...120)
+                }
+            }
         }
         .navigationTitle("Grids")
         .navigationBarTitleDisplayMode(.large)

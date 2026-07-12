@@ -129,67 +129,113 @@ struct MenusView: View {
 
 
 struct ProgressIndicatorsView: View {
+    private enum IndicatorStyle: String, CaseIterable {
+        case linear = "Linear"
+        case circular = "Circular"
+        case indeterminate = "Indeterminate"
+    }
+
+    @State private var style: IndicatorStyle = .linear
     @State private var progress = 0.6
-    @State private var animating = false
+    @State private var tint = Color.blue
+    @State private var showLabel = false
 
     var body: some View {
         List {
-            Section("Indeterminate (spinning)") {
-                HStack(spacing: 16) {
-                    ProgressView()
-                    ProgressView().scaleEffect(1.5)
-                    ProgressView().tint(.green)
-                    ProgressView().tint(.orange)
+            Section {
+                VStack(spacing: 24) {
+                    VStack {
+                        indicator
+                            .tint(tint)
+                    }
+                    .padding(32)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 220)
+                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
-                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .animation(.spring(duration: 0.3), value: style)
+                .animation(.spring(duration: 0.3), value: showLabel)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            Section("Controls") {
+                Picker("Style", selection: $style) {
+                    ForEach(IndicatorStyle.allCases, id: \.self) { s in
+                        Text(s.rawValue).tag(s)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                LabeledContent("value: \(progress, specifier: "%.2f")") {
+                    Slider(value: $progress, in: 0...1)
+                }
+                .disabled(style == .indeterminate)
+                .foregroundStyle(style == .indeterminate ? .secondary : .primary)
+
+                ColorPicker("Tint", selection: $tint, supportsOpacity: false)
+
+                Toggle("Label", isOn: $showLabel)
             }
 
-            Section("Linear (determinate)") {
-                VStack(spacing: 12) {
-                    ProgressView(value: progress)
-                    ProgressView(value: progress)
-                        .tint(.green)
-                    ProgressView(value: 0.3)
-                        .tint(.orange)
-                    ProgressView(value: 1.0)
-                        .tint(.red)
+            Section("API") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("ProgressView(value:total:)")
+                        .font(.mono(.caption)).fontWeight(.medium)
+                    Text("A valueless ProgressView spins forever; give it a value for a linear bar, or apply .progressViewStyle(.circular) for a determinate ring.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text("The label and currentValueLabel closures pair a title like Downloading… with a live percent readout — toggle Label above to see both.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text("For arcs, ranges, and min/max labels, see Gauges — the accessory gauge styles cover richer indicator shapes.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 8)
-
-                HStack {
-                    Text("Progress:")
-                    Slider(value: $progress)
-                }
+                .padding(.vertical, 4)
             }
+        }
+        .navigationTitle("Progress Indicators")
+        .navigationBarTitleDisplayMode(.large)
+    }
 
-            Section("With Label") {
+    @ViewBuilder private var indicator: some View {
+        switch style {
+        case .linear:
+            if showLabel {
                 ProgressView(value: progress, total: 1.0) {
                     Text("Downloading…")
                 } currentValueLabel: {
                     Text("\(Int(progress * 100))%")
                 }
-                .padding(.vertical, 8)
+            } else {
+                ProgressView(value: progress)
             }
-
-            Section("Circular (explicit style)") {
-                HStack(spacing: 20) {
-                    VStack(spacing: 6) {
-                        ProgressView()
-                            .progressViewStyle(.circular)
-                        Text("circular").font(.mono(.caption2)).foregroundStyle(.secondary)
+        case .circular:
+            Group {
+                if showLabel {
+                    ProgressView(value: progress, total: 1.0) {
+                        Text("Downloading…")
+                    } currentValueLabel: {
+                        Text("\(Int(progress * 100))%")
                     }
-                    VStack(spacing: 6) {
-                        ProgressView(value: progress)
-                            .progressViewStyle(.linear)
-                            .frame(width: 120)
-                        Text("linear").font(.mono(.caption2)).foregroundStyle(.secondary)
-                    }
+                } else {
+                    ProgressView(value: progress)
                 }
-                .padding(.vertical, 8)
             }
+            .progressViewStyle(.circular)
+            .scaleEffect(1.8)
+        case .indeterminate:
+            Group {
+                if showLabel {
+                    ProgressView {
+                        Text("Downloading…")
+                    }
+                } else {
+                    ProgressView()
+                }
+            }
+            .scaleEffect(1.8)
         }
-        .navigationTitle("Progress Indicators")
-        .navigationBarTitleDisplayMode(.large)
     }
 }
 
