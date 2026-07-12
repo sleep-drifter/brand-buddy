@@ -14,20 +14,95 @@ struct SheetsModalsView: View {
     @State private var customFraction: Double = 0.4
     @State private var customHeight: Double = 300
 
+    private let phoneHeight: CGFloat = 280
+
+    private var canvasSheetFraction: CGFloat {
+        if selectedDetent == .medium { return 0.5 }
+        if selectedDetent == .large { return 0.93 }
+        if selectedDetent == .fraction(customFraction) { return customFraction }
+        if selectedDetent == .height(customHeight) { return min(customHeight / 852, 0.93) }
+        return 0.93
+    }
+
+    private var selectedDetentLabel: String {
+        if selectedDetent == .medium { return ".medium" }
+        if selectedDetent == .large { return ".large" }
+        if selectedDetent == .fraction(customFraction) { return ".fraction(\(String(format: "%.2f", customFraction)))" }
+        if selectedDetent == .height(customHeight) { return ".height(\(Int(customHeight)))" }
+        return ".large"
+    }
+
     var body: some View {
         List {
-            Section("Sheets") {
-                Button("Present Sheet (medium)") { showHalfSheet = true }
-                Button("Present Sheet (large)") { showFullSheet = true }
-                Button("Scrolling content in sheet") { showScrollSheet = true }
-            }
-            Section("Full Screen") {
-                Button("Full Screen Cover") { showFullScreenCover = true }
-            }
+            Section {
+                VStack(spacing: 24) {
+                    ZStack(alignment: .bottom) {
+                        // App layer, dimmed behind the sheet
+                        VStack(alignment: .leading, spacing: 10) {
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(.quaternary)
+                                .frame(width: 56, height: 10)
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(.quaternary)
+                                .frame(height: 8)
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(.quaternary)
+                                .frame(height: 8)
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(.quaternary)
+                                .frame(width: 72, height: 8)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .overlay(Color.black.opacity(0.25))
 
-            Section("Interactive Detents") {
-                Button("Show Interactive Sheet") { showSheet = true }
-                Button("Show Scrolling Content Sheet") { showScrollSheet = true }
+                        // Sheet layer rising from the bottom
+                        VStack(spacing: 0) {
+                            if showDragIndicator {
+                                Capsule()
+                                    .fill(.tertiary)
+                                    .frame(width: 32, height: 4)
+                                    .padding(.top, 6)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: phoneHeight * canvasSheetFraction)
+                        .background(
+                            UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 12, style: .continuous)
+                                .fill(Color(.systemBackground))
+                                .shadow(color: .black.opacity(0.2), radius: 6, y: -2)
+                        )
+                    }
+                    .frame(width: 140, height: phoneHeight)
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .strokeBorder(.separator, lineWidth: 1)
+                    )
+                    .animation(.spring(duration: 0.3), value: canvasSheetFraction)
+                    .animation(.spring(duration: 0.3), value: showDragIndicator)
+
+                    Text("\(selectedDetentLabel) — \(Int((canvasSheetFraction * 100).rounded()))% of screen")
+                        .font(.mono(.caption))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            Section("Presentation") {
+                Picker("Selected detent", selection: $selectedDetent) {
+                    Text(".medium").tag(PresentationDetent.medium)
+                    Text(".large").tag(PresentationDetent.large)
+                    Text(".fraction").tag(PresentationDetent.fraction(customFraction))
+                    Text(".height").tag(PresentationDetent.height(customHeight))
+                }
+                .pickerStyle(.segmented)
                 Toggle("Show drag indicator", isOn: $showDragIndicator)
             }
 
@@ -56,6 +131,21 @@ struct SheetsModalsView: View {
                     Slider(value: $customHeight, in: 100...700)
                         .padding(.leading, 4)
                 }
+            }
+
+            Section("Interactive Detents") {
+                Button("Show Interactive Sheet") { showSheet = true }
+                Button("Show Scrolling Content Sheet") { showScrollSheet = true }
+            }
+
+            Section("Sheets") {
+                Button("Present Sheet (medium)") { showHalfSheet = true }
+                Button("Present Sheet (large)") { showFullSheet = true }
+                Button("Scrolling content in sheet") { showScrollSheet = true }
+            }
+
+            Section("Full Screen") {
+                Button("Full Screen Cover") { showFullScreenCover = true }
             }
 
             Section("Detent Reference") {
@@ -94,6 +184,16 @@ struct SheetsModalsView: View {
         }
         .navigationTitle("Sheets & Modals")
         .navigationBarTitleDisplayMode(.large)
+        .onChange(of: customFraction) { oldValue, newValue in
+            if selectedDetent == .fraction(oldValue) {
+                selectedDetent = .fraction(newValue)
+            }
+        }
+        .onChange(of: customHeight) { oldValue, newValue in
+            if selectedDetent == .height(oldValue) {
+                selectedDetent = .height(newValue)
+            }
+        }
         .sheet(isPresented: $showHalfSheet) {
             SampleSheetContent(title: "Medium Sheet")
                 .presentationDetents([.medium])
@@ -220,41 +320,187 @@ struct PopoversView: View {
 }
 
 struct ToastsView: View {
+    private enum ToastType: String, CaseIterable, Identifiable {
+        case success = "Success"
+        case warning = "Warning"
+        case error = "Error"
+        case info = "Info"
+
+        var id: Self { self }
+
+        var icon: String {
+            switch self {
+            case .success: return "checkmark.circle.fill"
+            case .warning: return "exclamationmark.triangle.fill"
+            case .error: return "xmark.octagon.fill"
+            case .info: return "info.circle.fill"
+            }
+        }
+
+        var tint: Color {
+            switch self {
+            case .success: return .green
+            case .warning: return .orange
+            case .error: return .red
+            case .info: return .blue
+            }
+        }
+    }
+
+    private enum ToastPosition: String, CaseIterable, Identifiable {
+        case top = "Top"
+        case bottom = "Bottom"
+
+        var id: Self { self }
+
+        var edge: Edge { self == .top ? .top : .bottom }
+        var alignment: Alignment { self == .top ? .top : .bottom }
+    }
+
+    @State private var toastType: ToastType = .success
+    @State private var message = "Item saved successfully"
+    @State private var position: ToastPosition = .top
+    @State private var autoDismiss = true
+    @State private var duration: Double = 2.5
+    @State private var isToastVisible = false
+    @State private var dismissTask: Task<Void, Never>?
+
     var body: some View {
         List {
             Section {
-                Text("iOS doesn't have a native toast/banner component for in-app use. Common patterns:")
+                VStack(spacing: 24) {
+                    ZStack(alignment: position.alignment) {
+                        Color(.secondarySystemGroupedBackground)
+
+                        VStack(spacing: 16) {
+                            ForEach(0..<4, id: \.self) { _ in
+                                HStack(spacing: 12) {
+                                    Circle()
+                                        .fill(.quaternary)
+                                        .frame(width: 36, height: 36)
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                            .fill(.quaternary)
+                                            .frame(width: 110, height: 10)
+                                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                            .fill(.quaternary.opacity(0.6))
+                                            .frame(width: 170, height: 10)
+                                    }
+                                    Spacer()
+                                }
+                            }
+                        }
+                        .padding(20)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                        if isToastVisible {
+                            toastPill
+                                .padding(12)
+                                .transition(.move(edge: position.edge).combined(with: .opacity))
+                        }
+                    }
+                    .frame(height: 260)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(.separator, lineWidth: 0.5)
+                    )
+                    .animation(.spring(duration: 0.3), value: position)
+                    .animation(.spring(duration: 0.3), value: toastType)
+
+                    Button {
+                        if isToastVisible {
+                            hideToast()
+                        } else {
+                            showToast()
+                        }
+                    } label: {
+                        Label(isToastVisible ? "Hide toast" : "Show toast", systemImage: "bell.badge")
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            Section("Toast") {
+                Picker("Type", selection: $toastType) {
+                    ForEach(ToastType.allCases) { type in
+                        Text(type.rawValue).tag(type)
+                    }
+                }
+                .pickerStyle(.segmented)
+                TextField("Message", text: $message)
+                Picker("Position", selection: $position) {
+                    ForEach(ToastPosition.allCases) { position in
+                        Text(position.rawValue).tag(position)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            Section("Dismissal") {
+                Toggle("Auto-dismiss", isOn: $autoDismiss.animation(.spring(duration: 0.3)))
+                if autoDismiss {
+                    LabeledContent("duration: \(duration, specifier: "%.1f")s") {
+                        Slider(value: $duration, in: 1...5, step: 0.5)
+                    }
+                }
+            }
+
+            Section("When to Use") {
+                Text("iOS doesn't have a native toast/banner component for in-app use. Build one with an overlay, a spring transition, and an auto-dismiss timer — and reserve it for passive status that requires no action.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 4)
             }
-            Section("Patterns") {
-                VStack(spacing: 12) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                        Text("Item saved successfully")
-                            .font(.subheadline)
-                        Spacer()
-                    }
-                    .padding(12)
-                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-                    HStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
-                        Text("Connection lost. Retrying…")
-                            .font(.subheadline)
-                        Spacer()
-                    }
-                    .padding(12)
-                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .padding(.vertical, 4)
-            }
         }
         .navigationTitle("Toasts & Banners")
         .navigationBarTitleDisplayMode(.large)
+        .onChange(of: autoDismiss) { _, isOn in
+            if !isOn { dismissTask?.cancel() }
+        }
+    }
+
+    private var toastPill: some View {
+        HStack(spacing: 10) {
+            Image(systemName: toastType.icon)
+                .foregroundStyle(toastType.tint)
+            Text(message.isEmpty ? "Toast message" : message)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .lineLimit(2)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            Capsule()
+                .fill(Color(.systemBackground))
+                .overlay(Capsule().fill(toastType.tint.opacity(0.15)))
+                .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
+        )
+    }
+
+    private func showToast() {
+        dismissTask?.cancel()
+        withAnimation(.spring(duration: 0.4, bounce: 0.25)) {
+            isToastVisible = true
+        }
+        guard autoDismiss else { return }
+        dismissTask = Task {
+            try? await Task.sleep(for: .seconds(duration))
+            guard !Task.isCancelled else { return }
+            hideToast()
+        }
+    }
+
+    private func hideToast() {
+        dismissTask?.cancel()
+        withAnimation(.spring(duration: 0.4, bounce: 0.25)) {
+            isToastVisible = false
+        }
     }
 }
 
