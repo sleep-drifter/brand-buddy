@@ -1,177 +1,195 @@
 import SwiftUI
 
 struct PhaseAnimationsView: View {
+    @State private var mode: PhaseMode = .loop
+    @State private var phaseSet: PhaseSet = .bounce
+    @State private var stepStyle: StepStyle = .spring
     @State private var isAnimating = false
-    @State private var manualPhase: BouncePhase = .resting
+    @State private var manualIndex = 0
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
+        List {
+            Section {
+                VStack(spacing: 24) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(.quaternary)
+                            .frame(height: 240)
 
-                // MARK: - Looping PhaseAnimator
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Label("PhaseAnimator — Looping", systemImage: "waveform.path")
-                            .font(.headline)
-                        Spacer()
+                        switch mode {
+                        case .loop:
+                            if isAnimating {
+                                PhaseAnimator(phaseSet.phases) { phase in
+                                    tile(for: phase)
+                                } animation: { _ in
+                                    stepAnimation
+                                }
+                            } else {
+                                tile(for: phaseSet.phases[0])
+                            }
+                        case .manual:
+                            tile(for: currentManualPhase)
+                                .animation(stepAnimation, value: manualIndex)
+                        }
+                    }
+                    .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .onTapGesture { handleCanvasTap() }
+                    .overlay(alignment: .bottom) {
+                        if mode == .loop && !isAnimating {
+                            Text("Tap to start looping")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                                .padding(.bottom, 12)
+                        }
+                    }
+
+                    switch mode {
+                    case .loop:
                         Button(isAnimating ? "Pause" : "Play") {
                             isAnimating.toggle()
                         }
                         .buttonStyle(.bordered)
-                        .controlSize(.small)
-                    }
-
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.teal.opacity(0.08))
-                            .frame(height: 160)
-
-                        if isAnimating {
-                            PhaseAnimator([
-                                LoadPhase.idle,
-                                LoadPhase.scaleUp,
-                                LoadPhase.moveRight,
-                                LoadPhase.scaleDown,
-                            ]) { phase in
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(Color.teal.gradient)
-                                    .frame(width: 60, height: 60)
-                                    .overlay(
-                                        Image(systemName: "arrow.right")
-                                            .foregroundStyle(.white)
-                                            .font(.title2)
-                                    )
-                                    .scaleEffect(phase.scale)
-                                    .offset(x: phase.offsetX)
-                                    .opacity(phase.opacity)
-                            } animation: { phase in
-                                switch phase {
-                                case .idle:       .easeIn(duration: 0.3)
-                                case .scaleUp:    .spring(duration: 0.3, bounce: 0.4)
-                                case .moveRight:  .easeInOut(duration: 0.4)
-                                case .scaleDown:  .easeOut(duration: 0.3)
+                    case .manual:
+                        HStack(spacing: 8) {
+                            ForEach(Array(phaseSet.phases.enumerated()), id: \.offset) { index, phase in
+                                Button(phase.label) {
+                                    manualIndex = index
                                 }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .tint(manualIndex == index ? .accentColor : nil)
                             }
-                        } else {
-                            Text("Tap Play to start looping")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
                         }
                     }
-
-                    Text("PhaseAnimator cycles through an array of values automatically. Each transition uses the animation returned for the incoming phase.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
-                .padding(16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-
-                // MARK: - Manual phase control
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Label("Manual Phase Control", systemImage: "slider.horizontal.3")
-                            .font(.headline)
-                        Spacer()
-                    }
-
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.orange.opacity(0.08))
-                            .frame(height: 140)
-
-                        PhaseAnimator([manualPhase]) { phase in
-                            Circle()
-                                .fill(Color.orange.gradient)
-                                .frame(width: 70, height: 70)
-                                .overlay(
-                                    Text(phase.label)
-                                        .font(.caption2.weight(.semibold))
-                                        .foregroundStyle(.white)
-                                )
-                                .scaleEffect(phase.scale)
-                                .opacity(phase.opacity)
-                        } animation: { _ in .spring(duration: 0.5, bounce: 0.3) }
-                    }
-
-                    HStack(spacing: 8) {
-                        ForEach(BouncePhase.allCases, id: \.self) { phase in
-                            Button(phase.label) {
-                                manualPhase = phase
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                            .tint(manualPhase == phase ? .orange : nil)
-                        }
-                    }
-
-                    Text("Passing a single-element array to PhaseAnimator lets you drive it manually — useful for triggered one-shot sequences triggered by state.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .frame(maxWidth: .infinity)
             }
-            .padding(16)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            Section("Controls") {
+                Picker("Mode", selection: $mode) {
+                    ForEach(PhaseMode.allCases, id: \.self) { Text($0.rawValue) }
+                }
+                .pickerStyle(.segmented)
+
+                Picker("Phase set", selection: $phaseSet) {
+                    ForEach(PhaseSet.allCases, id: \.self) { set in
+                        Text("\(set.rawValue) (\(set.phaseList))")
+                    }
+                }
+                .pickerStyle(.menu)
+
+                Picker("Step animation", selection: $stepStyle) {
+                    ForEach(StepStyle.allCases, id: \.self) { Text($0.rawValue) }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            Section("Notes") {
+                Text("PhaseAnimator cycles through an array of values automatically. Each transition uses the animation returned for the incoming phase.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Text("Passing a single-element array to PhaseAnimator lets you drive it manually — useful for triggered one-shot sequences triggered by state.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .onChange(of: phaseSet) { _, _ in
+            manualIndex = 0
         }
         .navigationTitle("Phase Animations")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var currentManualPhase: DemoPhase {
+        let phases = phaseSet.phases
+        return phases[min(manualIndex, phases.count - 1)]
+    }
+
+    private var stepAnimation: Animation {
+        switch stepStyle {
+        case .spring:    return .spring(duration: 0.4, bounce: 0.4)
+        case .easeInOut: return .easeInOut(duration: 0.4)
+        }
+    }
+
+    private func handleCanvasTap() {
+        switch mode {
+        case .loop:
+            isAnimating.toggle()
+        case .manual:
+            manualIndex = (manualIndex + 1) % phaseSet.phases.count
+        }
+    }
+
+    private func tile(for phase: DemoPhase) -> some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(Color.teal.gradient)
+            .frame(width: 72, height: 72)
+            .overlay(
+                Text(phase.label)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white)
+            )
+            .scaleEffect(phase.scale)
+            .rotationEffect(.degrees(phase.rotation))
+            .offset(x: phase.offsetX, y: phase.offsetY)
+            .opacity(phase.opacity)
     }
 }
 
 // MARK: - Phase Definitions
 
-private enum LoadPhase: CaseIterable {
-    case idle, scaleUp, moveRight, scaleDown
-
-    var scale: CGFloat {
-        switch self {
-        case .idle:       return 1.0
-        case .scaleUp:    return 1.4
-        case .moveRight:  return 1.0
-        case .scaleDown:  return 0.7
-        }
-    }
-
-    var offsetX: CGFloat {
-        switch self {
-        case .idle, .scaleUp, .scaleDown: return 0
-        case .moveRight: return 60
-        }
-    }
-
-    var opacity: Double {
-        switch self {
-        case .idle, .scaleUp, .moveRight: return 1.0
-        case .scaleDown: return 0.6
-        }
-    }
+private struct DemoPhase: Hashable {
+    var label: String
+    var scale: CGFloat = 1.0
+    var offsetX: CGFloat = 0
+    var offsetY: CGFloat = 0
+    var rotation: Double = 0
+    var opacity: Double = 1.0
 }
 
-private enum BouncePhase: CaseIterable {
-    case resting, bounced, shrunk
+private enum PhaseMode: String, CaseIterable {
+    case loop = "Loop"
+    case manual = "Manual"
+}
 
-    var scale: CGFloat {
+private enum StepStyle: String, CaseIterable {
+    case spring = "Spring"
+    case easeInOut = "EaseInOut"
+}
+
+private enum PhaseSet: String, CaseIterable {
+    case bounce = "Bounce"
+    case pulse = "Pulse"
+    case shake = "Shake"
+
+    var phases: [DemoPhase] {
         switch self {
-        case .resting: return 1.0
-        case .bounced: return 1.5
-        case .shrunk:  return 0.6
+        case .bounce:
+            return [
+                DemoPhase(label: "Rest"),
+                DemoPhase(label: "Up", scale: 1.1, offsetY: -60),
+                DemoPhase(label: "Down", scale: 0.92, offsetY: 14),
+            ]
+        case .pulse:
+            return [
+                DemoPhase(label: "Small", scale: 0.75, opacity: 0.85),
+                DemoPhase(label: "Big", scale: 1.3),
+            ]
+        case .shake:
+            return [
+                DemoPhase(label: "Left", offsetX: -36, rotation: -8),
+                DemoPhase(label: "Right", offsetX: 36, rotation: 8),
+                DemoPhase(label: "Center"),
+            ]
         }
     }
 
-    var opacity: Double {
-        switch self {
-        case .resting: return 1.0
-        case .bounced: return 0.8
-        case .shrunk:  return 0.4
-        }
-    }
-
-    var label: String {
-        switch self {
-        case .resting: return "Rest"
-        case .bounced: return "Big"
-        case .shrunk:  return "Small"
-        }
+    var phaseList: String {
+        phases.map(\.label).joined(separator: " · ")
     }
 }
 
