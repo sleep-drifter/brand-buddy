@@ -543,11 +543,43 @@ struct UsageRow: View {
 // MARK: - Vibrancy Playground
 
 struct VibrancyPlayground: View {
+    @State private var backgroundType: BackgroundType = .gradient
+    @State private var materialThickness: MaterialThickness = .ultraThin
+    @State private var cornerRadius: CGFloat = 16
+    @State private var showPrimary = true
+    @State private var showSecondary = true
+    @State private var showTertiary = true
+    @State private var showQuaternary = true
+
+    private enum BackgroundType: String, CaseIterable {
+        case gradient = "Gradient"
+        case blobs = "Blobs"
+        case mesh = "Mesh"
+    }
+
+    private enum MaterialThickness: String, CaseIterable {
+        case ultraThin = "ultraThin"
+        case thin = "thin"
+        case regular = "regular"
+        case thick = "thick"
+        case ultraThick = "ultraThick"
+
+        var material: Material {
+            switch self {
+            case .ultraThin: return .ultraThinMaterial
+            case .thin: return .thinMaterial
+            case .regular: return .regularMaterial
+            case .thick: return .thickMaterial
+            case .ultraThick: return .ultraThickMaterial
+            }
+        }
+    }
+
     var body: some View {
         List {
             Section {
                 ZStack {
-                    LinearGradient(colors: [.purple, .blue, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    backgroundContent
                         .frame(height: 300)
                         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
@@ -557,32 +589,66 @@ struct VibrancyPlayground: View {
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
 
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(.ultraThinMaterial)
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(materialThickness.material)
                             .frame(width: 260, height: 160)
                             .overlay(
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Label("Primary label", systemImage: "star.fill")
-                                        .font(.subheadline)
-                                    Label("Secondary label", systemImage: "circle.fill")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                    Label("Tertiary label", systemImage: "triangle.fill")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.tertiary)
-                                    Divider()
-                                    Text("Separator above")
-                                        .font(.caption)
-                                        .foregroundStyle(.quaternary)
+                                    if showPrimary {
+                                        Label("Primary label", systemImage: "star.fill")
+                                            .font(.subheadline)
+                                    }
+                                    if showSecondary {
+                                        Label("Secondary label", systemImage: "circle.fill")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    if showTertiary {
+                                        Label("Tertiary label", systemImage: "triangle.fill")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                    if showQuaternary {
+                                        Divider()
+                                        Text("Separator above")
+                                            .font(.caption)
+                                            .foregroundStyle(.quaternary)
+                                    }
                                 }
                                 .padding(16)
                             )
+                            .animation(.spring(duration: 0.3), value: cornerRadius)
+                            .animation(.spring(duration: 0.3), value: [showPrimary, showSecondary, showTertiary, showQuaternary])
                     }
                 }
             }
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
+
+            Section("Background") {
+                Picker("Background", selection: $backgroundType) {
+                    ForEach(BackgroundType.allCases, id: \.self) { Text($0.rawValue) }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            Section("Material") {
+                Picker("Thickness", selection: $materialThickness) {
+                    ForEach(MaterialThickness.allCases, id: \.self) { Text($0.rawValue) }
+                }
+                .pickerStyle(.menu)
+                LabeledContent("Corner Radius: \(Int(cornerRadius))") {
+                    Slider(value: $cornerRadius, in: 0...32)
+                }
+            }
+
+            Section("Labels") {
+                Toggle(".primary", isOn: $showPrimary)
+                Toggle(".secondary", isOn: $showSecondary)
+                Toggle(".tertiary", isOn: $showTertiary)
+                Toggle(".quaternary", isOn: $showQuaternary)
+            }
 
             Section("Vibrancy Labels") {
                 ForEach(["primary", "secondary", "tertiary", "quaternary"], id: \.self) { level in
@@ -602,6 +668,22 @@ struct VibrancyPlayground: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+        }
+    }
+
+    @ViewBuilder
+    var backgroundContent: some View {
+        switch backgroundType {
+        case .gradient:
+            LinearGradient(colors: [.purple, .blue, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .blobs:
+            BlobBackground()
+        case .mesh:
+            Rectangle().fill(MeshGradient(width: 3, height: 3, points: [
+                [0,0],[0.5,0],[1,0],
+                [0,0.5],[0.5,0.5],[1,0.5],
+                [0,1],[0.5,1],[1,1]
+            ], colors: [.red,.orange,.yellow,.purple,.pink,.orange,.blue,.cyan,.green]))
         }
     }
 

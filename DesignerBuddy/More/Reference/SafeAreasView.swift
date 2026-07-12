@@ -5,9 +5,18 @@ struct SafeAreasView: View {
 
     var body: some View {
         List {
-            Section("Live Safe Area") {
-                LiveSafeAreaView()
+            Section {
+                VStack(spacing: 16) {
+                    phoneCanvas
+                    Text("\(selectedDevice.name) — \(Int(selectedDevice.width))×\(Int(selectedDevice.height))pt @\(Int(selectedDevice.scale))x")
+                        .font(.mono(.caption2))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
             }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
 
             Section("Select Device") {
                 Picker("Device", selection: $selectedDevice) {
@@ -15,7 +24,11 @@ struct SafeAreasView: View {
                         Text(device.name).tag(device)
                     }
                 }
-                .pickerStyle(.inline)
+                .pickerStyle(.menu)
+            }
+
+            Section("Live Safe Area") {
+                LiveSafeAreaView()
             }
 
             Section("Safe Area Insets — \(selectedDevice.name)") {
@@ -43,6 +56,63 @@ struct SafeAreasView: View {
         }
         .navigationTitle("Safe Areas")
         .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var phoneCanvas: some View {
+        let phoneHeight: CGFloat = 320
+        let phoneWidth = phoneHeight * 9 / 19.5
+        let pointScale = phoneHeight / selectedDevice.height
+        let topBandHeight = selectedDevice.safeTop * pointScale
+        let bottomBandHeight = selectedDevice.safeBottom * pointScale
+
+        return VStack(spacing: 0) {
+            ZStack {
+                Rectangle()
+                    .fill(Color.accentColor.opacity(0.2))
+                if selectedDevice.safeTop >= 59 {
+                    Capsule()
+                        .fill(.primary)
+                        .frame(width: 44, height: 13)
+                } else if selectedDevice.safeTop >= 44 {
+                    UnevenRoundedRectangle(bottomLeadingRadius: 7, bottomTrailingRadius: 7, style: .continuous)
+                        .fill(.primary)
+                        .frame(width: 74, height: 10)
+                        .frame(maxHeight: .infinity, alignment: .top)
+                }
+            }
+            .frame(height: topBandHeight)
+
+            Text("top \(Int(selectedDevice.safeTop))pt")
+                .font(.mono(.caption2))
+                .foregroundStyle(.secondary)
+                .padding(.top, 8)
+
+            Spacer(minLength: 0)
+
+            Text("bottom \(Int(selectedDevice.safeBottom))pt")
+                .font(.mono(.caption2))
+                .foregroundStyle(.secondary)
+                .padding(.bottom, 8)
+
+            ZStack {
+                Rectangle()
+                    .fill(Color.accentColor.opacity(0.2))
+                if selectedDevice.safeBottom > 0 {
+                    Capsule()
+                        .fill(.secondary)
+                        .frame(width: 48, height: 4)
+                }
+            }
+            .frame(height: bottomBandHeight)
+        }
+        .frame(width: phoneWidth, height: phoneHeight)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 46, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 46, style: .continuous)
+                .strokeBorder(.separator, lineWidth: 1)
+        )
+        .animation(.spring(duration: 0.3), value: selectedDevice)
     }
 }
 

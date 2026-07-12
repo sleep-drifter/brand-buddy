@@ -23,6 +23,51 @@ struct TypographyReferenceView: View {
     var body: some View {
         List {
             Section {
+                VStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("The quick brown fox")
+                            .font(.title2)
+                        Text("Jumps over the lazy dog while every text style on this page scales in step, so the hierarchy holds at any size.")
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(20)
+                    .frame(minHeight: 200)
+                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .environment(\.sizeCategory, selectedCategory)
+                    .animation(.spring(duration: 0.3), value: selectedSizeIndex)
+
+                    Text("\(selectedCategory.label) — body \(dynamicPointSize(for: .body, category: selectedCategory))pt")
+                        .font(.mono(.caption2))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            Section("Dynamic Type Scale") {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(selectedCategory.label)
+                            .font(.subheadline)
+                        Spacer()
+                        Text("\(selectedSizeIndex + 1) of \(ContentSizeCategory.allAccessibilitySizes.count)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(
+                        value: Binding(get: { Double(selectedSizeIndex) }, set: { selectedSizeIndex = Int($0.rounded()) }),
+                        in: 0...Double(ContentSizeCategory.allAccessibilitySizes.count - 1),
+                        step: 1
+                    )
+                }
+                .padding(.vertical, 4)
+            }
+
+            Section {
                 Toggle("Show size info", isOn: $showSizeInfo)
             }
 
@@ -45,25 +90,6 @@ struct TypographyReferenceView: View {
                     }
                     .padding(.vertical, 2)
                 }
-            }
-
-            Section("Dynamic Type Scale") {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text(selectedCategory.label)
-                            .font(.subheadline)
-                        Spacer()
-                        Text("\(selectedSizeIndex + 1) of \(ContentSizeCategory.allAccessibilitySizes.count)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Slider(
-                        value: Binding(get: { Double(selectedSizeIndex) }, set: { selectedSizeIndex = Int($0.rounded()) }),
-                        in: 0...Double(ContentSizeCategory.allAccessibilitySizes.count - 1),
-                        step: 1
-                    )
-                }
-                .padding(.vertical, 4)
             }
 
             Section("Scale at \(selectedCategory.label)") {
