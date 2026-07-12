@@ -16,81 +16,173 @@ private let mockTrack = MockTrack(
     color: .indigo
 )
 
+// MARK: - Player Style
+
+private enum PlayerStyle: String, CaseIterable, Identifiable {
+    case mini = "Mini"
+    case expanded = "Expanded"
+    case inline = "Inline"
+
+    var id: Self { self }
+
+    var number: String {
+        switch self {
+        case .mini:     return "01"
+        case .expanded: return "02"
+        case .inline:   return "03"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .mini:     return "Mini Player Bar"
+        case .expanded: return "Expanded Player Sheet"
+        case .inline:   return "Inline Player Row"
+        }
+    }
+
+    var explanation: String {
+        switch self {
+        case .mini:     return "Use at the bottom of any screen to let users control playback without leaving their current context. Common in music, podcast, and audio apps."
+        case .expanded: return "Full-screen or large sheet used when the user wants full control. Typically presented over existing content via a sheet or by tapping the mini player bar."
+        case .inline:   return "Compact row embedded in a list or queue. Use to show Now Playing state alongside other tracks, with minimal controls to keep the layout dense."
+        }
+    }
+}
+
 // MARK: - Main View
 
 struct AudioPlaybackPatternsView: View {
-    // Mini player
-    @State private var miniIsPlaying = false
-    @State private var miniProgress: Double = 0.32
-
-    // Expanded player
-    @State private var expandedIsPlaying = false
-    @State private var expandedProgress: Double = 0.45
+    @State private var style: PlayerStyle = .mini
+    @State private var isPlaying = false
+    @State private var progress: Double = 0.32
     @State private var isFavorited = false
     @State private var isShuffle = false
     @State private var isRepeat = false
     @State private var volume: Double = 0.7
 
-    // Inline player
-    @State private var inlineIsPlaying = true
+    private let placeholderWidths: [(CGFloat, CGFloat)] = [(128, 84), (96, 64), (136, 92)]
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 32) {
-                miniPlayerSection
-                expandedPlayerSection
-                inlinePlayerSection
+        List {
+            Section {
+                VStack(spacing: 24) {
+                    switch style {
+                    case .mini:
+                        miniPlayerCanvas
+                    case .expanded:
+                        expandedPlayerCanvas
+                    case .inline:
+                        inlinePlayerCanvas
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .buttonStyle(.borderless)
+                .animation(.spring(duration: 0.3), value: canvasState)
             }
-            .padding(16)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            Section("Style") {
+                Picker("Style", selection: $style) {
+                    ForEach(PlayerStyle.allCases) { option in
+                        Text(option.rawValue).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            Section("Playback") {
+                Toggle("Playing", isOn: $isPlaying)
+
+                LabeledContent("progress: \(progress, specifier: "%.2f")") {
+                    Slider(value: $progress, in: 0...1)
+                }
+                .disabled(style == .inline)
+
+                LabeledContent("volume: \(volume, specifier: "%.2f")") {
+                    Slider(value: $volume, in: 0...1)
+                }
+                .disabled(style != .expanded)
+
+                Toggle("Favorited", isOn: $isFavorited)
+                    .disabled(style != .expanded)
+                Toggle("Shuffle", isOn: $isShuffle)
+                    .disabled(style != .expanded)
+                Toggle("Repeat", isOn: $isRepeat)
+                    .disabled(style != .expanded)
+            }
+
+            Section("Patterns") {
+                ForEach(PlayerStyle.allCases) { option in
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            style = option
+                        }
+                    } label: {
+                        HStack(alignment: .top) {
+                            AudioPatternHeader(
+                                number: option.number,
+                                title: option.title,
+                                description: option.explanation
+                            )
+                            .foregroundStyle(.primary)
+                            Spacer()
+                            if style == option {
+                                Image(systemName: "checkmark")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(.tint)
+                            }
+                        }
+                    }
+                }
+            }
         }
         .navigationTitle("Playback UI Patterns")
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    private var canvasState: [AnyHashable] {
+        [style, isPlaying, isFavorited, isShuffle, isRepeat]
+    }
+
     // MARK: - Pattern 1: Mini Player Bar
 
-    private var miniPlayerSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            AudioPatternHeader(
-                number: "01",
-                title: "Mini Player Bar",
-                description: "Use at the bottom of any screen to let users control playback without leaving their current context. Common in music, podcast, and audio apps."
-            )
-
-            // Phone frame mockup
-            RoundedRectangle(cornerRadius: 28)
-                .fill(Color(.secondarySystemBackground))
-                .frame(height: 320)
-                .overlay(
-                    VStack(spacing: 0) {
-                        // Placeholder content
-                        VStack(spacing: 12) {
-                            ForEach(0..<3) { i in
-                                HStack(spacing: 12) {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(.quaternary)
-                                        .frame(width: 40, height: 40)
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Capsule().fill(.quaternary).frame(width: CGFloat.random(in: 80...140), height: 10)
-                                        Capsule().fill(.quaternary.opacity(0.6)).frame(width: CGFloat.random(in: 60...100), height: 8)
-                                    }
-                                    Spacer()
+    private var miniPlayerCanvas: some View {
+        // Phone frame mockup
+        RoundedRectangle(cornerRadius: 28)
+            .fill(Color(.secondarySystemBackground))
+            .frame(height: 320)
+            .overlay(
+                VStack(spacing: 0) {
+                    // Placeholder content
+                    VStack(spacing: 12) {
+                        ForEach(0..<placeholderWidths.count, id: \.self) { i in
+                            HStack(spacing: 12) {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(.quaternary)
+                                    .frame(width: 40, height: 40)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Capsule().fill(.quaternary).frame(width: placeholderWidths[i].0, height: 10)
+                                    Capsule().fill(.quaternary.opacity(0.6)).frame(width: placeholderWidths[i].1, height: 8)
                                 }
+                                Spacer()
                             }
                         }
-                        .padding(16)
-                        .frame(maxHeight: .infinity, alignment: .top)
-
-                        miniPlayerBar
                     }
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 28)
-                        .stroke(.quaternary, lineWidth: 1)
-                )
-        }
-        .padding(16)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .padding(16)
+                    .frame(maxHeight: .infinity, alignment: .top)
+
+                    miniPlayerBar
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 28))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 28)
+                    .stroke(.quaternary, lineWidth: 1)
+            )
+            .padding(.horizontal, 20)
     }
 
     private var miniPlayerBar: some View {
@@ -99,7 +191,7 @@ struct AudioPlaybackPatternsView: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Rectangle().fill(.quaternary).frame(height: 2)
-                    Rectangle().fill(mockTrack.color).frame(width: geo.size.width * miniProgress, height: 2)
+                    Rectangle().fill(mockTrack.color).frame(width: geo.size.width * progress, height: 2)
                 }
             }
             .frame(height: 2)
@@ -130,9 +222,9 @@ struct AudioPlaybackPatternsView: View {
 
                 // Controls
                 Button {
-                    miniIsPlaying.toggle()
+                    isPlaying.toggle()
                 } label: {
-                    Image(systemName: miniIsPlaying ? "pause.fill" : "play.fill")
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(.primary)
                         .frame(width: 36, height: 36)
@@ -155,118 +247,97 @@ struct AudioPlaybackPatternsView: View {
 
     // MARK: - Pattern 2: Expanded Player Sheet
 
-    private var expandedPlayerSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            AudioPatternHeader(
-                number: "02",
-                title: "Expanded Player Sheet",
-                description: "Full-screen or large sheet used when the user wants full control. Typically presented over existing content via a sheet or by tapping the mini player bar."
-            )
-
-            VStack(spacing: 24) {
-                // Album art
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(
-                        LinearGradient(
-                            colors: [mockTrack.color, mockTrack.color.opacity(0.5)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+    private var expandedPlayerCanvas: some View {
+        VStack(spacing: 16) {
+            // Album art
+            RoundedRectangle(cornerRadius: 20)
+                .fill(
+                    LinearGradient(
+                        colors: [mockTrack.color, mockTrack.color.opacity(0.5)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
-                    .frame(width: 200, height: 200)
-                    .overlay(
-                        Image(systemName: "music.note")
-                            .font(.system(size: 64))
-                            .foregroundStyle(.white.opacity(0.6))
-                    )
-                    .shadow(color: mockTrack.color.opacity(0.4), radius: 20, y: 8)
-                    .frame(maxWidth: .infinity)
+                )
+                .frame(width: 120, height: 120)
+                .overlay(
+                    Image(systemName: "music.note")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.white.opacity(0.6))
+                )
+                .shadow(color: mockTrack.color.opacity(0.4), radius: 20, y: 8)
+                .frame(maxWidth: .infinity)
 
-                // Title + favorite
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(mockTrack.title)
-                            .font(.title2.weight(.bold))
-                        Text(mockTrack.artist)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button {
-                        isFavorited.toggle()
-                    } label: {
-                        Image(systemName: isFavorited ? "heart.fill" : "heart")
-                            .font(.title2)
-                            .foregroundStyle(isFavorited ? .red : .secondary)
-                    }
-                    .animation(.spring(response: 0.2), value: isFavorited)
-                }
-
-                // Scrubber
-                VStack(spacing: 6) {
-                    Slider(value: $expandedProgress, in: 0...1)
-                        .tint(mockTrack.color)
-
-                    HStack {
-                        Text(timeString(expandedProgress * mockTrack.duration))
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text("-" + timeString((1 - expandedProgress) * mockTrack.duration))
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                // Playback controls
-                HStack(spacing: 0) {
-                    controlButton(systemImage: isShuffle ? "shuffle" : "shuffle", isActive: isShuffle, size: 20) {
-                        isShuffle.toggle()
-                    }
-                    controlButton(systemImage: "backward.fill", isActive: false, size: 24) {}
-                    Button {
-                        expandedIsPlaying.toggle()
-                    } label: {
-                        Image(systemName: expandedIsPlaying ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.system(size: 56))
-                            .foregroundStyle(mockTrack.color)
-                    }
-                    .frame(maxWidth: .infinity)
-                    controlButton(systemImage: "forward.fill", isActive: false, size: 24) {}
-                    controlButton(systemImage: isRepeat ? "repeat.1" : "repeat", isActive: isRepeat, size: 20) {
-                        isRepeat.toggle()
-                    }
-                }
-
-                // Volume
-                HStack(spacing: 10) {
-                    Image(systemName: "speaker.fill")
+            // Title + favorite
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(mockTrack.title)
+                        .font(.title2.weight(.bold))
+                    Text(mockTrack.artist)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .font(.caption)
-                    Slider(value: $volume, in: 0...1)
-                        .tint(.secondary)
-                    Image(systemName: "speaker.wave.3.fill")
-                        .foregroundStyle(.secondary)
-                        .font(.caption)
                 }
+                Spacer()
+                Button {
+                    isFavorited.toggle()
+                } label: {
+                    Image(systemName: isFavorited ? "heart.fill" : "heart")
+                        .font(.title2)
+                        .foregroundStyle(isFavorited ? .red : .secondary)
+                }
+                .animation(.spring(response: 0.2), value: isFavorited)
+            }
 
-                // AirPlay
+            // Scrubber
+            VStack(spacing: 6) {
+                Slider(value: $progress, in: 0...1)
+                    .tint(mockTrack.color)
+
                 HStack {
+                    Text(timeString(progress * mockTrack.duration))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
                     Spacer()
-                    Button {
-                        // AirPlay picker would appear here
-                    } label: {
-                        Image(systemName: "airplay.audio")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                    }
+                    Text("-" + timeString((1 - progress) * mockTrack.duration))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
                 }
             }
-            .padding(20)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+
+            // Playback controls
+            HStack(spacing: 0) {
+                controlButton(systemImage: "shuffle", isActive: isShuffle, size: 20) {
+                    isShuffle.toggle()
+                }
+                controlButton(systemImage: "backward.fill", isActive: false, size: 24) {}
+                Button {
+                    isPlaying.toggle()
+                } label: {
+                    Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                        .font(.system(size: 56))
+                        .foregroundStyle(mockTrack.color)
+                }
+                .frame(maxWidth: .infinity)
+                controlButton(systemImage: "forward.fill", isActive: false, size: 24) {}
+                controlButton(systemImage: isRepeat ? "repeat.1" : "repeat", isActive: isRepeat, size: 20) {
+                    isRepeat.toggle()
+                }
+            }
+
+            // Volume
+            HStack(spacing: 10) {
+                Image(systemName: "speaker.fill")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+                Slider(value: $volume, in: 0...1)
+                    .tint(.secondary)
+                Image(systemName: "speaker.wave.3.fill")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+            }
         }
-        .padding(16)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .padding(20)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .padding(.horizontal, 20)
     }
 
     private func controlButton(systemImage: String, isActive: Bool, size: CGFloat, action: @escaping () -> Void) -> some View {
@@ -280,39 +351,30 @@ struct AudioPlaybackPatternsView: View {
 
     // MARK: - Pattern 3: Inline Player Row
 
-    private var inlinePlayerSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            AudioPatternHeader(
-                number: "03",
-                title: "Inline Player Row",
-                description: "Compact row embedded in a list or queue. Use to show Now Playing state alongside other tracks, with minimal controls to keep the layout dense."
+    private var inlinePlayerCanvas: some View {
+        VStack(spacing: 0) {
+            // Now playing row
+            inlinePlayerRow(
+                track: mockTrack,
+                isCurrentTrack: true,
+                isPlayingParam: $isPlaying
             )
 
-            VStack(spacing: 0) {
-                // Now playing row
-                inlinePlayerRow(
-                    track: mockTrack,
-                    isCurrentTrack: true,
-                    isPlayingParam: $inlineIsPlaying
-                )
+            Divider().padding(.leading, 64)
 
-                Divider().padding(.leading, 64)
+            // Other rows (static, not playing)
+            inlineStaticRow(title: "Neon Coast", artist: "Chillwave Co.", color: .teal)
 
-                // Other rows (static, not playing)
-                inlineStaticRow(title: "Neon Coast", artist: "Chillwave Co.", color: .teal)
+            Divider().padding(.leading, 64)
 
-                Divider().padding(.leading, 64)
-
-                inlineStaticRow(title: "Electric Dusk", artist: "Future Bass", color: .purple)
-            }
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(.quaternary, lineWidth: 0.5)
-            )
+            inlineStaticRow(title: "Electric Dusk", artist: "Future Bass", color: .purple)
         }
-        .padding(16)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(.quaternary, lineWidth: 0.5)
+        )
+        .padding(.horizontal, 20)
     }
 
     private func inlinePlayerRow(track: MockTrack, isCurrentTrack: Bool, isPlayingParam: Binding<Bool>) -> some View {

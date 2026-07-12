@@ -3,38 +3,133 @@ import SwiftUI
 // MARK: - Photo Library Patterns View
 
 struct PhotoLibraryPatternsView: View {
+    @State private var pattern: PhotoPattern = .avatar
+    @State private var isPhotoSet = false
+    @State private var thumbnails: [Color] = [
+        .indigo, .blue, .purple, .teal
+    ]
+    @State private var showEditOverlay = true
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 40) {
-                PatternHeader(number: 1, title: "Avatar / Profile Photo")
-                AvatarPatternView()
-                designNote("Use when the user has a single primary identity photo. The confirmationDialog matches native iOS Camera Roll patterns users already expect.")
-
-                Divider().padding(.horizontal)
-
-                PatternHeader(number: 2, title: "Thumbnail Strip with Replace")
-                ThumbnailStripPatternView()
-                designNote("Use for multi-image content like listings, galleries, or attachments. The horizontal strip keeps images visible while allowing reorder/remove at a glance.")
-
-                Divider().padding(.horizontal)
-
-                PatternHeader(number: 3, title: "Full-Bleed Preview")
-                FullBleedPatternView()
-                designNote("Use when the photo is the primary content (cover photo, hero image). Overlaid edit affordances keep the image immersive without leaving the context.")
+        List {
+            Section {
+                VStack(spacing: 24) {
+                    switch pattern {
+                    case .avatar:
+                        AvatarPatternView(isPhotoSet: $isPhotoSet)
+                    case .thumbnailStrip:
+                        ThumbnailStripPatternView(thumbnails: $thumbnails)
+                    case .fullBleed:
+                        FullBleedPatternView(showEditOverlay: showEditOverlay)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .buttonStyle(.borderless)
+                .animation(.spring(duration: 0.3), value: canvasState)
             }
-            .padding(.vertical, 24)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            Section("Pattern") {
+                Picker("Pattern", selection: $pattern) {
+                    ForEach(PhotoPattern.allCases) { option in
+                        Text(option.rawValue).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                switch pattern {
+                case .avatar:
+                    Toggle("Photo set", isOn: $isPhotoSet)
+                case .thumbnailStrip:
+                    Stepper("Thumbnails: \(thumbnails.count)") {
+                        withAnimation(.spring(duration: 0.3)) {
+                            thumbnails.append(availableColors.randomElement() ?? .blue)
+                        }
+                    } onDecrement: {
+                        guard !thumbnails.isEmpty else { return }
+                        withAnimation(.spring(duration: 0.3)) {
+                            thumbnails.removeLast()
+                        }
+                    }
+                case .fullBleed:
+                    Toggle("Edit overlay", isOn: $showEditOverlay)
+                }
+            }
+
+            Section("Design Notes") {
+                ForEach(PhotoPattern.allCases) { option in
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            pattern = option
+                        }
+                    } label: {
+                        HStack(alignment: .top, spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(pattern == option ? Color.accentColor : Color(uiColor: .tertiarySystemFill))
+                                    .frame(width: 28, height: 28)
+                                Text("\(option.number)")
+                                    .font(.footnote.weight(.bold))
+                                    .foregroundStyle(pattern == option ? Color.white : Color.secondary)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(option.title)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.primary)
+                                Text(option.note)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
         }
         .navigationTitle("Photo Library Patterns")
-        .background(Color(uiColor: .systemGroupedBackground))
     }
 
-    private func designNote(_ text: String) -> some View {
-        Text(text)
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 20)
+    private var canvasState: [AnyHashable] {
+        [pattern, isPhotoSet, thumbnails, showEditOverlay]
     }
 }
+
+// MARK: - Photo Pattern
+
+private enum PhotoPattern: String, CaseIterable, Identifiable {
+    case avatar = "Avatar"
+    case thumbnailStrip = "Thumbnail strip"
+    case fullBleed = "Full bleed"
+
+    var id: Self { self }
+
+    var number: Int {
+        switch self {
+        case .avatar:         return 1
+        case .thumbnailStrip: return 2
+        case .fullBleed:      return 3
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .avatar:         return "Avatar / Profile Photo"
+        case .thumbnailStrip: return "Thumbnail Strip with Replace"
+        case .fullBleed:      return "Full-Bleed Preview"
+        }
+    }
+
+    var note: String {
+        switch self {
+        case .avatar:         return "Use when the user has a single primary identity photo. The confirmationDialog matches native iOS Camera Roll patterns users already expect."
+        case .thumbnailStrip: return "Use for multi-image content like listings, galleries, or attachments. The horizontal strip keeps images visible while allowing reorder/remove at a glance."
+        case .fullBleed:      return "Use when the photo is the primary content (cover photo, hero image). Overlaid edit affordances keep the image immersive without leaving the context."
+        }
+    }
+}
+
+private let availableColors: [Color] = [.indigo, .blue, .purple, .teal, .green, .orange, .pink]
 
 // MARK: - Pattern Header
 
@@ -62,7 +157,7 @@ struct PatternHeader: View {
 // MARK: - Pattern 1: Avatar / Profile Photo
 
 struct AvatarPatternView: View {
-    @State private var isPhotoSet = false
+    @Binding var isPhotoSet: Bool
     @State private var showChangeDialog = false
 
     var body: some View {
@@ -104,17 +199,13 @@ struct AvatarPatternView: View {
         .padding(.vertical, 28)
         .background(Color(uiColor: .secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .padding(.horizontal, 20)
     }
 }
 
 // MARK: - Pattern 2: Thumbnail Strip with Replace
 
 struct ThumbnailStripPatternView: View {
-    @State private var thumbnails: [Color] = [
-        .indigo, .blue, .purple, .teal
-    ]
-    private let availableColors: [Color] = [.indigo, .blue, .purple, .teal, .green, .orange, .pink]
+    @Binding var thumbnails: [Color]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -198,14 +289,13 @@ struct ThumbnailStripPatternView: View {
         .padding(.vertical, 20)
         .background(Color(uiColor: .secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .padding(.horizontal, 20)
     }
 }
 
 // MARK: - Pattern 3: Full-Bleed Preview
 
 struct FullBleedPatternView: View {
-    @State private var showEditOverlay = true
+    var showEditOverlay: Bool = true
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -228,14 +318,17 @@ struct FullBleedPatternView: View {
                     bottomMetaBar
                 }
                 .overlay(alignment: .top) {
-                    topEditBar
+                    if showEditOverlay {
+                        topEditBar
+                    }
                 }
                 .overlay(alignment: .bottom) {
-                    editToolbar
+                    if showEditOverlay {
+                        editToolbar
+                    }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 16))
         }
-        .padding(.horizontal, 20)
     }
 
     private var topEditBar: some View {

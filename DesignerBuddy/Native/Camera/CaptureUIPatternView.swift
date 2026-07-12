@@ -3,65 +3,199 @@ import SwiftUI
 // MARK: - Capture UI Pattern View
 
 struct CaptureUIPatternView: View {
+    @State private var layout: CaptureLayout = .standard
+    @State private var showTopBar = true
+    @State private var showModeStrip = true
+    @State private var showGrid = false
+    @State private var showBrackets = true
+    @State private var shutterStyle: ShutterStyle = .circle
+
+    private let canvasScale: CGFloat = 0.68
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: 40) {
-                patternCard(
-                    title: "Standard Centered",
-                    caption: "Default camera app layout. Maximizes viewfinder real estate with symmetrical controls.",
-                    label: "Standard centered shutter"
-                ) {
-                    StandardCenteredPattern()
-                }
+        List {
+            Section {
+                VStack(spacing: 24) {
+                    PhoneFrame {
+                        selectedPattern
+                    }
+                    .scaleEffect(canvasScale)
+                    .frame(width: 280 * canvasScale, height: 560 * canvasScale)
 
-                patternCard(
-                    title: "Bottom Control Strip",
-                    caption: "Used when mode-switching (Photo/Video/Slow-Mo) is a primary interaction. Extra vertical space for the strip.",
-                    label: "Bottom-docked control strip"
-                ) {
-                    BottomControlStripPattern()
+                    Text(layout.caption)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity)
+                .animation(.spring(duration: 0.3), value: canvasState)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
 
-                patternCard(
-                    title: "Minimal / Scan",
-                    caption: "Document scanning and QR/barcode apps. Removes chrome to focus attention on the target subject.",
-                    label: "Minimal / Scan mode"
-                ) {
-                    MinimalScanPattern()
+            Section("Layout") {
+                Picker("Layout", selection: $layout) {
+                    ForEach(CaptureLayout.allCases) { option in
+                        Text(option.rawValue).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            Section("Chrome") {
+                Toggle("Top status bar", isOn: $showTopBar)
+                    .disabled(layout == .minimalScan)
+                Toggle("Mode strip", isOn: $showModeStrip)
+                    .disabled(layout != .bottomStrip)
+                Toggle("Grid overlay", isOn: $showGrid)
+                Toggle("Corner brackets & crosshair", isOn: $showBrackets)
+                    .disabled(layout != .minimalScan)
+            }
+
+            Section("Shutter") {
+                Picker("Shutter style", selection: $shutterStyle) {
+                    ForEach(ShutterStyle.allCases) { style in
+                        Text(style.rawValue).tag(style)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            Section("Patterns") {
+                ForEach(CaptureLayout.allCases) { option in
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            layout = option
+                        }
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(option.title)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.primary)
+                                Text(option.note)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if layout == option {
+                                Image(systemName: "checkmark")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(.tint)
+                            }
+                        }
+                    }
                 }
             }
-            .padding(20)
         }
         .navigationTitle("Capture UI Patterns")
-        .background(Color(uiColor: .systemGroupedBackground))
     }
 
-    // MARK: - Card Container
-
     @ViewBuilder
-    private func patternCard<Content: View>(
-        title: String,
-        caption: String,
-        label: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.headline)
+    private var selectedPattern: some View {
+        switch layout {
+        case .standard:
+            StandardCenteredPattern(showTopBar: showTopBar, showGrid: showGrid, shutterStyle: shutterStyle)
+        case .bottomStrip:
+            BottomControlStripPattern(showTopBar: showTopBar, showModeStrip: showModeStrip, showGrid: showGrid, shutterStyle: shutterStyle)
+        case .minimalScan:
+            MinimalScanPattern(showGrid: showGrid, showBrackets: showBrackets, shutterStyle: shutterStyle)
+        }
+    }
 
-            PhoneFrame {
-                content()
+    private var canvasState: [AnyHashable] {
+        [layout, showTopBar, showModeStrip, showGrid, showBrackets, shutterStyle]
+    }
+}
+
+// MARK: - Capture Layout
+
+private enum CaptureLayout: String, CaseIterable, Identifiable {
+    case standard = "Standard"
+    case bottomStrip = "Bottom strip"
+    case minimalScan = "Minimal scan"
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .standard:    return "Standard Centered"
+        case .bottomStrip: return "Bottom Control Strip"
+        case .minimalScan: return "Minimal / Scan"
+        }
+    }
+
+    var caption: String {
+        switch self {
+        case .standard:    return "Standard centered shutter"
+        case .bottomStrip: return "Bottom-docked control strip"
+        case .minimalScan: return "Minimal / Scan mode"
+        }
+    }
+
+    var note: String {
+        switch self {
+        case .standard:    return "Default camera app layout. Maximizes viewfinder real estate with symmetrical controls."
+        case .bottomStrip: return "Used when mode-switching (Photo/Video/Slow-Mo) is a primary interaction. Extra vertical space for the strip."
+        case .minimalScan: return "Document scanning and QR/barcode apps. Removes chrome to focus attention on the target subject."
+        }
+    }
+}
+
+// MARK: - Shutter Style
+
+enum ShutterStyle: String, CaseIterable, Identifiable {
+    case circle = "Circle"
+    case roundedSquare = "Rounded square"
+
+    var id: Self { self }
+}
+
+private struct ShutterButton: View {
+    var style: ShutterStyle = .circle
+
+    var body: some View {
+        switch style {
+        case .circle:
+            ZStack {
+                Circle()
+                    .stroke(.white, lineWidth: 3)
+                    .frame(width: 62, height: 62)
+                Circle()
+                    .fill(.white)
+                    .frame(width: 52, height: 52)
             }
+        case .roundedSquare:
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(.white, lineWidth: 3)
+                    .frame(width: 62, height: 62)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(.white)
+                    .frame(width: 52, height: 52)
+            }
+        }
+    }
+}
 
-            Text(label)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
+// MARK: - Grid Overlay
 
-            Text(caption)
-                .font(.caption)
-                .foregroundStyle(Color(uiColor: .tertiaryLabel))
-                .padding(.horizontal, 4)
+private struct GridOverlay: View {
+    var body: some View {
+        GeometryReader { geo in
+            Path { path in
+                let w = geo.size.width
+                let h = geo.size.height
+                for i in 1..<3 {
+                    let x = w * CGFloat(i) / 3
+                    path.move(to: CGPoint(x: x, y: 0))
+                    path.addLine(to: CGPoint(x: x, y: h))
+                    let y = h * CGFloat(i) / 3
+                    path.move(to: CGPoint(x: 0, y: y))
+                    path.addLine(to: CGPoint(x: w, y: y))
+                }
+            }
+            .stroke(Color.white.opacity(0.35), lineWidth: 0.5)
         }
     }
 }
@@ -94,25 +228,36 @@ struct PhoneFrame<Content: View>: View {
 // MARK: - Pattern 1: Standard Centered
 
 struct StandardCenteredPattern: View {
+    var showTopBar: Bool = true
+    var showGrid: Bool = false
+    var shutterStyle: ShutterStyle = .circle
+
     var body: some View {
         VStack(spacing: 0) {
             // Top strip
-            HStack {
-                Image(systemName: "bolt.slash")
-                Spacer()
-                Image(systemName: "timer")
-                Spacer()
-                Image(systemName: "ellipsis")
+            if showTopBar {
+                HStack {
+                    Image(systemName: "bolt.slash")
+                    Spacer()
+                    Image(systemName: "timer")
+                    Spacer()
+                    Image(systemName: "ellipsis")
+                }
+                .font(.system(size: 18))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 16)
             }
-            .font(.system(size: 18))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 28)
-            .padding(.vertical, 16)
 
             // Viewfinder
             Rectangle()
                 .fill(Color(white: 0.15))
                 .frame(maxHeight: .infinity)
+                .overlay {
+                    if showGrid {
+                        GridOverlay()
+                    }
+                }
 
             // Bottom strip
             HStack {
@@ -123,14 +268,7 @@ struct StandardCenteredPattern: View {
                 Spacer()
 
                 // Shutter
-                ZStack {
-                    Circle()
-                        .stroke(.white, lineWidth: 3)
-                        .frame(width: 62, height: 62)
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 52, height: 52)
-                }
+                ShutterButton(style: shutterStyle)
 
                 Spacer()
 
@@ -151,36 +289,50 @@ struct StandardCenteredPattern: View {
 // MARK: - Pattern 2: Bottom Control Strip
 
 struct BottomControlStripPattern: View {
+    var showTopBar: Bool = true
+    var showModeStrip: Bool = true
+    var showGrid: Bool = false
+    var shutterStyle: ShutterStyle = .circle
+
     var body: some View {
         VStack(spacing: 0) {
             // Minimal top bar
-            HStack {
-                Image(systemName: "xmark")
-                Spacer()
-                Image(systemName: "bolt.slash")
+            if showTopBar {
+                HStack {
+                    Image(systemName: "xmark")
+                    Spacer()
+                    Image(systemName: "bolt.slash")
+                }
+                .font(.system(size: 18))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 16)
             }
-            .font(.system(size: 18))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 28)
-            .padding(.vertical, 16)
 
             // Viewfinder
             Rectangle()
                 .fill(Color(white: 0.15))
                 .frame(maxHeight: .infinity)
+                .overlay {
+                    if showGrid {
+                        GridOverlay()
+                    }
+                }
 
             // Docked bottom strip
             VStack(spacing: 14) {
                 // Mode selector
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 24) {
-                        ForEach(["Slo-Mo", "Video", "Photo", "Portrait", "Pano"], id: \.self) { mode in
-                            Text(mode)
-                                .font(.caption.weight(mode == "Photo" ? .bold : .regular))
-                                .foregroundStyle(mode == "Photo" ? Color.yellow : .white)
+                if showModeStrip {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 24) {
+                            ForEach(["Slo-Mo", "Video", "Photo", "Portrait", "Pano"], id: \.self) { mode in
+                                Text(mode)
+                                    .font(.caption.weight(mode == "Photo" ? .bold : .regular))
+                                    .foregroundStyle(mode == "Photo" ? Color.yellow : .white)
+                            }
                         }
+                        .padding(.horizontal, 28)
                     }
-                    .padding(.horizontal, 28)
                 }
 
                 // Controls row
@@ -191,14 +343,7 @@ struct BottomControlStripPattern: View {
 
                     Spacer()
 
-                    ZStack {
-                        Circle()
-                            .stroke(.white, lineWidth: 3)
-                            .frame(width: 62, height: 62)
-                        Circle()
-                            .fill(.white)
-                            .frame(width: 52, height: 52)
-                    }
+                    ShutterButton(style: shutterStyle)
 
                     Spacer()
 
@@ -209,7 +354,7 @@ struct BottomControlStripPattern: View {
                 .padding(.horizontal, 28)
             }
             .padding(.vertical, 14)
-            .frame(height: 100)
+            .frame(height: showModeStrip ? 100 : 90)
             .background(Color(white: 0.08))
         }
     }
@@ -218,63 +363,70 @@ struct BottomControlStripPattern: View {
 // MARK: - Pattern 3: Minimal / Scan
 
 struct MinimalScanPattern: View {
+    var showGrid: Bool = false
+    var showBrackets: Bool = true
+    var shutterStyle: ShutterStyle = .circle
+
     var body: some View {
         ZStack {
             // Viewfinder background
             Color(white: 0.12)
 
-            // Corner brackets
-            GeometryReader { geo in
-                let w = geo.size.width
-                let h = geo.size.height
-                let inset: CGFloat = 48
-                let armLen: CGFloat = 24
-                let thickness: CGFloat = 3
-
-                ZStack {
-                    // Top-left
-                    CornerBracket(armLength: armLen, thickness: thickness)
-                        .position(x: inset, y: inset)
-
-                    // Top-right
-                    CornerBracket(armLength: armLen, thickness: thickness)
-                        .rotationEffect(.degrees(90))
-                        .position(x: w - inset, y: inset)
-
-                    // Bottom-left
-                    CornerBracket(armLength: armLen, thickness: thickness)
-                        .rotationEffect(.degrees(-90))
-                        .position(x: inset, y: h - inset)
-
-                    // Bottom-right
-                    CornerBracket(armLength: armLen, thickness: thickness)
-                        .rotationEffect(.degrees(180))
-                        .position(x: w - inset, y: h - inset)
-                }
+            if showGrid {
+                GridOverlay()
             }
 
-            // Crosshair
-            ZStack {
-                Rectangle()
-                    .fill(Color.white.opacity(0.5))
-                    .frame(width: 20, height: 1)
-                Rectangle()
-                    .fill(Color.white.opacity(0.5))
-                    .frame(width: 1, height: 20)
+            if showBrackets {
+                // Corner brackets
+                GeometryReader { geo in
+                    let w = geo.size.width
+                    let h = geo.size.height
+                    let inset: CGFloat = 48
+                    let armLen: CGFloat = 24
+                    let thickness: CGFloat = 3
+
+                    ZStack {
+                        // Top-left
+                        CornerBracket(armLength: armLen, thickness: thickness)
+                            .fill(.white)
+                            .position(x: inset, y: inset)
+
+                        // Top-right
+                        CornerBracket(armLength: armLen, thickness: thickness)
+                            .fill(.white)
+                            .rotationEffect(.degrees(90))
+                            .position(x: w - inset, y: inset)
+
+                        // Bottom-left
+                        CornerBracket(armLength: armLen, thickness: thickness)
+                            .fill(.white)
+                            .rotationEffect(.degrees(-90))
+                            .position(x: inset, y: h - inset)
+
+                        // Bottom-right
+                        CornerBracket(armLength: armLen, thickness: thickness)
+                            .fill(.white)
+                            .rotationEffect(.degrees(180))
+                            .position(x: w - inset, y: h - inset)
+                    }
+                }
+
+                // Crosshair
+                ZStack {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.5))
+                        .frame(width: 20, height: 1)
+                    Rectangle()
+                        .fill(Color.white.opacity(0.5))
+                        .frame(width: 1, height: 20)
+                }
             }
 
             // Single centered shutter button at bottom
             VStack {
                 Spacer()
-                ZStack {
-                    Circle()
-                        .stroke(.white, lineWidth: 3)
-                        .frame(width: 62, height: 62)
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 52, height: 52)
-                }
-                .padding(.bottom, 36)
+                ShutterButton(style: shutterStyle)
+                    .padding(.bottom, 36)
             }
         }
     }
@@ -288,13 +440,13 @@ struct CornerBracket: Shape {
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
+        let corner = CGPoint(x: rect.midX - armLength / 2, y: rect.midY - armLength / 2)
         // Horizontal arm going right
-        path.move(to: CGPoint(x: -armLength / 2, y: 0))
-        path.addLine(to: CGPoint(x: armLength / 2, y: 0))
+        path.move(to: CGPoint(x: corner.x + armLength, y: corner.y))
+        path.addLine(to: corner)
         // Vertical arm going down
-        path.move(to: CGPoint(x: 0, y: -armLength / 2))
-        path.addLine(to: CGPoint(x: 0, y: armLength / 2))
-        return path
+        path.addLine(to: CGPoint(x: corner.x, y: corner.y + armLength))
+        return path.strokedPath(StrokeStyle(lineWidth: thickness, lineCap: .round))
     }
 }
 
