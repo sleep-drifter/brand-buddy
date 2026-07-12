@@ -7,105 +7,105 @@ struct CornerRadiusView: View {
     @State private var showGrid = true
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                // Live comparison
-                if showBothStyles {
-                    HStack(spacing: 24) {
-                        VStack(spacing: 8) {
-                            Rectangle()
-                                .fill(.tint)
-                                .frame(width: shapeSize, height: shapeSize)
-                                .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-                            Text(".continuous")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+        List {
+            Section {
+                VStack(spacing: 24) {
+                    // Live comparison
+                    if showBothStyles {
+                        HStack(spacing: 24) {
+                            VStack(spacing: 8) {
+                                Rectangle()
+                                    .fill(.tint)
+                                    .frame(width: shapeSize, height: shapeSize)
+                                    .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+                                Text(".continuous")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            VStack(spacing: 8) {
+                                Rectangle()
+                                    .fill(.tint.opacity(0.6))
+                                    .frame(width: shapeSize, height: shapeSize)
+                                    .clipShape(RoundedRectangle(cornerRadius: radius, style: .circular))
+                                Text(".circular")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
-                        VStack(spacing: 8) {
-                            Rectangle()
-                                .fill(.tint.opacity(0.6))
-                                .frame(width: shapeSize, height: shapeSize)
-                                .clipShape(RoundedRectangle(cornerRadius: radius, style: .circular))
-                            Text(".circular")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 12)
-                } else {
-                    Rectangle()
-                        .fill(.tint)
-                        .frame(width: shapeSize, height: shapeSize)
-                        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
                         .padding(.vertical, 12)
-                }
-
-                Text("radius: \(Int(radius))pt")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .monospacedDigit()
-
-                List {
-                    Section("Controls") {
-                        LabeledContent("Corner Radius: \(Int(radius))") {
-                            Slider(value: $radius, in: 0...shapeSize / 2)
-                        }
-                        LabeledContent("Shape Size: \(Int(shapeSize))") {
-                            Slider(value: $shapeSize, in: 60...160)
-                        }
-                        Toggle("Compare both styles", isOn: $showBothStyles)
+                    } else {
+                        Rectangle()
+                            .fill(.tint)
+                            .frame(width: shapeSize, height: shapeSize)
+                            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+                            .padding(.vertical, 12)
                     }
 
-                    Section("iOS Standard Radii") {
-                        ForEach(StandardRadius.all) { item in
-                            Button {
-                                withAnimation(.spring(duration: 0.4, bounce: 0.3)) {
-                                    radius = item.value
-                                }
-                            } label: {
-                                HStack {
+                    Text("radius: \(Int(radius))pt")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .monospacedDigit()
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            Section("Controls") {
+                LabeledContent("Corner Radius: \(Int(radius))") {
+                    Slider(value: $radius, in: 0...shapeSize / 2)
+                }
+                LabeledContent("Shape Size: \(Int(shapeSize))") {
+                    Slider(value: $shapeSize, in: 60...160)
+                }
+                Toggle("Compare both styles", isOn: $showBothStyles)
+            }
+
+            Section("iOS Standard Radii") {
+                ForEach(StandardRadius.all) { item in
+                    Button {
+                        withAnimation(.spring(duration: 0.4, bounce: 0.3)) {
+                            radius = item.value
+                        }
+                    } label: {
+                        HStack {
+                            RoundedRectangle(cornerRadius: item.value / 120 * 32, style: .continuous)
+                                .fill(.tint.opacity(0.2))
+                                .frame(width: 32, height: 32)
+                                .overlay(
                                     RoundedRectangle(cornerRadius: item.value / 120 * 32, style: .continuous)
-                                        .fill(.tint.opacity(0.2))
-                                        .frame(width: 32, height: 32)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: item.value / 120 * 32, style: .continuous)
-                                                .strokeBorder(.tint, lineWidth: 1)
-                                        )
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(item.name).font(.subheadline).foregroundStyle(.primary)
-                                        Text("\(Int(item.value))pt — \(item.usage)").font(.caption).foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    if Int(radius) == Int(item.value) {
-                                        Image(systemName: "checkmark").foregroundStyle(.tint).font(.caption)
-                                    }
-                                }
+                                        .strokeBorder(.tint, lineWidth: 1)
+                                )
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.name).font(.subheadline).foregroundStyle(.primary)
+                                Text("\(Int(item.value))pt — \(item.usage)").font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if Int(radius) == Int(item.value) {
+                                Image(systemName: "checkmark").foregroundStyle(.tint).font(.caption)
                             }
                         }
                     }
-
-                    Section("Continuous vs Circular") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(".continuous (squircle)")
-                                .font(.subheadline).fontWeight(.semibold)
-                            Text("The curve starts earlier and ends later, creating a smoother transition from straight to curved. Used by Apple for all system UI since iOS 13: app icons, widgets, cards.")
-                                .font(.caption).foregroundStyle(.secondary)
-
-                            Divider()
-
-                            Text(".circular (classic)")
-                                .font(.subheadline).fontWeight(.semibold)
-                            Text("A standard circular arc clamped to the corner. The corner feels more distinct. Used in some legacy contexts and by Android.")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 4)
-                    }
                 }
-                .frame(height: 620)
-                .scrollDisabled(true)
-                .padding(.horizontal)
             }
-            .padding(.top)
+
+            Section("Continuous vs Circular") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(".continuous (squircle)")
+                        .font(.subheadline).fontWeight(.semibold)
+                    Text("The curve starts earlier and ends later, creating a smoother transition from straight to curved. Used by Apple for all system UI since iOS 13: app icons, widgets, cards.")
+                        .font(.caption).foregroundStyle(.secondary)
+
+                    Divider()
+
+                    Text(".circular (classic)")
+                        .font(.subheadline).fontWeight(.semibold)
+                    Text("A standard circular arc clamped to the corner. The corner feels more distinct. Used in some legacy contexts and by Android.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
+            }
         }
         .navigationTitle("Corner Radius")
         .navigationBarTitleDisplayMode(.large)

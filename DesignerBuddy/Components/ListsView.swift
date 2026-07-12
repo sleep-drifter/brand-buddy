@@ -3,137 +3,137 @@ import SwiftUI
 // MARK: - ListsView (#010 — inline mock cards for each list style)
 
 struct ListsView: View {
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-
-                // MARK: Plain
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Plain")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    Text(".listStyle(.plain)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal)
-
-                    VStack(spacing: 0) {
-                        ForEach(["Row 1", "Row 2", "Row 3", "Row 4"], id: \.self) { label in
-                            HStack {
-                                Text(label)
-                                Spacer()
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            Divider()
-                                .padding(.leading, 16)
-                        }
-                    }
-                    .background(Color(.systemBackground))
-                }
-
-                // MARK: Inset Grouped
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Inset Grouped")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    Text(".listStyle(.insetGrouped)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal)
-
-                    VStack(spacing: 12) {
-                        ForEach(["Section A", "Section B"], id: \.self) { section in
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text(section)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                                    .padding(.horizontal, 16)
-                                    .padding(.bottom, 4)
-                                VStack(spacing: 0) {
-                                    ForEach(1...3, id: \.self) { i in
-                                        HStack {
-                                            Text("Row \(i)")
-                                            Spacer()
-                                        }
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 11)
-                                        if i < 3 {
-                                            Divider().padding(.leading, 16)
-                                        }
-                                    }
-                                }
-                                .background(Color(.secondarySystemGroupedBackground),
-                                             in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGroupedBackground))
-                }
-
-                // MARK: Grouped
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Grouped")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    Text(".listStyle(.grouped)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal)
-
-                    VStack(spacing: 0) {
-                        ForEach(["Section A", "Section B"], id: \.self) { section in
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text(section)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                                    .padding(.horizontal, 16)
-                                    .padding(.top, 20)
-                                    .padding(.bottom, 6)
-                                VStack(spacing: 0) {
-                                    ForEach(1...3, id: \.self) { i in
-                                        HStack {
-                                            Text("Row \(i)")
-                                            Spacer()
-                                        }
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 11)
-                                        .background(Color(.secondarySystemGroupedBackground))
-                                        if i < 3 {
-                                            Divider().padding(.leading, 16)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .background(Color(.systemGroupedBackground))
-                }
-
-                // MARK: Row Types — real interactive List
-                Text("Row Types")
-                    .font(.headline)
-                    .padding(.horizontal)
-                    .padding(.top, 4)
-
-                RowVariantsList()
-                    .frame(height: 520)
-            }
-            .padding(.vertical)
-        }
-        .navigationTitle("Lists & Tables")
-        .navigationBarTitleDisplayMode(.large)
-    }
-}
-
-// Extracted so it can have its own @State
-private struct RowVariantsList: View {
     @State private var checked = false
 
     var body: some View {
         List {
+            Section {
+                VStack(alignment: .leading, spacing: 28) {
+
+                    // MARK: Plain
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Plain")
+                            .font(.headline)
+                        Text(".listStyle(.plain)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        VStack(spacing: 0) {
+                            ForEach(["Row 1", "Row 2", "Row 3", "Row 4"], id: \.self) { label in
+                                HStack {
+                                    Text(label)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                Divider()
+                                    .padding(.leading, 16)
+                            }
+                        }
+                        .background(Color(.systemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(Color(.separator), lineWidth: 0.5)
+                        )
+                    }
+
+                    // MARK: Inset Grouped
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Inset Grouped")
+                            .font(.headline)
+                        Text(".listStyle(.insetGrouped)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        VStack(spacing: 12) {
+                            ForEach(["Section A", "Section B"], id: \.self) { section in
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text(section)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                        .padding(.horizontal, 16)
+                                        .padding(.bottom, 4)
+                                    VStack(spacing: 0) {
+                                        ForEach(1...3, id: \.self) { i in
+                                            HStack {
+                                                Text("Row \(i)")
+                                                Spacer()
+                                            }
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 11)
+                                            if i < 3 {
+                                                Divider().padding(.leading, 16)
+                                            }
+                                        }
+                                    }
+                                    .background(Color(.secondarySystemGroupedBackground),
+                                                 in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+                        .background(Color(.systemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(Color(.separator), lineWidth: 0.5)
+                        )
+                    }
+
+                    // MARK: Grouped
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Grouped")
+                            .font(.headline)
+                        Text(".listStyle(.grouped)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        VStack(spacing: 0) {
+                            ForEach(["Section A", "Section B"], id: \.self) { section in
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text(section)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                        .padding(.horizontal, 16)
+                                        .padding(.top, 20)
+                                        .padding(.bottom, 6)
+                                    VStack(spacing: 0) {
+                                        ForEach(1...3, id: \.self) { i in
+                                            HStack {
+                                                Text("Row \(i)")
+                                                Spacer()
+                                            }
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 11)
+                                            .background(Color(.secondarySystemGroupedBackground))
+                                            if i < 3 {
+                                                Divider().padding(.leading, 16)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .background(Color(.systemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(Color(.separator), lineWidth: 0.5)
+                        )
+                    }
+
+                    // MARK: Row Types — real interactive rows below
+                    Text("Row Types")
+                        .font(.headline)
+                        .padding(.top, 4)
+                }
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
             Section("Basic") {
                 Text("Simple text row")
                 HStack {
@@ -191,8 +191,8 @@ private struct RowVariantsList: View {
                     }
             }
         }
-        .listStyle(.insetGrouped)
-        .scrollDisabled(true)
+        .navigationTitle("Lists & Tables")
+        .navigationBarTitleDisplayMode(.large)
     }
 }
 

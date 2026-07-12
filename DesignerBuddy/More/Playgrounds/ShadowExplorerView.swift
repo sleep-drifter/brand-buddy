@@ -18,106 +18,103 @@ struct ShadowExplorerView: View {
     ]
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                // Preview
-                ZStack {
-                    backgrounds[bgIndex].1
-                        .frame(height: 200)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .strokeBorder(.separator, lineWidth: 0.5)
-                        )
+        List {
+            Section {
+                VStack(spacing: 24) {
+                    // Preview
+                    ZStack {
+                        backgrounds[bgIndex].1
+                            .frame(height: 200)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .strokeBorder(.separator, lineWidth: 0.5)
+                            )
 
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(cardColor)
-                        .frame(width: 140, height: 90)
-                        .shadow(
-                            color: shadowColor.opacity(opacity),
-                            radius: radius,
-                            x: x,
-                            y: y
-                        )
-                        .overlay(
-                            Text("Card")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.secondary)
-                        )
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(cardColor)
+                            .frame(width: 140, height: 90)
+                            .shadow(
+                                color: shadowColor.opacity(opacity),
+                                radius: radius,
+                                x: x,
+                                y: y
+                            )
+                            .overlay(
+                                Text("Card")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(.secondary)
+                            )
+                    }
+
+                    // Code output
+                    Text(".shadow(\n  color: \(shadowColor == .black ? ".black" : "color").opacity(\(opacity, specifier: "%.2f")),\n  radius: \(Int(radius)),\n  x: \(Int(x)), y: \(Int(y))\n)")
+                        .font(.mono(.caption))
+                        .foregroundStyle(.secondary)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
-                .padding(.horizontal)
-
-                // Code output
-                Text(".shadow(\n  color: \(shadowColor == .black ? ".black" : "color").opacity(\(opacity, specifier: "%.2f")),\n  radius: \(Int(radius)),\n  x: \(Int(x)), y: \(Int(y))\n)")
-                    .font(.mono(.caption))
-                    .foregroundStyle(.secondary)
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .padding(.horizontal)
-
-                List {
-                    Section("Shadow") {
-                        LabeledContent("radius: \(Int(radius))") {
-                            Slider(value: $radius, in: 0...60)
-                        }
-                        LabeledContent("x: \(Int(x))") {
-                            Slider(value: $x, in: -40...40)
-                        }
-                        LabeledContent("y: \(Int(y))") {
-                            Slider(value: $y, in: -40...40)
-                        }
-                        LabeledContent("opacity: \(opacity, specifier: "%.2f")") {
-                            Slider(value: $opacity, in: 0...1)
-                        }
-                        ColorPicker("Shadow color", selection: $shadowColor, supportsOpacity: false)
-                    }
-
-                    Section("Card") {
-                        LabeledContent("cornerRadius: \(Int(cornerRadius))") {
-                            Slider(value: $cornerRadius, in: 0...48)
-                        }
-                        ColorPicker("Card color", selection: $cardColor, supportsOpacity: false)
-                    }
-
-                    Section("Background") {
-                        Picker("Background", selection: $bgIndex) {
-                            ForEach(Array(backgrounds.enumerated()), id: \.offset) { i, bg in
-                                Text(bg.0).tag(i)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                    }
-
-                    Section("Presets") {
-                        ForEach(ShadowPreset.all) { preset in
-                            Button {
-                                withAnimation(.spring(duration: 0.3)) {
-                                    radius = preset.radius
-                                    x = preset.x
-                                    y = preset.y
-                                    opacity = preset.opacity
-                                }
-                            } label: {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(preset.name).font(.subheadline).foregroundStyle(.primary)
-                                        Text(preset.description).font(.caption).foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Text("r:\(Int(preset.radius)) y:\(Int(preset.y))")
-                                        .font(.mono(.caption2)).foregroundStyle(.tertiary)
-                                }
-                            }
-                        }
-                    }
-                }
-                .frame(height: 680)
-                .scrollDisabled(true)
-                .padding(.horizontal)
             }
-            .padding(.top)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            Section("Shadow") {
+                LabeledContent("radius: \(Int(radius))") {
+                    Slider(value: $radius, in: 0...60)
+                }
+                LabeledContent("x: \(Int(x))") {
+                    Slider(value: $x, in: -40...40)
+                }
+                LabeledContent("y: \(Int(y))") {
+                    Slider(value: $y, in: -40...40)
+                }
+                LabeledContent("opacity: \(opacity, specifier: "%.2f")") {
+                    Slider(value: $opacity, in: 0...1)
+                }
+                ColorPicker("Shadow color", selection: $shadowColor, supportsOpacity: false)
+            }
+
+            Section("Card") {
+                LabeledContent("cornerRadius: \(Int(cornerRadius))") {
+                    Slider(value: $cornerRadius, in: 0...48)
+                }
+                ColorPicker("Card color", selection: $cardColor, supportsOpacity: false)
+            }
+
+            Section("Background") {
+                Picker("Background", selection: $bgIndex) {
+                    ForEach(Array(backgrounds.enumerated()), id: \.offset) { i, bg in
+                        Text(bg.0).tag(i)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            Section("Presets") {
+                ForEach(ShadowPreset.all) { preset in
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            radius = preset.radius
+                            x = preset.x
+                            y = preset.y
+                            opacity = preset.opacity
+                        }
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(preset.name).font(.subheadline).foregroundStyle(.primary)
+                                Text(preset.description).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text("r:\(Int(preset.radius)) y:\(Int(preset.y))")
+                                .font(.mono(.caption2)).foregroundStyle(.tertiary)
+                        }
+                    }
+                }
+            }
         }
         .navigationTitle("Shadow Explorer")
         .navigationBarTitleDisplayMode(.large)

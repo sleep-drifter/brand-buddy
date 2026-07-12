@@ -7,97 +7,93 @@ struct ConcentricRadiusView: View {
     var innerConcentric: CGFloat { max(outerRadius - padding, 0) }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 32) {
+        List {
+            Section {
+                VStack(spacing: 32) {
+                    // Side-by-side comparison
+                    HStack(spacing: 20) {
+                        VStack(spacing: 10) {
+                            concentricCard(innerRadius: innerConcentric, label: "Concentric\n(R − p)")
+                                .overlay(alignment: .topLeading) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                        .padding(8)
+                                }
+                            Text("inner = \(Int(innerConcentric))pt")
+                                .font(.mono(.caption))
+                                .foregroundStyle(.secondary)
+                        }
 
-                // Side-by-side comparison
-                HStack(spacing: 20) {
-                    VStack(spacing: 10) {
-                        concentricCard(innerRadius: innerConcentric, label: "Concentric\n(R − p)")
-                            .overlay(alignment: .topLeading) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                    .padding(8)
-                            }
-                        Text("inner = \(Int(innerConcentric))pt")
-                            .font(.mono(.caption))
-                            .foregroundStyle(.secondary)
+                        VStack(spacing: 10) {
+                            concentricCard(innerRadius: outerRadius, label: "Naive\n(same R)")
+                                .overlay(alignment: .topLeading) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.red)
+                                        .padding(8)
+                                }
+                            Text("inner = \(Int(outerRadius))pt")
+                                .font(.mono(.caption))
+                                .foregroundStyle(.secondary)
+                        }
                     }
 
-                    VStack(spacing: 10) {
-                        concentricCard(innerRadius: outerRadius, label: "Naive\n(same R)")
-                            .overlay(alignment: .topLeading) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(.red)
-                                    .padding(8)
-                            }
-                        Text("inner = \(Int(outerRadius))pt")
-                            .font(.mono(.caption))
-                            .foregroundStyle(.secondary)
+                    // Formula callout
+                    VStack(spacing: 6) {
+                        Text("inner radius = outer radius − padding")
+                            .font(.mono(.subheadline))
+                            .multilineTextAlignment(.center)
+                        Text("\(Int(innerConcentric)) = \(Int(outerRadius)) − \(Int(padding))")
+                            .font(.mono(.title3))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.tint)
+                            .contentTransition(.numericText())
+                            .animation(.spring(duration: 0.3), value: innerConcentric)
                     }
+                    .padding(16)
+                    .frame(maxWidth: .infinity)
+                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
-                .padding(.horizontal)
-
-                // Formula callout
-                VStack(spacing: 6) {
-                    Text("inner radius = outer radius − padding")
-                        .font(.mono(.subheadline))
-                        .multilineTextAlignment(.center)
-                    Text("\(Int(innerConcentric)) = \(Int(outerRadius)) − \(Int(padding))")
-                        .font(.mono(.title3))
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.tint)
-                        .contentTransition(.numericText())
-                        .animation(.spring(duration: 0.3), value: innerConcentric)
-                }
-                .padding(16)
                 .frame(maxWidth: .infinity)
-                .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .padding(.horizontal)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
 
-                List {
-                    Section("Controls") {
-                        LabeledContent("Outer Radius (R): \(Int(outerRadius))pt") {
-                            Slider(value: $outerRadius, in: 8...56)
+            Section("Controls") {
+                LabeledContent("Outer Radius (R): \(Int(outerRadius))pt") {
+                    Slider(value: $outerRadius, in: 8...56)
+                }
+                LabeledContent("Padding (p): \(Int(padding))pt") {
+                    Slider(value: $padding, in: 4...32)
+                }
+            }
+
+            Section("Why it matters") {
+                Text("When two rounded rectangles share the same radius, their curves don't follow the same center — they look like separate shapes placed near each other.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Text("Subtracting the padding aligns both curves to the same focal point, so the inner shape feels like it belongs inside the outer one.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Real examples") {
+                ForEach(ConcentricExample.all) { ex in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(ex.name).font(.subheadline)
+                            Text(ex.detail).font(.caption).foregroundStyle(.secondary)
                         }
-                        LabeledContent("Padding (p): \(Int(padding))pt") {
-                            Slider(value: $padding, in: 4...32)
-                        }
-                    }
-
-                    Section("Why it matters") {
-                        Text("When two rounded rectangles share the same radius, their curves don't follow the same center — they look like separate shapes placed near each other.")
-                            .font(.caption).foregroundStyle(.secondary)
-                        Text("Subtracting the padding aligns both curves to the same focal point, so the inner shape feels like it belongs inside the outer one.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-
-                    Section("Real examples") {
-                        ForEach(ConcentricExample.all) { ex in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(ex.name).font(.subheadline)
-                                    Text(ex.detail).font(.caption).foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Button("Apply") {
-                                    withAnimation(.spring(duration: 0.4, bounce: 0.2)) {
-                                        outerRadius = ex.outer
-                                        padding = ex.padding
-                                    }
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
+                        Spacer()
+                        Button("Apply") {
+                            withAnimation(.spring(duration: 0.4, bounce: 0.2)) {
+                                outerRadius = ex.outer
+                                padding = ex.padding
                             }
                         }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                     }
                 }
-                .frame(height: 580)
-                .scrollDisabled(true)
-                .padding(.horizontal)
             }
-            .padding(.top)
-            .padding(.bottom, 32)
         }
         .navigationTitle("Concentric Radius")
         .navigationBarTitleDisplayMode(.large)

@@ -43,62 +43,60 @@ struct GlassEffectPlayground: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                ZStack {
-                    bgContent
-                        .frame(height: 300)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        List {
+            Section {
+                VStack(spacing: 20) {
+                    ZStack {
+                        bgContent
+                            .frame(height: 300)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-                    VStack(spacing: 16) {
-                        glassCard(label: "Hello, glass.")
-                        HStack(spacing: 12) {
-                            glassChip("Confirm")
-                            glassChip("Cancel")
+                        VStack(spacing: 16) {
+                            glassCard(label: "Hello, glass.")
+                            HStack(spacing: 12) {
+                                glassChip("Confirm")
+                                glassChip("Cancel")
+                            }
                         }
                     }
-                }
-                .padding(.horizontal)
 
-                Button(showControls ? "Hide Controls" : "Show Controls") {
-                    withAnimation(.spring(duration: 0.3)) { showControls.toggle() }
-                }
-                .buttonStyle(.bordered)
-
-                if showControls {
-                    List {
-                        Section("Background") {
-                            Picker("Background", selection: $backgroundType) {
-                                ForEach(GlassBG.allCases, id: \.self) { Text($0.rawValue) }
-                            }
-                            .pickerStyle(.segmented)
-                            if backgroundType == .gradient {
-                                ColorPicker("Color 1", selection: $bgColor1, supportsOpacity: false)
-                                ColorPicker("Color 2", selection: $bgColor2, supportsOpacity: false)
-                            }
-                        }
-
-                        Section("GlassEffect") {
-                            LabeledContent("Corner Radius: \(Int(cornerRadius))") {
-                                Slider(value: $cornerRadius, in: 0...56)
-                            }
-                            Toggle(".interactive", isOn: $isInteractive)
-                        }
-
-                        Section("How it works") {
-                            Text("`.glassEffect(in:)` is the iOS 26 liquid glass modifier. The system synthesizes the blur, specular highlights, and refraction — you only specify the shape.")
-                                .font(.caption).foregroundStyle(.secondary)
-                            Text("`.interactive` makes the glass surface respond to press gestures with a physical scale-and-dim feedback, matching system button behavior.")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
+                    Button(showControls ? "Hide Controls" : "Show Controls") {
+                        withAnimation(.spring(duration: 0.3)) { showControls.toggle() }
                     }
-                    .frame(height: 420)
-                    .scrollDisabled(true)
-                    .padding(.horizontal)
+                    .buttonStyle(.bordered)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            if showControls {
+                Section("Background") {
+                    Picker("Background", selection: $backgroundType) {
+                        ForEach(GlassBG.allCases, id: \.self) { Text($0.rawValue) }
+                    }
+                    .pickerStyle(.segmented)
+                    if backgroundType == .gradient {
+                        ColorPicker("Color 1", selection: $bgColor1, supportsOpacity: false)
+                        ColorPicker("Color 2", selection: $bgColor2, supportsOpacity: false)
+                    }
+                }
+
+                Section("GlassEffect") {
+                    LabeledContent("Corner Radius: \(Int(cornerRadius))") {
+                        Slider(value: $cornerRadius, in: 0...56)
+                    }
+                    Toggle(".interactive", isOn: $isInteractive)
+                }
+
+                Section("How it works") {
+                    Text("`.glassEffect(in:)` is the iOS 26 liquid glass modifier. The system synthesizes the blur, specular highlights, and refraction — you only specify the shape.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text("`.interactive` makes the glass surface respond to press gestures with a physical scale-and-dim feedback, matching system button behavior.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
             }
-            .padding(.top)
-            .padding(.bottom, 32)
         }
     }
 
@@ -236,27 +234,30 @@ struct GlassPlayground: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                ZStack {
-                    backgroundContent
-                        .frame(height: 280)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    glassCard
-                }
-                .padding(.horizontal)
+        List {
+            Section {
+                VStack(spacing: 20) {
+                    ZStack {
+                        backgroundContent
+                            .frame(height: 280)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        glassCard
+                    }
 
-                Button(showControls ? "Hide Controls" : "Show Controls") {
-                    withAnimation(.spring(duration: 0.3)) { showControls.toggle() }
+                    Button(showControls ? "Hide Controls" : "Show Controls") {
+                        withAnimation(.spring(duration: 0.3)) { showControls.toggle() }
+                    }
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.bordered)
-
-                if showControls {
-                    controlsPanel
-                }
+                .frame(maxWidth: .infinity)
             }
-            .padding(.top)
-            .padding(.bottom, 32)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            if showControls {
+                controlSections
+            }
         }
     }
 
@@ -320,70 +321,66 @@ struct GlassPlayground: View {
         .opacity(cardOpacity)
     }
 
-    var controlsPanel: some View {
-        List {
-            Section("Background") {
-                Picker("Type", selection: $backgroundType) {
-                    ForEach(BackgroundType.allCases, id: \.self) { Text($0.rawValue) }
-                }
-                .pickerStyle(.segmented)
-                if backgroundType == .gradient {
-                    ColorPicker("Color 1", selection: $bgColor1, supportsOpacity: false)
-                    ColorPicker("Color 2", selection: $bgColor2, supportsOpacity: false)
-                    LabeledContent("Angle: \(Int(gradientAngle))°") {
-                        Slider(value: $gradientAngle, in: 0...360)
-                    }
-                }
+    @ViewBuilder
+    var controlSections: some View {
+        Section("Background") {
+            Picker("Type", selection: $backgroundType) {
+                ForEach(BackgroundType.allCases, id: \.self) { Text($0.rawValue) }
             }
-
-            Section("Material") {
-                Picker("Thickness", selection: $materialThickness) {
-                    ForEach(MaterialThickness.allCases, id: \.self) { Text($0.rawValue) }
-                }
-                .pickerStyle(.menu)
-                LabeledContent("Opacity: \(cardOpacity, specifier: "%.2f")") {
-                    Slider(value: $cardOpacity, in: 0.1...1.0)
-                }
-            }
-
-            Section("Shape") {
-                LabeledContent("Corner Radius: \(Int(cornerRadius))") {
-                    Slider(value: $cornerRadius, in: 0...56)
-                }
-            }
-
-            Section("Tint Overlay") {
-                ColorPicker("Tint Color", selection: $tintColor, supportsOpacity: false)
-                LabeledContent("Opacity: \(tintOpacity, specifier: "%.2f")") {
-                    Slider(value: $tintOpacity, in: 0...0.5)
-                }
-            }
-
-            Section("Border") {
-                ColorPicker("Color", selection: $borderColor, supportsOpacity: false)
-                LabeledContent("Opacity: \(borderOpacity, specifier: "%.2f")") {
-                    Slider(value: $borderOpacity, in: 0...1.0)
-                }
-                LabeledContent("Width: \(borderWidth, specifier: "%.1f")pt") {
-                    Slider(value: $borderWidth, in: 0...4)
-                }
-            }
-
-            Section("Shadow") {
-                LabeledContent("Opacity: \(shadowOpacity, specifier: "%.2f")") {
-                    Slider(value: $shadowOpacity, in: 0...0.8)
-                }
-                LabeledContent("Radius: \(Int(shadowRadius))") {
-                    Slider(value: $shadowRadius, in: 0...60)
-                }
-                LabeledContent("Y Offset: \(Int(shadowY))") {
-                    Slider(value: $shadowY, in: -30...30)
+            .pickerStyle(.segmented)
+            if backgroundType == .gradient {
+                ColorPicker("Color 1", selection: $bgColor1, supportsOpacity: false)
+                ColorPicker("Color 2", selection: $bgColor2, supportsOpacity: false)
+                LabeledContent("Angle: \(Int(gradientAngle))°") {
+                    Slider(value: $gradientAngle, in: 0...360)
                 }
             }
         }
-        .frame(height: 820)
-        .scrollDisabled(true)
-        .padding(.horizontal)
+
+        Section("Material") {
+            Picker("Thickness", selection: $materialThickness) {
+                ForEach(MaterialThickness.allCases, id: \.self) { Text($0.rawValue) }
+            }
+            .pickerStyle(.menu)
+            LabeledContent("Opacity: \(cardOpacity, specifier: "%.2f")") {
+                Slider(value: $cardOpacity, in: 0.1...1.0)
+            }
+        }
+
+        Section("Shape") {
+            LabeledContent("Corner Radius: \(Int(cornerRadius))") {
+                Slider(value: $cornerRadius, in: 0...56)
+            }
+        }
+
+        Section("Tint Overlay") {
+            ColorPicker("Tint Color", selection: $tintColor, supportsOpacity: false)
+            LabeledContent("Opacity: \(tintOpacity, specifier: "%.2f")") {
+                Slider(value: $tintOpacity, in: 0...0.5)
+            }
+        }
+
+        Section("Border") {
+            ColorPicker("Color", selection: $borderColor, supportsOpacity: false)
+            LabeledContent("Opacity: \(borderOpacity, specifier: "%.2f")") {
+                Slider(value: $borderOpacity, in: 0...1.0)
+            }
+            LabeledContent("Width: \(borderWidth, specifier: "%.1f")pt") {
+                Slider(value: $borderWidth, in: 0...4)
+            }
+        }
+
+        Section("Shadow") {
+            LabeledContent("Opacity: \(shadowOpacity, specifier: "%.2f")") {
+                Slider(value: $shadowOpacity, in: 0...0.8)
+            }
+            LabeledContent("Radius: \(Int(shadowRadius))") {
+                Slider(value: $shadowRadius, in: 0...60)
+            }
+            LabeledContent("Y Offset: \(Int(shadowY))") {
+                Slider(value: $shadowY, in: -30...30)
+            }
+        }
     }
 }
 
@@ -547,8 +544,8 @@ struct UsageRow: View {
 
 struct VibrancyPlayground: View {
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
+        List {
+            Section {
                 ZStack {
                     LinearGradient(colors: [.purple, .blue, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
                         .frame(height: 300)
@@ -582,33 +579,29 @@ struct VibrancyPlayground: View {
                             )
                     }
                 }
-                .padding(.horizontal)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
 
-                List {
-                    Section("Vibrancy Labels") {
-                        ForEach(["primary", "secondary", "tertiary", "quaternary"], id: \.self) { level in
-                            HStack {
-                                Text(".\(level)")
-                                    .font(.mono(.caption))
-                                Spacer()
-                                Text("Label")
-                                    .foregroundStyle(labelStyle(for: level))
-                                    .padding(8)
-                                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                            }
-                        }
-                    }
-                    Section("Usage") {
-                        Text("Vibrancy effects are automatic when using .foregroundStyle(.primary/.secondary/.tertiary) on views placed inside a material background. The system synthesizes appropriate contrast.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+            Section("Vibrancy Labels") {
+                ForEach(["primary", "secondary", "tertiary", "quaternary"], id: \.self) { level in
+                    HStack {
+                        Text(".\(level)")
+                            .font(.mono(.caption))
+                        Spacer()
+                        Text("Label")
+                            .foregroundStyle(labelStyle(for: level))
+                            .padding(8)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                     }
                 }
-                .frame(height: 380)
-                .scrollDisabled(true)
-                .padding(.horizontal)
             }
-            .padding(.top)
+            Section("Usage") {
+                Text("Vibrancy effects are automatic when using .foregroundStyle(.primary/.secondary/.tertiary) on views placed inside a material background. The system synthesizes appropriate contrast.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
