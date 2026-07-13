@@ -41,6 +41,7 @@ struct SafeAreasView: View {
             Section("Screen Dimensions — \(selectedDevice.name)") {
                 DeviceSpecRow(label: "Screen width", value: selectedDevice.width)
                 DeviceSpecRow(label: "Screen height", value: selectedDevice.height)
+                DeviceSpecRow(label: "Display corner radius", value: selectedDevice.screenRadius)
                 DeviceSpecRow(label: "Scale factor", value: Int(selectedDevice.scale), unit: "×")
             }
 
@@ -60,8 +61,9 @@ struct SafeAreasView: View {
 
     private var phoneCanvas: some View {
         let phoneHeight: CGFloat = 320
-        let phoneWidth = phoneHeight * 9 / 19.5
         let pointScale = phoneHeight / selectedDevice.height
+        let phoneWidth = selectedDevice.width * pointScale
+        let cornerRadius = selectedDevice.screenRadius * pointScale
         let topBandHeight = selectedDevice.safeTop * pointScale
         let bottomBandHeight = selectedDevice.safeBottom * pointScale
 
@@ -107,9 +109,9 @@ struct SafeAreasView: View {
         }
         .frame(width: phoneWidth, height: phoneHeight)
         .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 46, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 46, style: .continuous)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .strokeBorder(.separator, lineWidth: 1)
         )
         .animation(.spring(duration: 0.3), value: selectedDevice)
@@ -193,18 +195,20 @@ struct DeviceSpec: Identifiable, Hashable {
     let safeBottom: CGFloat
     let safeLeading: CGFloat
     let safeTrailing: CGFloat
+    // Display corner radius in points (0 = rectangular LCD)
+    let screenRadius: CGFloat
 
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
     static func == (lhs: DeviceSpec, rhs: DeviceSpec) -> Bool { lhs.id == rhs.id }
 
     static let all: [DeviceSpec] = [
-        DeviceSpec(name: "iPhone 16 Pro Max", width: 440, height: 956, scale: 3, safeTop: 62, safeBottom: 34, safeLeading: 0, safeTrailing: 0),
-        DeviceSpec(name: "iPhone 16 Pro", width: 402, height: 874, scale: 3, safeTop: 62, safeBottom: 34, safeLeading: 0, safeTrailing: 0),
-        DeviceSpec(name: "iPhone 16 Plus", width: 430, height: 932, scale: 3, safeTop: 59, safeBottom: 34, safeLeading: 0, safeTrailing: 0),
-        DeviceSpec(name: "iPhone 16", width: 393, height: 852, scale: 3, safeTop: 59, safeBottom: 34, safeLeading: 0, safeTrailing: 0),
-        DeviceSpec(name: "iPhone 15", width: 393, height: 852, scale: 3, safeTop: 59, safeBottom: 34, safeLeading: 0, safeTrailing: 0),
-        DeviceSpec(name: "iPhone SE (3rd gen)", width: 375, height: 667, scale: 2, safeTop: 20, safeBottom: 0, safeLeading: 0, safeTrailing: 0),
-        DeviceSpec(name: "iPhone 14", width: 390, height: 844, scale: 3, safeTop: 47, safeBottom: 34, safeLeading: 0, safeTrailing: 0),
+        DeviceSpec(name: "iPhone 16 Pro Max", width: 440, height: 956, scale: 3, safeTop: 62, safeBottom: 34, safeLeading: 0, safeTrailing: 0, screenRadius: 62),
+        DeviceSpec(name: "iPhone 16 Pro", width: 402, height: 874, scale: 3, safeTop: 62, safeBottom: 34, safeLeading: 0, safeTrailing: 0, screenRadius: 62),
+        DeviceSpec(name: "iPhone 16 Plus", width: 430, height: 932, scale: 3, safeTop: 59, safeBottom: 34, safeLeading: 0, safeTrailing: 0, screenRadius: 55),
+        DeviceSpec(name: "iPhone 16", width: 393, height: 852, scale: 3, safeTop: 59, safeBottom: 34, safeLeading: 0, safeTrailing: 0, screenRadius: 55),
+        DeviceSpec(name: "iPhone 15", width: 393, height: 852, scale: 3, safeTop: 59, safeBottom: 34, safeLeading: 0, safeTrailing: 0, screenRadius: 55),
+        DeviceSpec(name: "iPhone SE (3rd gen)", width: 375, height: 667, scale: 2, safeTop: 20, safeBottom: 0, safeLeading: 0, safeTrailing: 0, screenRadius: 0),
+        DeviceSpec(name: "iPhone 14", width: 390, height: 844, scale: 3, safeTop: 47, safeBottom: 34, safeLeading: 0, safeTrailing: 0, screenRadius: 47.33),
     ]
 }
 
