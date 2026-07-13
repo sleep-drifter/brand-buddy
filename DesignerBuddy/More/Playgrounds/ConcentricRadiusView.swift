@@ -3,6 +3,7 @@ import SwiftUI
 struct ConcentricRadiusView: View {
     @State private var outerRadius: CGFloat = 32
     @State private var padding: CGFloat = 12
+    @State private var selectedExample: String?
 
     var innerConcentric: CGFloat { max(outerRadius - padding, 0) }
 
@@ -76,23 +77,25 @@ struct ConcentricRadiusView: View {
             }
 
             Section("Real examples") {
-                ForEach(ConcentricExample.all) { ex in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(ex.name).font(.subheadline)
-                            Text(ex.detail).font(.caption).foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button("Apply") {
-                            withAnimation(.spring(duration: 0.4, bounce: 0.2)) {
-                                outerRadius = ex.outer
-                                padding = ex.padding
-                            }
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
+                PresetChipRow(
+                    chips: ConcentricExample.all.map { ex in
+                        PresetChip(
+                            name: ex.name,
+                            detail: ex.detail,
+                            code: "outer: \(Int(ex.outer)), padding: \(Int(ex.padding))"
+                        )
+                    },
+                    selectedID: $selectedExample
+                ) { chip in
+                    guard let ex = ConcentricExample.all.first(where: { $0.name == chip.name }) else { return }
+                    withAnimation(.spring(duration: 0.4, bounce: 0.2)) {
+                        outerRadius = ex.outer
+                        padding = ex.padding
                     }
                 }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
         }
         .navigationTitle("Concentric Radius")

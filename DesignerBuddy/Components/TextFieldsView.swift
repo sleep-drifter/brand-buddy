@@ -55,6 +55,7 @@ struct TextFieldsView: View {
     @State private var submit: SubmitLabelKind = .done
     @State private var emailText = ""
     @State private var multilineText = ""
+    @State private var selectedPreset: String?
     @FocusState private var focused: Field?
 
     enum Field: Hashable { case specimen, editor }
@@ -137,29 +138,26 @@ struct TextFieldsView: View {
             }
 
             Section("Presets") {
-                ForEach(FieldPreset.all) { preset in
-                    Button {
-                        withAnimation(.spring(duration: 0.3)) {
-                            styleKind = preset.style
-                            isSecure = preset.secure
-                            showIcon = preset.icon
-                            placeholder = preset.placeholder
-                            keyboard = preset.keyboard
-                            submit = preset.submit
-                            text = ""
-                        }
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(preset.name).font(.subheadline).foregroundStyle(.primary)
-                                Text(preset.detail).font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Text(preset.style.token)
-                                .font(.mono(.caption2)).foregroundStyle(.tertiary)
-                        }
+                PresetChipRow(
+                    chips: FieldPreset.all.map { preset in
+                        PresetChip(name: preset.name, detail: preset.detail, code: preset.style.token)
+                    },
+                    selectedID: $selectedPreset
+                ) { chip in
+                    guard let preset = FieldPreset.all.first(where: { $0.name == chip.name }) else { return }
+                    withAnimation(.spring(duration: 0.3)) {
+                        styleKind = preset.style
+                        isSecure = preset.secure
+                        showIcon = preset.icon
+                        placeholder = preset.placeholder
+                        keyboard = preset.keyboard
+                        submit = preset.submit
+                        text = ""
                     }
                 }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
 
             Section {

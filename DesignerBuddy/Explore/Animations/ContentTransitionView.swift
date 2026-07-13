@@ -51,11 +51,6 @@ struct ContentTransitionView: View {
             .listRowSeparator(.hidden)
 
             Section("Controls") {
-                Picker("Transition", selection: $style) {
-                    ForEach(MorphStyle.allCases, id: \.self) { Text($0.rawValue) }
-                }
-                .pickerStyle(.menu)
-
                 HStack(spacing: 12) {
                     Button("−1") { value = max(value - 1, 0) }
                     Button("+1") { value = min(value + 1, 9999) }
@@ -70,26 +65,31 @@ struct ContentTransitionView: View {
             }
 
             Section("Transition Types") {
-                ForEach(MorphStyle.allCases, id: \.self) { s in
-                    Button {
-                        style = s
-                        value = Int.random(in: 1000...9999)
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(s.rawValue).font(.subheadline).foregroundStyle(.primary)
-                                Text(s.detail).font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Text(s.code)
-                                .font(.mono(.caption2)).foregroundStyle(.tertiary)
-                        }
-                    }
+                PresetChipRow(
+                    chips: MorphStyle.allCases.map { s in
+                        PresetChip(name: s.rawValue, detail: s.detail, code: s.code)
+                    },
+                    selectedID: styleSelection
+                ) { _ in
+                    value = Int.random(in: 1000...9999)
                 }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
         }
         .navigationTitle("Content Transition")
         .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var styleSelection: Binding<String?> {
+        Binding(
+            get: { style.rawValue },
+            set: { name in
+                guard let name, let s = MorphStyle(rawValue: name) else { return }
+                style = s
+            }
+        )
     }
 
     private var generatedCode: String {

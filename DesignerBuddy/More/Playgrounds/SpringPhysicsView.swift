@@ -8,6 +8,7 @@ struct SpringPhysicsView: View {
     @State private var dampingFraction: Double = 0.7
     @State private var animating = false
     @State private var offset: CGFloat = 0
+    @State private var selectedPreset: String?
 
     enum SpringAPI: String, CaseIterable {
         case modern = "spring(duration:bounce:)"
@@ -105,25 +106,26 @@ struct SpringPhysicsView: View {
             }
 
             Section("Presets") {
-                ForEach(SpringPreset.all) { preset in
-                    Button {
-                        springAPI = .modern
-                        duration = preset.duration
-                        bounce = preset.bounce
-                        animating = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { animating = true }
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(preset.name).font(.subheadline).foregroundStyle(.primary)
-                                Text("duration: \(preset.duration, specifier: "%.2f"), bounce: \(preset.bounce, specifier: "%.2f")")
-                                    .font(.mono(.caption)).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Text(preset.feel).font(.caption).foregroundStyle(.tint)
-                        }
-                    }
+                PresetChipRow(
+                    chips: SpringPreset.all.map { preset in
+                        PresetChip(
+                            name: preset.name,
+                            detail: preset.feel,
+                            code: String(format: "duration: %.2f, bounce: %.2f", preset.duration, preset.bounce)
+                        )
+                    },
+                    selectedID: $selectedPreset
+                ) { chip in
+                    guard let preset = SpringPreset.all.first(where: { $0.name == chip.name }) else { return }
+                    springAPI = .modern
+                    duration = preset.duration
+                    bounce = preset.bounce
+                    animating = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { animating = true }
                 }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
         }
         .navigationTitle("Spring Physics")

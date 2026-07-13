@@ -50,11 +50,6 @@ struct TransitionsView: View {
             .listRowSeparator(.hidden)
 
             Section("Controls") {
-                Picker("Transition", selection: $transitionKind) {
-                    ForEach(TransitionKind.allCases, id: \.self) { Text($0.rawValue) }
-                }
-                .pickerStyle(.menu)
-
                 LabeledContent("duration: \(duration, specifier: "%.2f")s") {
                     Slider(value: $duration, in: 0.1...1.5)
                 }
@@ -66,26 +61,31 @@ struct TransitionsView: View {
             }
 
             Section("Transition Types") {
-                ForEach(TransitionKind.allCases, id: \.self) { kind in
-                    Button {
-                        transitionKind = kind
-                        replay()
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(kind.rawValue).font(.subheadline).foregroundStyle(.primary)
-                                Text(kind.detail).font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Text(kind.snippet)
-                                .font(.mono(.caption2)).foregroundStyle(.tertiary)
-                        }
-                    }
+                PresetChipRow(
+                    chips: TransitionKind.allCases.map { kind in
+                        PresetChip(name: kind.rawValue, detail: kind.detail, code: kind.snippet)
+                    },
+                    selectedID: transitionSelection
+                ) { _ in
+                    replay()
                 }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
         }
         .navigationTitle("Transitions")
         .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var transitionSelection: Binding<String?> {
+        Binding(
+            get: { transitionKind.rawValue },
+            set: { name in
+                guard let name, let kind = TransitionKind(rawValue: name) else { return }
+                transitionKind = kind
+            }
+        )
     }
 
     private var tile: some View {

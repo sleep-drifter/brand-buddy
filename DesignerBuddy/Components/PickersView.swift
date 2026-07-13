@@ -54,13 +54,6 @@ struct PickersView: View {
             .listRowSeparator(.hidden)
 
             Section("Controls") {
-                Picker("Style", selection: $style) {
-                    ForEach(StyleChoice.allCases, id: \.self) { s in
-                        Text(".\(s.rawValue)").tag(s)
-                    }
-                }
-                .pickerStyle(.menu)
-
                 LabeledContent("options: \(optionTotal)") {
                     Slider(value: $optionCount, in: 2...6, step: 1)
                 }
@@ -69,28 +62,15 @@ struct PickersView: View {
             }
 
             Section("Styles") {
-                ForEach(StyleChoice.allCases, id: \.self) { s in
-                    Button {
-                        withAnimation(.spring(duration: 0.3)) { style = s }
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(".\(s.rawValue)")
-                                    .font(.mono(.subheadline))
-                                    .foregroundStyle(.primary)
-                                Text(s.note)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if style == s {
-                                Image(systemName: "checkmark")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.tint)
-                            }
-                        }
-                    }
-                }
+                PresetChipRow(
+                    chips: StyleChoice.allCases.map { s in
+                        PresetChip(name: ".\(s.rawValue)", detail: s.note, code: ".pickerStyle(.\(s.rawValue))")
+                    },
+                    selectedID: styleSelection
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
         }
         .navigationTitle("Pickers")
@@ -100,6 +80,16 @@ struct PickersView: View {
         .onChange(of: optionCount) { _, _ in
             selection = min(selection, optionTotal)
         }
+    }
+
+    private var styleSelection: Binding<String?> {
+        Binding(
+            get: { ".\(style.rawValue)" },
+            set: { name in
+                guard let name, let s = StyleChoice.allCases.first(where: { ".\($0.rawValue)" == name }) else { return }
+                style = s
+            }
+        )
     }
 
     @ViewBuilder private var specimen: some View {
@@ -243,13 +233,6 @@ struct DateTimePickersView: View {
             .listRowSeparator(.hidden)
 
             Section("Controls") {
-                Picker("Style", selection: $style) {
-                    ForEach(StyleChoice.allCases, id: \.self) { s in
-                        Text(s.rawValue.capitalized).tag(s)
-                    }
-                }
-                .pickerStyle(.segmented)
-
                 Picker("Shows", selection: $componentsChoice) {
                     ForEach(ComponentsChoice.allCases, id: \.self) { c in
                         Text(c.rawValue).tag(c)
@@ -263,32 +246,29 @@ struct DateTimePickersView: View {
             }
 
             Section("Styles") {
-                ForEach(StyleChoice.allCases, id: \.self) { s in
-                    Button {
-                        withAnimation(.spring(duration: 0.3)) { style = s }
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(".\(s.rawValue)")
-                                    .font(.mono(.subheadline))
-                                    .foregroundStyle(.primary)
-                                Text(s.note)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if style == s {
-                                Image(systemName: "checkmark")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.tint)
-                            }
-                        }
-                    }
-                }
+                PresetChipRow(
+                    chips: StyleChoice.allCases.map { s in
+                        PresetChip(name: ".\(s.rawValue)", detail: s.note, code: ".datePickerStyle(.\(s.rawValue))")
+                    },
+                    selectedID: styleSelection
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
         }
         .navigationTitle("Date & Time Pickers")
         .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var styleSelection: Binding<String?> {
+        Binding(
+            get: { ".\(style.rawValue)" },
+            set: { name in
+                guard let name, let s = StyleChoice.allCases.first(where: { ".\($0.rawValue)" == name }) else { return }
+                style = s
+            }
+        )
     }
 
     @ViewBuilder private var specimen: some View {
