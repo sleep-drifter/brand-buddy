@@ -106,7 +106,7 @@ struct SymbolPlaygroundView: View {
     @State private var paletteColor2: Color = .green
     @State private var paletteColor3: Color = .red
 
-    private let palette: [Color] = [.blue, .purple, .pink, .red, .orange, .yellow, .green, .teal, .cyan, .indigo, .mint]
+    private let palette: [Color] = [.blue, .purple, .pink, .red, .orange, .yellow, .green, .teal, .cyan, .indigo, .mint, .white, Color(.systemGray3), .gray, .black]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -564,7 +564,11 @@ struct SymbolPlaygroundView: View {
                                 .frame(width: 28, height: 28)
                                 .overlay(
                                     Circle()
-                                        .strokeBorder(.white.opacity(binding.wrappedValue == color ? 1 : 0), lineWidth: 2.5)
+                                        .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
+                                )
+                                .overlay(
+                                    Circle()
+                                        .strokeBorder(selectionRing(for: color).opacity(binding.wrappedValue == color ? 1 : 0), lineWidth: 2.5)
                                         .padding(3)
                                 )
                                 .shadow(color: color.opacity(0.4), radius: binding.wrappedValue == color ? 6 : 2)
@@ -581,6 +585,10 @@ struct SymbolPlaygroundView: View {
         } label: {
             Text(label).font(.subheadline.weight(.medium))
         }
+    }
+
+    private func selectionRing(for color: Color) -> Color {
+        color == .white ? .gray : .white
     }
 
     // MARK: - Code Card
