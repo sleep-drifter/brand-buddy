@@ -20,47 +20,11 @@ struct ShadowExplorerView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    // Preview
-                    ZStack {
-                        backgrounds[bgIndex].1
-                            .frame(height: 200)
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .strokeBorder(.separator, lineWidth: 0.5)
-                            )
-
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(cardColor)
-                            .frame(width: 140, height: 90)
-                            .shadow(
-                                color: shadowColor.opacity(opacity),
-                                radius: radius,
-                                x: x,
-                                y: y
-                            )
-                            .overlay(
-                                Text("Card")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(.secondary)
-                            )
-                    }
-
-                    // Code output
-                    Text(".shadow(\n  color: \(shadowColor == .black ? ".black" : "color").opacity(\(opacity, specifier: "%.2f")),\n  radius: \(Int(radius)),\n  x: \(Int(x)), y: \(Int(y))\n)")
-                        .font(.mono(.caption))
-                        .foregroundStyle(.secondary)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                }
+            Section("Code") {
+                Text(".shadow(\n  color: \(shadowColor == .black ? ".black" : "color").opacity(\(opacity, specifier: "%.2f")),\n  radius: \(Int(radius)),\n  x: \(Int(x)), y: \(Int(y))\n)")
+                    .font(.mono(.caption))
+                    .foregroundStyle(.secondary)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
 
             Section("Shadow") {
                 LabeledContent("radius: \(Int(radius))") {
@@ -116,6 +80,33 @@ struct ShadowExplorerView: View {
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
+            }
+        }
+        .pinnedPreview {
+            ZStack {
+                backgrounds[bgIndex].1
+                    .frame(height: 180)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(.separator, lineWidth: 0.5)
+                    )
+
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(cardColor)
+                    .frame(width: 140, height: 90)
+                    .shadow(
+                        color: shadowColor.opacity(opacity),
+                        radius: radius,
+                        x: x,
+                        y: y
+                    )
+                    .overlay(
+                        Text("Card")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.secondary)
+                    )
             }
         }
         .navigationTitle("Shadow Explorer")
