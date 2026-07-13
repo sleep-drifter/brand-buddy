@@ -10,29 +10,10 @@ struct CaptureUIPatternView: View {
     @State private var showBrackets = true
     @State private var shutterStyle: ShutterStyle = .circle
 
-    private let canvasScale: CGFloat = 0.68
+    private let canvasScale: CGFloat = 0.38
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    PhoneFrame {
-                        selectedPattern
-                    }
-                    .scaleEffect(canvasScale)
-                    .frame(width: 280 * canvasScale, height: 560 * canvasScale)
-
-                    Text(layout.caption)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                .animation(.spring(duration: 0.3), value: canvasState)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
             Section("Pattern") {
                 PresetChipRow(
                     chips: CaptureLayout.allCases.map { option in
@@ -63,6 +44,20 @@ struct CaptureUIPatternView: View {
                 }
                 .pickerStyle(.segmented)
             }
+        }
+        .pinnedPreview {
+            VStack(spacing: 8) {
+                PhoneFrame {
+                    selectedPattern
+                }
+                .scaleEffect(canvasScale)
+                .frame(width: 280 * canvasScale, height: 560 * canvasScale)
+
+                Text(layout.caption)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+            .animation(.spring(duration: 0.3), value: canvasState)
         }
         .navigationTitle("Capture UI Patterns")
     }

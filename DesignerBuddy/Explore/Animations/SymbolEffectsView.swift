@@ -13,46 +13,11 @@ struct SymbolEffectsView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(.quaternary)
-                            .frame(height: 260)
-
-                        symbolView
-                    }
-                    .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .onTapGesture { handleCanvasTap() }
-                    .overlay(alignment: .bottom) {
-                        Text(selectedEffect.isDiscrete ? "Tap to trigger" : "Tap to toggle")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                            .padding(.bottom, 12)
-                    }
-
-                    if selectedEffect.isDiscrete {
-                        Button(selectedEffect == .replace ? "Swap" : "Trigger") {
-                            handleCanvasTap()
-                        }
-                        .buttonStyle(.bordered)
-                    } else {
-                        Toggle("Active", isOn: $isActive)
-                            .toggleStyle(.button)
-                    }
-
-                    Text(generatedCode)
-                        .font(.mono(.caption))
-                        .foregroundStyle(.secondary)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                }
-                .frame(maxWidth: .infinity)
+            Section("Code") {
+                Text(generatedCode)
+                    .font(.mono(.caption))
+                    .foregroundStyle(.secondary)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
 
             Section("Effect") {
                 PresetChipRow(
@@ -75,6 +40,14 @@ struct SymbolEffectsView: View {
             }
 
             Section {
+                if selectedEffect.isDiscrete {
+                    Button(selectedEffect == .replace ? "Swap" : "Trigger") {
+                        handleCanvasTap()
+                    }
+                } else {
+                    Toggle("Active", isOn: $isActive)
+                }
+
                 Picker("Symbol", selection: $symbolName) {
                     ForEach(symbols, id: \.self) { Text($0) }
                 }
@@ -101,6 +74,23 @@ struct SymbolEffectsView: View {
                 }
             } footer: {
                 Text("The playground adds color palettes, rendering modes, symbol search, and code export.")
+            }
+        }
+        .pinnedPreview {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.quaternary)
+                    .frame(height: 190)
+
+                symbolView
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .onTapGesture { handleCanvasTap() }
+            .overlay(alignment: .bottom) {
+                Text(selectedEffect.isDiscrete ? "Tap to trigger" : "Tap to toggle")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .padding(.bottom, 12)
             }
         }
         .navigationTitle("Symbol Effects")

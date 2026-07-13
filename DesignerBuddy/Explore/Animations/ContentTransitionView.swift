@@ -8,47 +8,11 @@ struct ContentTransitionView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(.quaternary)
-                            .frame(height: 240)
-
-                        VStack(spacing: 20) {
-                            Text("\(value)")
-                                .font(.system(size: 64, weight: .bold, design: .rounded))
-                                .monospacedDigit()
-                                .contentTransition(style.transition)
-                                .animation(.easeInOut(duration: duration), value: value)
-
-                            VStack(spacing: 4) {
-                                Text(wordDone ? "Done" : "Syncing…")
-                                    .font(.title3.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                    .contentTransition(style.transition)
-                                    .animation(.easeInOut(duration: duration), value: wordDone)
-                                Text("Tap the word to swap it")
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture { wordDone.toggle() }
-                        }
-                    }
-
-                    Text(generatedCode)
-                        .font(.mono(.caption))
-                        .foregroundStyle(.secondary)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                }
-                .frame(maxWidth: .infinity)
+            Section("Code") {
+                Text(generatedCode)
+                    .font(.mono(.caption))
+                    .foregroundStyle(.secondary)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
 
             Section("Controls") {
                 HStack(spacing: 12) {
@@ -76,6 +40,34 @@ struct ContentTransitionView: View {
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
+            }
+        }
+        .pinnedPreview {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.quaternary)
+                    .frame(height: 160)
+
+                VStack(spacing: 12) {
+                    Text("\(value)")
+                        .font(.system(size: 56, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .contentTransition(style.transition)
+                        .animation(.easeInOut(duration: duration), value: value)
+
+                    VStack(spacing: 2) {
+                        Text(wordDone ? "Done" : "Syncing…")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .contentTransition(style.transition)
+                            .animation(.easeInOut(duration: duration), value: wordDone)
+                        Text("Tap the word to swap it")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture { wordDone.toggle() }
+                }
             }
         }
         .navigationTitle("Content Transition")

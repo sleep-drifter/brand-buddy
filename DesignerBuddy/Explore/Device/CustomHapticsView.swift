@@ -28,55 +28,11 @@ struct CustomHapticsView: View {
 
     var body: some View {
         List {
+            #if targetEnvironment(simulator)
             Section {
-                VStack(spacing: 24) {
-                    #if targetEnvironment(simulator)
-                    simulatorBanner
-                    #endif
-
-                    VStack(spacing: 10) {
-                        envelopePlot
-                            .frame(height: 180)
-
-                        HStack(spacing: 8) {
-                            Text("dull")
-                                .font(.mono(.caption2))
-                                .foregroundStyle(.secondary)
-                            LinearGradient(colors: [.blue, .orange], startPoint: .leading, endPoint: .trailing)
-                                .frame(width: 56, height: 6)
-                                .clipShape(Capsule())
-                            Text("crisp")
-                                .font(.mono(.caption2))
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text(readout)
-                                .font(.mono(.caption2))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color(.secondarySystemGroupedBackground))
-                    )
-
-                    Button {
-                        if mode == .transient {
-                            hapticsEngine.playTransient()
-                        } else {
-                            hapticsEngine.playContinuous()
-                        }
-                    } label: {
-                        Label(mode == .transient ? "Play Transient" : "Play Continuous", systemImage: "play.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-                .frame(maxWidth: .infinity)
+                simulatorBanner
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
+            #endif
 
             Section("Controls") {
                 Picker("Mode", selection: $mode) {
@@ -198,6 +154,47 @@ struct CustomHapticsView: View {
                 RefRow(type: "CHHapticEvent", detail: "Transient or continuous, with parameters")
                 RefRow(type: "CHHapticPattern", detail: "Sequence of events at relative times")
                 RefRow(type: "CHHapticPatternPlayer", detail: "Plays a pattern, can be paused/stopped")
+            }
+        }
+        .pinnedPreview {
+            VStack(spacing: 12) {
+                VStack(spacing: 8) {
+                    envelopePlot
+                        .frame(height: 140)
+
+                    HStack(spacing: 8) {
+                        Text("dull")
+                            .font(.mono(.caption2))
+                            .foregroundStyle(.secondary)
+                        LinearGradient(colors: [.blue, .orange], startPoint: .leading, endPoint: .trailing)
+                            .frame(width: 56, height: 6)
+                            .clipShape(Capsule())
+                        Text("crisp")
+                            .font(.mono(.caption2))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(readout)
+                            .font(.mono(.caption2))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color(.secondarySystemGroupedBackground))
+                )
+
+                Button {
+                    if mode == .transient {
+                        hapticsEngine.playTransient()
+                    } else {
+                        hapticsEngine.playContinuous()
+                    }
+                } label: {
+                    Label(mode == .transient ? "Play Transient" : "Play Continuous", systemImage: "play.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
             }
         }
         .navigationTitle("Custom Haptics")

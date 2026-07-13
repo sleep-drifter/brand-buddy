@@ -18,43 +18,15 @@ struct ReduceMotionView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color(.secondarySystemGroupedBackground))
-                            .frame(height: 220)
-
-                        if mode == .oneShot {
-                            oneShotTile
-                        } else {
-                            loopingTile
-                        }
-                    }
-
-                    Text(canvasCaption)
-                        .font(.mono(.caption))
-                        .foregroundStyle(.secondary)
-
-                    Button {
-                        trigger()
-                    } label: {
-                        Label(triggerTitle, systemImage: triggerIcon)
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
             Section("Controls") {
                 Picker("Mode", selection: $mode) {
                     ForEach(DemoMode.allCases, id: \.self) { Text($0.rawValue) }
                 }
                 .pickerStyle(.segmented)
                 Toggle("Simulate Reduce Motion for this demo", isOn: $overrideReduceMotion)
+                Text(canvasCaption)
+                    .font(.mono(.caption))
+                    .foregroundStyle(.secondary)
             }
 
             Section("System Setting") {
@@ -84,6 +56,29 @@ struct ReduceMotionView: View {
                 Text("Replace looping or auto-playing animations with a static placeholder when reduce motion is on, so the same information is conveyed without continuous movement.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+        }
+        .pinnedPreview {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(.secondarySystemGroupedBackground))
+                    .frame(height: 190)
+
+                if mode == .oneShot {
+                    oneShotTile
+                } else {
+                    loopingTile
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Button {
+                    trigger()
+                } label: {
+                    Label(triggerTitle, systemImage: triggerIcon)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .padding(10)
             }
         }
         .navigationTitle("Reduce Motion")

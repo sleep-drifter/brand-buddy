@@ -10,27 +10,6 @@ struct HighContrastView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    sampleCluster
-                        .padding(24)
-                        .frame(maxWidth: .infinity, minHeight: 220)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(Color(.secondarySystemGroupedBackground))
-                        )
-
-                    Text(effectiveHighContrast ? "colorSchemeContrast: .increased" : "colorSchemeContrast: .standard")
-                        .font(.mono(.caption))
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                .animation(.spring(duration: 0.3), value: effectiveHighContrast)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
             Section("Controls") {
                 Toggle("Simulate High Contrast for this demo", isOn: $simulateHighContrast)
             }
@@ -148,6 +127,22 @@ struct HighContrastView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+        }
+        .pinnedPreview {
+            VStack(spacing: 8) {
+                sampleCluster
+                    .padding(10)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color(.secondarySystemGroupedBackground))
+                    )
+
+                Text(effectiveHighContrast ? "colorSchemeContrast: .increased" : "colorSchemeContrast: .standard")
+                    .font(.mono(.caption))
+                    .foregroundStyle(.secondary)
+            }
+            .animation(.spring(duration: 0.3), value: effectiveHighContrast)
         }
         .navigationTitle("High Contrast")
         .navigationBarTitleDisplayMode(.large)

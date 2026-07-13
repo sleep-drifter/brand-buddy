@@ -8,46 +8,11 @@ struct TransitionsView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(.quaternary)
-                            .frame(height: 240)
-
-                        if isShowing {
-                            transitionedTile
-                        }
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .onTapGesture { toggle() }
-                    .overlay(alignment: .bottom) {
-                        if !isShowing {
-                            Text("Tap to show")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                                .padding(.bottom, 12)
-                        }
-                    }
-
-                    Button(isShowing ? "Hide" : "Show") {
-                        toggle()
-                    }
-                    .buttonStyle(.bordered)
-
-                    Text(generatedCode)
-                        .font(.mono(.caption))
-                        .foregroundStyle(.secondary)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                }
-                .frame(maxWidth: .infinity)
+            Section("Code") {
+                Text(generatedCode)
+                    .font(.mono(.caption))
+                    .foregroundStyle(.secondary)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
 
             Section("Controls") {
                 LabeledContent("duration: \(duration, specifier: "%.2f")s") {
@@ -72,6 +37,36 @@ struct TransitionsView: View {
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
+            }
+        }
+        .pinnedPreview {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.quaternary)
+                    .frame(height: 190)
+
+                if isShowing {
+                    transitionedTile
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .onTapGesture { toggle() }
+            .overlay(alignment: .bottom) {
+                if !isShowing {
+                    Text("Tap to show")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .padding(.bottom, 12)
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Button(isShowing ? "Hide" : "Show") {
+                    toggle()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .padding(10)
             }
         }
         .navigationTitle("Transitions")

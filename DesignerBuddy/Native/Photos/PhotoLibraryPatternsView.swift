@@ -12,25 +12,6 @@ struct PhotoLibraryPatternsView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    switch pattern {
-                    case .avatar:
-                        AvatarPatternView(isPhotoSet: $isPhotoSet)
-                    case .thumbnailStrip:
-                        ThumbnailStripPatternView(thumbnails: $thumbnails)
-                    case .fullBleed:
-                        FullBleedPatternView(showEditOverlay: showEditOverlay)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .buttonStyle(.borderless)
-                .animation(.spring(duration: 0.3), value: canvasState)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
             Section("Pattern") {
                 PresetChipRow(
                     chips: PhotoPattern.allCases.map { option in
@@ -62,6 +43,22 @@ struct PhotoLibraryPatternsView: View {
                     Toggle("Edit overlay", isOn: $showEditOverlay)
                 }
             }
+        }
+        .pinnedPreview {
+            Group {
+                switch pattern {
+                case .avatar:
+                    AvatarPatternView(isPhotoSet: $isPhotoSet)
+                case .thumbnailStrip:
+                    ThumbnailStripPatternView(thumbnails: $thumbnails)
+                case .fullBleed:
+                    FullBleedPatternView(showEditOverlay: showEditOverlay)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: 230, alignment: .top)
+            .clipped()
+            .buttonStyle(.borderless)
+            .animation(.spring(duration: 0.3), value: canvasState)
         }
         .navigationTitle("Photo Library Patterns")
     }

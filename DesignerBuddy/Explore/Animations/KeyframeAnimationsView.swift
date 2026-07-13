@@ -24,84 +24,10 @@ struct KeyframeAnimationsView: View {
     var body: some View {
         List {
             Section {
-                VStack(spacing: 24) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(.quaternary)
-                            .frame(height: 240)
-
-                        if keyframes.isEmpty {
-                            Text("Add keyframes below or start from a preset.")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                        } else {
-                            KeyframeAnimator(
-                                initialValue: CustomAnimValues(),
-                                trigger: triggerAnimation
-                            ) { values in
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(LinearGradient(
-                                        colors: [.indigo, .purple],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ))
-                                    .frame(width: 90, height: 90)
-                                    .overlay(
-                                        Image(systemName: "wand.and.sparkles")
-                                            .font(.largeTitle)
-                                            .foregroundStyle(.white)
-                                    )
-                                    .scaleEffect(values.scale)
-                                    .opacity(values.opacity)
-                                    .offset(x: values.offsetX, y: values.offsetY)
-                                    .rotationEffect(.degrees(values.rotation))
-                            } keyframes: { _ in
-                                KeyframeTrack(\.scale) {
-                                    for kf in kfsFor(.scale) {
-                                        SpringKeyframe(CGFloat(kf.value), duration: kf.duration, spring: springFor(kf.type))
-                                    }
-                                }
-                                KeyframeTrack(\.offsetX) {
-                                    for kf in kfsFor(.offsetX) {
-                                        SpringKeyframe(CGFloat(kf.value), duration: kf.duration, spring: springFor(kf.type))
-                                    }
-                                }
-                                KeyframeTrack(\.offsetY) {
-                                    for kf in kfsFor(.offsetY) {
-                                        SpringKeyframe(CGFloat(kf.value), duration: kf.duration, spring: springFor(kf.type))
-                                    }
-                                }
-                                KeyframeTrack(\.opacity) {
-                                    for kf in kfsFor(.opacity) {
-                                        SpringKeyframe(kf.value, duration: kf.duration, spring: springFor(kf.type))
-                                    }
-                                }
-                                KeyframeTrack(\.rotation) {
-                                    for kf in kfsFor(.rotation) {
-                                        SpringKeyframe(kf.value, duration: kf.duration, spring: springFor(kf.type))
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Button("▶ Trigger Animation") {
-                        triggerAnimation += 1
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(keyframes.isEmpty)
-
-                    Text("Each KeyframeTrack targets one property. Values animate sequentially through the list in order.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 16)
-                }
-                .frame(maxWidth: .infinity)
+                Text("Each KeyframeTrack targets one property. Values animate sequentially through the list in order.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
 
             Section("Global Settings") {
                 LabeledContent("Total duration: \(totalDuration, specifier: "%.1f")s") {
@@ -236,6 +162,76 @@ struct KeyframeAnimationsView: View {
                     name: "MoveKeyframe",
                     desc: "Instant jump to a value with no interpolation."
                 )
+            }
+        }
+        .pinnedPreview {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.quaternary)
+                    .frame(height: 180)
+
+                if keyframes.isEmpty {
+                    Text("Add keyframes below or start from a preset.")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                } else {
+                    KeyframeAnimator(
+                        initialValue: CustomAnimValues(),
+                        trigger: triggerAnimation
+                    ) { values in
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(LinearGradient(
+                                colors: [.indigo, .purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ))
+                            .frame(width: 90, height: 90)
+                            .overlay(
+                                Image(systemName: "wand.and.sparkles")
+                                    .font(.largeTitle)
+                                    .foregroundStyle(.white)
+                            )
+                            .scaleEffect(values.scale)
+                            .opacity(values.opacity)
+                            .offset(x: values.offsetX, y: values.offsetY)
+                            .rotationEffect(.degrees(values.rotation))
+                    } keyframes: { _ in
+                        KeyframeTrack(\.scale) {
+                            for kf in kfsFor(.scale) {
+                                SpringKeyframe(CGFloat(kf.value), duration: kf.duration, spring: springFor(kf.type))
+                            }
+                        }
+                        KeyframeTrack(\.offsetX) {
+                            for kf in kfsFor(.offsetX) {
+                                SpringKeyframe(CGFloat(kf.value), duration: kf.duration, spring: springFor(kf.type))
+                            }
+                        }
+                        KeyframeTrack(\.offsetY) {
+                            for kf in kfsFor(.offsetY) {
+                                SpringKeyframe(CGFloat(kf.value), duration: kf.duration, spring: springFor(kf.type))
+                            }
+                        }
+                        KeyframeTrack(\.opacity) {
+                            for kf in kfsFor(.opacity) {
+                                SpringKeyframe(kf.value, duration: kf.duration, spring: springFor(kf.type))
+                            }
+                        }
+                        KeyframeTrack(\.rotation) {
+                            for kf in kfsFor(.rotation) {
+                                SpringKeyframe(kf.value, duration: kf.duration, spring: springFor(kf.type))
+                            }
+                        }
+                    }
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Button("▶ Trigger Animation") {
+                    triggerAnimation += 1
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(keyframes.isEmpty)
+                .padding(10)
             }
         }
         .navigationTitle("Keyframe Animations")

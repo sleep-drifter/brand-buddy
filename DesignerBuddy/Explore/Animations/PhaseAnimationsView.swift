@@ -9,65 +9,6 @@ struct PhaseAnimationsView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(.quaternary)
-                            .frame(height: 240)
-
-                        switch mode {
-                        case .loop:
-                            if isAnimating {
-                                PhaseAnimator(phaseSet.phases) { phase in
-                                    tile(for: phase)
-                                } animation: { _ in
-                                    stepAnimation
-                                }
-                            } else {
-                                tile(for: phaseSet.phases[0])
-                            }
-                        case .manual:
-                            tile(for: currentManualPhase)
-                                .animation(stepAnimation, value: manualIndex)
-                        }
-                    }
-                    .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .onTapGesture { handleCanvasTap() }
-                    .overlay(alignment: .bottom) {
-                        if mode == .loop && !isAnimating {
-                            Text("Tap to start looping")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                                .padding(.bottom, 12)
-                        }
-                    }
-
-                    switch mode {
-                    case .loop:
-                        Button(isAnimating ? "Pause" : "Play") {
-                            isAnimating.toggle()
-                        }
-                        .buttonStyle(.bordered)
-                    case .manual:
-                        HStack(spacing: 8) {
-                            ForEach(Array(phaseSet.phases.enumerated()), id: \.offset) { index, phase in
-                                Button(phase.label) {
-                                    manualIndex = index
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                                .tint(manualIndex == index ? .accentColor : nil)
-                            }
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
             Section("Controls") {
                 Picker("Mode", selection: $mode) {
                     ForEach(PhaseMode.allCases, id: \.self) { Text($0.rawValue) }
@@ -94,6 +35,61 @@ struct PhaseAnimationsView: View {
                 Text("Passing a single-element array to PhaseAnimator lets you drive it manually — useful for triggered one-shot sequences triggered by state.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+            }
+        }
+        .pinnedPreview {
+            VStack(spacing: 10) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(.quaternary)
+                        .frame(height: 190)
+
+                    switch mode {
+                    case .loop:
+                        if isAnimating {
+                            PhaseAnimator(phaseSet.phases) { phase in
+                                tile(for: phase)
+                            } animation: { _ in
+                                stepAnimation
+                            }
+                        } else {
+                            tile(for: phaseSet.phases[0])
+                        }
+                    case .manual:
+                        tile(for: currentManualPhase)
+                            .animation(stepAnimation, value: manualIndex)
+                    }
+                }
+                .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .onTapGesture { handleCanvasTap() }
+                .overlay(alignment: .bottom) {
+                    if mode == .loop && !isAnimating {
+                        Text("Tap to start looping")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .padding(.bottom, 12)
+                    }
+                }
+
+                switch mode {
+                case .loop:
+                    Button(isAnimating ? "Pause" : "Play") {
+                        isAnimating.toggle()
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                case .manual:
+                    HStack(spacing: 8) {
+                        ForEach(Array(phaseSet.phases.enumerated()), id: \.offset) { index, phase in
+                            Button(phase.label) {
+                                manualIndex = index
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .tint(manualIndex == index ? .accentColor : nil)
+                        }
+                    }
+                }
             }
         }
         .onChange(of: phaseSet) { _, _ in

@@ -49,25 +49,6 @@ struct AudioPlaybackPatternsView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    switch style {
-                    case .mini:
-                        miniPlayerCanvas
-                    case .expanded:
-                        expandedPlayerCanvas
-                    case .inline:
-                        inlinePlayerCanvas
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .buttonStyle(.borderless)
-                .animation(.spring(duration: 0.3), value: canvasState)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
             Section("Style") {
                 PresetChipRow(
                     chips: PlayerStyle.allCases.map { option in
@@ -101,6 +82,20 @@ struct AudioPlaybackPatternsView: View {
                     .disabled(style != .expanded)
             }
         }
+        .pinnedPreview {
+            Group {
+                switch style {
+                case .mini:
+                    miniPlayerCanvas
+                case .expanded:
+                    expandedPlayerCanvas
+                case .inline:
+                    inlinePlayerCanvas
+                }
+            }
+            .buttonStyle(.borderless)
+            .animation(.spring(duration: 0.3), value: canvasState)
+        }
         .navigationTitle("Playback UI Patterns")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -125,7 +120,7 @@ struct AudioPlaybackPatternsView: View {
         // Phone frame mockup
         RoundedRectangle(cornerRadius: 28)
             .fill(Color(.secondarySystemBackground))
-            .frame(height: 320)
+            .frame(height: 240)
             .overlay(
                 VStack(spacing: 0) {
                     // Placeholder content
@@ -154,7 +149,6 @@ struct AudioPlaybackPatternsView: View {
                 RoundedRectangle(cornerRadius: 28)
                     .stroke(.quaternary, lineWidth: 1)
             )
-            .padding(.horizontal, 20)
     }
 
     private var miniPlayerBar: some View {
@@ -220,30 +214,27 @@ struct AudioPlaybackPatternsView: View {
     // MARK: - Pattern 2: Expanded Player Sheet
 
     private var expandedPlayerCanvas: some View {
-        VStack(spacing: 16) {
-            // Album art
-            RoundedRectangle(cornerRadius: 20)
-                .fill(
-                    LinearGradient(
-                        colors: [mockTrack.color, mockTrack.color.opacity(0.5)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+        VStack(spacing: 10) {
+            // Album art + title + favorite
+            HStack(spacing: 12) {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(
+                        LinearGradient(
+                            colors: [mockTrack.color, mockTrack.color.opacity(0.5)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
-                )
-                .frame(width: 120, height: 120)
-                .overlay(
-                    Image(systemName: "music.note")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.white.opacity(0.6))
-                )
-                .shadow(color: mockTrack.color.opacity(0.4), radius: 20, y: 8)
-                .frame(maxWidth: .infinity)
+                    .frame(width: 56, height: 56)
+                    .overlay(
+                        Image(systemName: "music.note")
+                            .font(.system(size: 22))
+                            .foregroundStyle(.white.opacity(0.6))
+                    )
 
-            // Title + favorite
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(mockTrack.title)
-                        .font(.title2.weight(.bold))
+                        .font(.headline)
                     Text(mockTrack.artist)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -253,14 +244,14 @@ struct AudioPlaybackPatternsView: View {
                     isFavorited.toggle()
                 } label: {
                     Image(systemName: isFavorited ? "heart.fill" : "heart")
-                        .font(.title2)
+                        .font(.title3)
                         .foregroundStyle(isFavorited ? .red : .secondary)
                 }
                 .animation(.spring(response: 0.2), value: isFavorited)
             }
 
             // Scrubber
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 Slider(value: $progress, in: 0...1)
                     .tint(mockTrack.color)
 
@@ -277,20 +268,20 @@ struct AudioPlaybackPatternsView: View {
 
             // Playback controls
             HStack(spacing: 0) {
-                controlButton(systemImage: "shuffle", isActive: isShuffle, size: 20) {
+                controlButton(systemImage: "shuffle", isActive: isShuffle, size: 18) {
                     isShuffle.toggle()
                 }
-                controlButton(systemImage: "backward.fill", isActive: false, size: 24) {}
+                controlButton(systemImage: "backward.fill", isActive: false, size: 22) {}
                 Button {
                     isPlaying.toggle()
                 } label: {
                     Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                        .font(.system(size: 56))
+                        .font(.system(size: 44))
                         .foregroundStyle(mockTrack.color)
                 }
                 .frame(maxWidth: .infinity)
-                controlButton(systemImage: "forward.fill", isActive: false, size: 24) {}
-                controlButton(systemImage: isRepeat ? "repeat.1" : "repeat", isActive: isRepeat, size: 20) {
+                controlButton(systemImage: "forward.fill", isActive: false, size: 22) {}
+                controlButton(systemImage: isRepeat ? "repeat.1" : "repeat", isActive: isRepeat, size: 18) {
                     isRepeat.toggle()
                 }
             }
@@ -307,9 +298,8 @@ struct AudioPlaybackPatternsView: View {
                     .font(.caption)
             }
         }
-        .padding(20)
+        .padding(14)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
-        .padding(.horizontal, 20)
     }
 
     private func controlButton(systemImage: String, isActive: Bool, size: CGFloat, action: @escaping () -> Void) -> some View {
@@ -346,7 +336,6 @@ struct AudioPlaybackPatternsView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(.quaternary, lineWidth: 0.5)
         )
-        .padding(.horizontal, 20)
     }
 
     private func inlinePlayerRow(track: MockTrack, isCurrentTrack: Bool, isPlayingParam: Binding<Bool>) -> some View {
