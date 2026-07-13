@@ -76,10 +76,9 @@ struct ScrollViewsView: View {
                             )
                     }
                 }
-                .padding(.horizontal, 34)
+                .padding(.horizontal, 18)
             }
-            .scrollClipDisabled()
-            .padding(.horizontal, -32)
+            .padding(.horizontal, -16)
 
             captionText("ScrollView(.horizontal) { HStack { ... } }")
         }
@@ -253,9 +252,8 @@ struct ScrollViewsView: View {
             }
             .scrollPosition(id: $scrollPosition)
             .scrollTargetBehavior(.viewAligned)
-            .scrollClipDisabled()
-            .contentMargins(.horizontal, 32, for: .scrollContent)
-            .padding(.horizontal, -32)
+            .contentMargins(.horizontal, 16, for: .scrollContent)
+            .padding(.horizontal, -16)
 
             captionText(".scrollPosition(id:) — tracks the leading-aligned item")
         }

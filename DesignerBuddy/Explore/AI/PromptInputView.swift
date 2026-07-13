@@ -222,10 +222,9 @@ private struct AttachmentChipsDemo: View {
                         }
                     }
                     .padding(.vertical, 2)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, 16)
                 }
-                .scrollClipDisabled()
-                .padding(.horizontal, -32)
+                .padding(.horizontal, -16)
             }
 
             HStack {
