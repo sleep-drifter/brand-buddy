@@ -11,36 +11,6 @@ struct SlidersView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    // Preview
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color(.secondarySystemGroupedBackground))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .strokeBorder(.separator, lineWidth: 0.5)
-                            )
-                            .frame(height: 200)
-
-                        VStack(spacing: 20) {
-                            Text(readout)
-                                .font(.system(size: 44, weight: .semibold, design: .rounded))
-                                .monospacedDigit()
-                                .foregroundStyle(tint)
-
-                            demoSlider
-                                .tint(tint)
-                        }
-                        .padding(.horizontal, 28)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
             Section("Range") {
                 LabeledContent("min: \(Int(rangeMin))") {
                     Slider(value: $rangeMin, in: 0...99)
@@ -85,6 +55,28 @@ struct SlidersView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 4)
+            }
+        }
+        .pinnedPreview {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(.secondarySystemGroupedBackground))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(.separator, lineWidth: 0.5)
+                    )
+                    .frame(height: 140)
+
+                VStack(spacing: 14) {
+                    Text(readout)
+                        .font(.system(size: 40, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(tint)
+
+                    demoSlider
+                        .tint(tint)
+                }
+                .padding(.horizontal, 28)
             }
         }
         .navigationTitle("Sliders")

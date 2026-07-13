@@ -14,7 +14,7 @@ struct SheetsModalsView: View {
     @State private var customFraction: Double = 0.4
     @State private var customHeight: Double = 300
 
-    private let phoneHeight: CGFloat = 280
+    private let phoneHeight: CGFloat = 200
 
     private var canvasSheetFraction: CGFloat {
         if selectedDetent == .medium { return 0.5 }
@@ -32,69 +32,64 @@ struct SheetsModalsView: View {
         return ".large"
     }
 
-    var body: some View {
-        List {
-            Section {
-                VStack(spacing: 24) {
-                    ZStack(alignment: .bottom) {
-                        // App layer, dimmed behind the sheet
-                        VStack(alignment: .leading, spacing: 10) {
-                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .fill(.quaternary)
-                                .frame(width: 56, height: 10)
-                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .fill(.quaternary)
-                                .frame(height: 8)
-                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .fill(.quaternary)
-                                .frame(height: 8)
-                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .fill(.quaternary)
-                                .frame(width: 72, height: 8)
-                        }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                        .background(Color(.secondarySystemGroupedBackground))
-                        .overlay(Color.black.opacity(0.25))
+    private var detentCanvas: some View {
+        VStack(spacing: 8) {
+            ZStack(alignment: .bottom) {
+                // App layer, dimmed behind the sheet
+                VStack(alignment: .leading, spacing: 10) {
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(.quaternary)
+                        .frame(width: 56, height: 10)
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(.quaternary)
+                        .frame(height: 8)
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(.quaternary)
+                        .frame(height: 8)
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(.quaternary)
+                        .frame(width: 72, height: 8)
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .background(Color(.secondarySystemGroupedBackground))
+                .overlay(Color.black.opacity(0.25))
 
-                        // Sheet layer rising from the bottom
-                        VStack(spacing: 0) {
-                            if showDragIndicator {
-                                Capsule()
-                                    .fill(.tertiary)
-                                    .frame(width: 32, height: 4)
-                                    .padding(.top, 6)
-                            }
-                            Spacer(minLength: 0)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: phoneHeight * canvasSheetFraction)
-                        .background(
-                            UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 12, style: .continuous)
-                                .fill(Color(.systemBackground))
-                                .shadow(color: .black.opacity(0.2), radius: 6, y: -2)
-                        )
+                // Sheet layer rising from the bottom
+                VStack(spacing: 0) {
+                    if showDragIndicator {
+                        Capsule()
+                            .fill(.tertiary)
+                            .frame(width: 32, height: 4)
+                            .padding(.top, 6)
                     }
-                    .frame(width: 140, height: phoneHeight)
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .strokeBorder(.separator, lineWidth: 1)
-                    )
-                    .animation(.spring(duration: 0.3), value: canvasSheetFraction)
-                    .animation(.spring(duration: 0.3), value: showDragIndicator)
-
-                    Text("\(selectedDetentLabel) — \(Int((canvasSheetFraction * 100).rounded()))% of screen")
-                        .font(.mono(.caption))
-                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
+                .frame(height: phoneHeight * canvasSheetFraction)
+                .background(
+                    UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 12, style: .continuous)
+                        .fill(Color(.systemBackground))
+                        .shadow(color: .black.opacity(0.2), radius: 6, y: -2)
+                )
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
+            .frame(width: 140, height: phoneHeight)
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(.separator, lineWidth: 1)
+            )
+            .animation(.spring(duration: 0.3), value: canvasSheetFraction)
+            .animation(.spring(duration: 0.3), value: showDragIndicator)
 
+            Text("\(selectedDetentLabel) — \(Int((canvasSheetFraction * 100).rounded()))% of screen")
+                .font(.mono(.caption))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    var body: some View {
+        List {
             Section("Presentation") {
                 Picker("Selected detent", selection: $selectedDetent) {
                     Text(".medium").tag(PresentationDetent.medium)
@@ -181,6 +176,9 @@ struct SheetsModalsView: View {
                     .padding(.vertical, 2)
                 }
             }
+        }
+        .pinnedPreview {
+            detentCanvas
         }
         .navigationTitle("Sheets & Modals")
         .navigationBarTitleDisplayMode(.large)
@@ -365,66 +363,63 @@ struct ToastsView: View {
     @State private var isToastVisible = false
     @State private var dismissTask: Task<Void, Never>?
 
+    private var toastCanvas: some View {
+        VStack(spacing: 10) {
+            ZStack(alignment: position.alignment) {
+                Color(.secondarySystemGroupedBackground)
+
+                VStack(spacing: 16) {
+                    ForEach(0..<2, id: \.self) { _ in
+                        HStack(spacing: 12) {
+                            Circle()
+                                .fill(.quaternary)
+                                .frame(width: 36, height: 36)
+                            VStack(alignment: .leading, spacing: 6) {
+                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                    .fill(.quaternary)
+                                    .frame(width: 110, height: 10)
+                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                    .fill(.quaternary.opacity(0.6))
+                                    .frame(width: 170, height: 10)
+                            }
+                            Spacer()
+                        }
+                    }
+                }
+                .padding(20)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                if isToastVisible {
+                    toastPill
+                        .padding(12)
+                        .transition(.move(edge: position.edge).combined(with: .opacity))
+                }
+            }
+            .frame(height: 150)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(.separator, lineWidth: 0.5)
+            )
+            .animation(.spring(duration: 0.3), value: position)
+            .animation(.spring(duration: 0.3), value: toastType)
+
+            Button {
+                if isToastVisible {
+                    hideToast()
+                } else {
+                    showToast()
+                }
+            } label: {
+                Label(isToastVisible ? "Hide toast" : "Show toast", systemImage: "bell.badge")
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+        }
+    }
+
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    ZStack(alignment: position.alignment) {
-                        Color(.secondarySystemGroupedBackground)
-
-                        VStack(spacing: 16) {
-                            ForEach(0..<4, id: \.self) { _ in
-                                HStack(spacing: 12) {
-                                    Circle()
-                                        .fill(.quaternary)
-                                        .frame(width: 36, height: 36)
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                            .fill(.quaternary)
-                                            .frame(width: 110, height: 10)
-                                        RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                            .fill(.quaternary.opacity(0.6))
-                                            .frame(width: 170, height: 10)
-                                    }
-                                    Spacer()
-                                }
-                            }
-                        }
-                        .padding(20)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                        if isToastVisible {
-                            toastPill
-                                .padding(12)
-                                .transition(.move(edge: position.edge).combined(with: .opacity))
-                        }
-                    }
-                    .frame(height: 260)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(.separator, lineWidth: 0.5)
-                    )
-                    .animation(.spring(duration: 0.3), value: position)
-                    .animation(.spring(duration: 0.3), value: toastType)
-
-                    Button {
-                        if isToastVisible {
-                            hideToast()
-                        } else {
-                            showToast()
-                        }
-                    } label: {
-                        Label(isToastVisible ? "Hide toast" : "Show toast", systemImage: "bell.badge")
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
             Section("Toast") {
                 Picker("Type", selection: $toastType) {
                     ForEach(ToastType.allCases) { type in
@@ -456,6 +451,9 @@ struct ToastsView: View {
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 4)
             }
+        }
+        .pinnedPreview {
+            toastCanvas
         }
         .navigationTitle("Toasts & Banners")
         .navigationBarTitleDisplayMode(.large)

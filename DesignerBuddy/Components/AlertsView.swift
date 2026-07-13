@@ -17,32 +17,6 @@ struct AlertsView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    ZStack {
-                        Color(.secondarySystemGroupedBackground)
-                        Color.black.opacity(0.3)
-
-                        mockAlertCard
-                            .padding(20)
-                    }
-                    .frame(height: 300)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(.separator, lineWidth: 0.5)
-                    )
-                    .animation(.spring(duration: 0.3), value: mockButtonCount)
-                    .animation(.spring(duration: 0.3), value: destructiveAction)
-                    .animation(.spring(duration: 0.3), value: showMockMessage)
-                    .animation(.spring(duration: 0.3), value: includeMockTextField)
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
             Section("Content") {
                 TextField("Title", text: $mockTitle)
                 Toggle("Message", isOn: $showMockMessage.animation(.spring(duration: 0.3)))
@@ -79,6 +53,25 @@ struct AlertsView: View {
                 }
                 .padding(.vertical, 4)
             }
+        }
+        .pinnedPreview {
+            ZStack {
+                Color(.secondarySystemGroupedBackground)
+                Color.black.opacity(0.3)
+
+                mockAlertCard
+                    .padding(16)
+            }
+            .frame(height: 220)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(.separator, lineWidth: 0.5)
+            )
+            .animation(.spring(duration: 0.3), value: mockButtonCount)
+            .animation(.spring(duration: 0.3), value: destructiveAction)
+            .animation(.spring(duration: 0.3), value: showMockMessage)
+            .animation(.spring(duration: 0.3), value: includeMockTextField)
         }
         .navigationTitle("Alerts & Dialogs")
         .navigationBarTitleDisplayMode(.large)

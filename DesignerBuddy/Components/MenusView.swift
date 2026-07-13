@@ -142,25 +142,6 @@ struct ProgressIndicatorsView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    VStack {
-                        indicator
-                            .tint(tint)
-                    }
-                    .padding(32)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 220)
-                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                }
-                .frame(maxWidth: .infinity)
-                .animation(.spring(duration: 0.3), value: style)
-                .animation(.spring(duration: 0.3), value: showLabel)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
             Section("Controls") {
                 Picker("Style", selection: $style) {
                     ForEach(IndicatorStyle.allCases, id: \.self) { s in
@@ -193,6 +174,18 @@ struct ProgressIndicatorsView: View {
                 }
                 .padding(.vertical, 4)
             }
+        }
+        .pinnedPreview {
+            VStack {
+                indicator
+                    .tint(tint)
+            }
+            .padding(32)
+            .frame(maxWidth: .infinity)
+            .frame(height: 160)
+            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .animation(.spring(duration: 0.3), value: style)
+            .animation(.spring(duration: 0.3), value: showLabel)
         }
         .navigationTitle("Progress Indicators")
         .navigationBarTitleDisplayMode(.large)

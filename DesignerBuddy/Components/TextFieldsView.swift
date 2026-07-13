@@ -62,45 +62,11 @@ struct TextFieldsView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    // Preview
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color(.secondarySystemGroupedBackground))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .strokeBorder(.separator, lineWidth: 0.5)
-                            )
-                            .frame(height: 200)
-
-                        HStack(spacing: 10) {
-                            if showIcon {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundStyle(.secondary)
-                            }
-                            specimenField
-                                .keyboardType(keyboard)
-                                .submitLabel(submit.label)
-                                .focused($focused, equals: .specimen)
-                        }
-                        .padding(.horizontal, 28)
-                        .animation(.spring(duration: 0.3), value: showIcon)
-                    }
-
-                    // Code output
-                    Text(codeSnippet)
-                        .font(.mono(.caption))
-                        .foregroundStyle(.secondary)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                }
-                .frame(maxWidth: .infinity)
+            Section("Code") {
+                Text(codeSnippet)
+                    .font(.mono(.caption))
+                    .foregroundStyle(.secondary)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
 
             Section("Field") {
                 Picker("Style", selection: $styleKind) {
@@ -208,6 +174,30 @@ struct TextFieldsView: View {
                 Text("Keyboard Types")
             } footer: {
                 Text("Tap any field to trigger that keyboard type.")
+            }
+        }
+        .pinnedPreview {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(.secondarySystemGroupedBackground))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(.separator, lineWidth: 0.5)
+                    )
+                    .frame(height: 140)
+
+                HStack(spacing: 10) {
+                    if showIcon {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(.secondary)
+                    }
+                    specimenField
+                        .keyboardType(keyboard)
+                        .submitLabel(submit.label)
+                        .focused($focused, equals: .specimen)
+                }
+                .padding(.horizontal, 28)
+                .animation(.spring(duration: 0.3), value: showIcon)
             }
         }
         .navigationTitle("Text Fields")

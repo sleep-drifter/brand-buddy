@@ -26,33 +26,6 @@ struct PickersView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    VStack {
-                        Spacer(minLength: 0)
-                        specimen
-                            .tint(tint)
-                        Spacer(minLength: 0)
-                    }
-                    .padding(20)
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 220)
-                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                    Text("selected: Option \(selection)")
-                        .font(.mono(.callout))
-                        .foregroundStyle(tint)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .background(tint.opacity(0.12), in: Capsule())
-                }
-                .frame(maxWidth: .infinity)
-                .animation(.spring(duration: 0.3), value: style)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
             Section("Controls") {
                 LabeledContent("options: \(optionTotal)") {
                     Slider(value: $optionCount, in: 2...6, step: 1)
@@ -72,6 +45,28 @@ struct PickersView: View {
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
             }
+        }
+        .pinnedPreview {
+            VStack(spacing: 10) {
+                VStack {
+                    Spacer(minLength: 0)
+                    specimen
+                        .tint(tint)
+                    Spacer(minLength: 0)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 60)
+                .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                Text("selected: Option \(selection)")
+                    .font(.mono(.callout))
+                    .foregroundStyle(tint)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(tint.opacity(0.12), in: Capsule())
+            }
+            .animation(.spring(duration: 0.3), value: style)
         }
         .navigationTitle("Pickers")
         .navigationBarTitleDisplayMode(.large)

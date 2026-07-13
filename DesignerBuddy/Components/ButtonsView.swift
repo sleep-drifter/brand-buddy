@@ -60,38 +60,11 @@ struct ButtonsView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    // Preview
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color(.secondarySystemGroupedBackground))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .strokeBorder(.separator, lineWidth: 0.5)
-                            )
-                            .frame(height: 220)
-
-                        demoButton
-                            .padding(.horizontal, 32)
-                    }
-                    .animation(.spring(duration: 0.3), value: size)
-                    .animation(.spring(duration: 0.3), value: fullWidth)
-                    .animation(.spring(duration: 0.3), value: isLoading)
-
-                    // Code output
-                    Text(codeSnippet)
-                        .font(.mono(.caption))
-                        .foregroundStyle(.secondary)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                }
-                .frame(maxWidth: .infinity)
+            Section("Code") {
+                Text(codeSnippet)
+                    .font(.mono(.caption))
+                    .foregroundStyle(.secondary)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
 
             Section("Style") {
                 Picker("Style", selection: $style) {
@@ -173,6 +146,23 @@ struct ButtonsView: View {
                 }
                 .padding(.vertical, 4)
             }
+        }
+        .pinnedPreview {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(.secondarySystemGroupedBackground))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(.separator, lineWidth: 0.5)
+                    )
+                    .frame(height: 150)
+
+                demoButton
+                    .padding(.horizontal, 32)
+            }
+            .animation(.spring(duration: 0.3), value: size)
+            .animation(.spring(duration: 0.3), value: fullWidth)
+            .animation(.spring(duration: 0.3), value: isLoading)
         }
         .navigationTitle("Buttons")
         .navigationBarTitleDisplayMode(.large)
