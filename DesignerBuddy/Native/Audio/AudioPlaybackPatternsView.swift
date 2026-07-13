@@ -25,22 +25,6 @@ private enum PlayerStyle: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
-    var number: String {
-        switch self {
-        case .mini:     return "01"
-        case .expanded: return "02"
-        case .inline:   return "03"
-        }
-    }
-
-    var title: String {
-        switch self {
-        case .mini:     return "Mini Player Bar"
-        case .expanded: return "Expanded Player Sheet"
-        case .inline:   return "Inline Player Row"
-        }
-    }
-
     var explanation: String {
         switch self {
         case .mini:     return "Use at the bottom of any screen to let users control playback without leaving their current context. Common in music, podcast, and audio apps."
@@ -85,12 +69,15 @@ struct AudioPlaybackPatternsView: View {
             .listRowSeparator(.hidden)
 
             Section("Style") {
-                Picker("Style", selection: $style) {
-                    ForEach(PlayerStyle.allCases) { option in
-                        Text(option.rawValue).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
+                PresetChipRow(
+                    chips: PlayerStyle.allCases.map { option in
+                        PresetChip(name: option.rawValue, detail: option.explanation)
+                    },
+                    selectedID: styleSelection
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
 
             Section("Playback") {
@@ -113,31 +100,6 @@ struct AudioPlaybackPatternsView: View {
                 Toggle("Repeat", isOn: $isRepeat)
                     .disabled(style != .expanded)
             }
-
-            Section("Patterns") {
-                ForEach(PlayerStyle.allCases) { option in
-                    Button {
-                        withAnimation(.spring(duration: 0.3)) {
-                            style = option
-                        }
-                    } label: {
-                        HStack(alignment: .top) {
-                            AudioPatternHeader(
-                                number: option.number,
-                                title: option.title,
-                                description: option.explanation
-                            )
-                            .foregroundStyle(.primary)
-                            Spacer()
-                            if style == option {
-                                Image(systemName: "checkmark")
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(.tint)
-                            }
-                        }
-                    }
-                }
-            }
         }
         .navigationTitle("Playback UI Patterns")
         .navigationBarTitleDisplayMode(.inline)
@@ -145,6 +107,16 @@ struct AudioPlaybackPatternsView: View {
 
     private var canvasState: [AnyHashable] {
         [style, isPlaying, isFavorited, isShuffle, isRepeat]
+    }
+
+    private var styleSelection: Binding<String?> {
+        Binding(
+            get: { style.rawValue },
+            set: { name in
+                guard let name, let option = PlayerStyle(rawValue: name) else { return }
+                style = option
+            }
+        )
     }
 
     // MARK: - Pattern 1: Mini Player Bar
@@ -499,30 +471,6 @@ private struct EqualizerView: View {
                     heights[i] = CGFloat.random(in: 0.5...1.0)
                 }
             }
-        }
-    }
-}
-
-// MARK: - Pattern Header
-
-private struct AudioPatternHeader: View {
-    let number: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(number)
-                    .font(.caption.weight(.bold).monospacedDigit())
-                    .foregroundStyle(.secondary)
-                Text(title)
-                    .font(.headline)
-            }
-            Text(description)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

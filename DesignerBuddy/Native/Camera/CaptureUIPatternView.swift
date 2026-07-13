@@ -33,13 +33,16 @@ struct CaptureUIPatternView: View {
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
 
-            Section("Layout") {
-                Picker("Layout", selection: $layout) {
-                    ForEach(CaptureLayout.allCases) { option in
-                        Text(option.rawValue).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
+            Section("Pattern") {
+                PresetChipRow(
+                    chips: CaptureLayout.allCases.map { option in
+                        PresetChip(name: option.rawValue, detail: option.note)
+                    },
+                    selectedID: layoutSelection
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
 
             Section("Chrome") {
@@ -60,33 +63,6 @@ struct CaptureUIPatternView: View {
                 }
                 .pickerStyle(.segmented)
             }
-
-            Section("Patterns") {
-                ForEach(CaptureLayout.allCases) { option in
-                    Button {
-                        withAnimation(.spring(duration: 0.3)) {
-                            layout = option
-                        }
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(option.title)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.primary)
-                                Text(option.note)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if layout == option {
-                                Image(systemName: "checkmark")
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(.tint)
-                            }
-                        }
-                    }
-                }
-            }
         }
         .navigationTitle("Capture UI Patterns")
     }
@@ -106,6 +82,16 @@ struct CaptureUIPatternView: View {
     private var canvasState: [AnyHashable] {
         [layout, showTopBar, showModeStrip, showGrid, showBrackets, shutterStyle]
     }
+
+    private var layoutSelection: Binding<String?> {
+        Binding(
+            get: { layout.rawValue },
+            set: { name in
+                guard let name, let option = CaptureLayout(rawValue: name) else { return }
+                layout = option
+            }
+        )
+    }
 }
 
 // MARK: - Capture Layout
@@ -116,14 +102,6 @@ private enum CaptureLayout: String, CaseIterable, Identifiable {
     case minimalScan = "Minimal scan"
 
     var id: Self { self }
-
-    var title: String {
-        switch self {
-        case .standard:    return "Standard Centered"
-        case .bottomStrip: return "Bottom Control Strip"
-        case .minimalScan: return "Minimal / Scan"
-        }
-    }
 
     var caption: String {
         switch self {

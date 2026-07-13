@@ -32,13 +32,18 @@ struct PhotoLibraryPatternsView: View {
             .listRowSeparator(.hidden)
 
             Section("Pattern") {
-                Picker("Pattern", selection: $pattern) {
-                    ForEach(PhotoPattern.allCases) { option in
-                        Text(option.rawValue).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
+                PresetChipRow(
+                    chips: PhotoPattern.allCases.map { option in
+                        PresetChip(name: option.rawValue, detail: option.note)
+                    },
+                    selectedID: patternSelection
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            }
 
+            Section("Controls") {
                 switch pattern {
                 case .avatar:
                     Toggle("Photo set", isOn: $isPhotoSet)
@@ -57,41 +62,22 @@ struct PhotoLibraryPatternsView: View {
                     Toggle("Edit overlay", isOn: $showEditOverlay)
                 }
             }
-
-            Section("Design Notes") {
-                ForEach(PhotoPattern.allCases) { option in
-                    Button {
-                        withAnimation(.spring(duration: 0.3)) {
-                            pattern = option
-                        }
-                    } label: {
-                        HStack(alignment: .top, spacing: 12) {
-                            ZStack {
-                                Circle()
-                                    .fill(pattern == option ? Color.accentColor : Color(uiColor: .tertiarySystemFill))
-                                    .frame(width: 28, height: 28)
-                                Text("\(option.number)")
-                                    .font(.footnote.weight(.bold))
-                                    .foregroundStyle(pattern == option ? Color.white : Color.secondary)
-                            }
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(option.title)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.primary)
-                                Text(option.note)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-            }
         }
         .navigationTitle("Photo Library Patterns")
     }
 
     private var canvasState: [AnyHashable] {
         [pattern, isPhotoSet, thumbnails, showEditOverlay]
+    }
+
+    private var patternSelection: Binding<String?> {
+        Binding(
+            get: { pattern.rawValue },
+            set: { name in
+                guard let name, let option = PhotoPattern(rawValue: name) else { return }
+                pattern = option
+            }
+        )
     }
 }
 
@@ -103,22 +89,6 @@ private enum PhotoPattern: String, CaseIterable, Identifiable {
     case fullBleed = "Full bleed"
 
     var id: Self { self }
-
-    var number: Int {
-        switch self {
-        case .avatar:         return 1
-        case .thumbnailStrip: return 2
-        case .fullBleed:      return 3
-        }
-    }
-
-    var title: String {
-        switch self {
-        case .avatar:         return "Avatar / Profile Photo"
-        case .thumbnailStrip: return "Thumbnail Strip with Replace"
-        case .fullBleed:      return "Full-Bleed Preview"
-        }
-    }
 
     var note: String {
         switch self {

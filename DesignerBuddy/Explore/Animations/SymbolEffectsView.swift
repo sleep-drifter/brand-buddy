@@ -54,6 +54,26 @@ struct SymbolEffectsView: View {
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
 
+            Section("Effect") {
+                PresetChipRow(
+                    chips: EffectOption.allCases.map { effect in
+                        PresetChip(
+                            name: effect.rawValue,
+                            detail: "\(effect.detail) \(effect.nature)",
+                            code: effect.code
+                        )
+                    },
+                    selectedID: effectSelection
+                ) { _ in
+                    trigger = 0
+                    isActive = false
+                    showAlternate = false
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            }
+
             Section {
                 Picker("Symbol", selection: $symbolName) {
                     ForEach(symbols, id: \.self) { Text($0) }
@@ -75,41 +95,6 @@ struct SymbolEffectsView: View {
                 Text(".byLayer applies the effect to each symbol path layer independently, creating a staggered sequential animation.")
             }
 
-            Section("Effects") {
-                ForEach(EffectOption.allCases, id: \.self) { effect in
-                    Button {
-                        selectedEffect = effect
-                        trigger = 0
-                        isActive = false
-                        showAlternate = false
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 6) {
-                                    Text(effect.rawValue)
-                                        .font(.mono(.caption))
-                                        .foregroundStyle(.primary)
-                                    Text(effect.isDiscrete ? "discrete" : "indefinite")
-                                        .font(.caption2.weight(.medium))
-                                        .foregroundStyle(.secondary)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(.quaternary, in: Capsule())
-                                }
-                                Text(effect.detail)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if selectedEffect == effect {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.tint)
-                            }
-                        }
-                    }
-                }
-            }
-
             Section {
                 NavigationLink("Open Symbol Playground") {
                     SymbolPlaygroundView()
@@ -120,6 +105,16 @@ struct SymbolEffectsView: View {
         }
         .navigationTitle("Symbol Effects")
         .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var effectSelection: Binding<String?> {
+        Binding(
+            get: { selectedEffect.rawValue },
+            set: { name in
+                guard let name, let effect = EffectOption(rawValue: name) else { return }
+                selectedEffect = effect
+            }
+        )
     }
 
     // MARK: - Canvas
@@ -270,6 +265,25 @@ private enum EffectOption: String, CaseIterable {
         case .appear:          return "Animates the symbol into view when toggled."
         case .disappear:       return "Animates the symbol out of view when toggled."
         case .replace:         return "Most common real-world use — toggle play/pause state."
+        }
+    }
+
+    var nature: String {
+        isDiscrete ? "Discrete — plays once per trigger." : "Indefinite — runs while active."
+    }
+
+    var code: String {
+        switch self {
+        case .bounce:          return ".symbolEffect(.bounce, value: trigger)"
+        case .pulse:           return ".symbolEffect(.pulse, value: trigger)"
+        case .wiggle:          return ".symbolEffect(.wiggle, value: trigger)"
+        case .rotate:          return ".symbolEffect(.rotate, value: trigger)"
+        case .breathe:         return ".symbolEffect(.breathe, isActive: isActive)"
+        case .pulseContinuous: return ".symbolEffect(.pulse, isActive: isActive)"
+        case .variableColor:   return ".symbolEffect(.variableColor.iterative.reversing, isActive: isActive)"
+        case .appear:          return ".symbolEffect(.appear, isActive: isActive)"
+        case .disappear:       return ".symbolEffect(.disappear, isActive: isActive)"
+        case .replace:         return ".contentTransition(.symbolEffect(.replace))"
         }
     }
 }
