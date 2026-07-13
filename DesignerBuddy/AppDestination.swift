@@ -70,6 +70,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Physics Tag":            PhysicsTagView()
     case "Stable Fluid":           StableFluidView()
     case "Liquid Wallet":          LiquidWalletView()
+    case "Liquid Carousel":        LiquidCarouselView()
     case "Safe Areas":             SafeAreasView()
     case "Permission Requests":        PermissionRequestView()
     case "Permission Denied Recovery": PermissionDeniedRecoveryView()
