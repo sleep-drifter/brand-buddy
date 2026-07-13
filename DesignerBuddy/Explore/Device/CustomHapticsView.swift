@@ -167,6 +167,9 @@ struct CustomHapticsView: View {
                     .buttonStyle(.plain)
                     .padding(.vertical, 2)
                 }
+                Text("Custom CoreHaptics compositions that approximate the system generators in Standard Feedback — built from the same transient/continuous primitives as the plot above, so you can read the recipes.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Usage Guidelines") {

@@ -9,6 +9,7 @@ struct ShadowExplorerView: View {
     @State private var cardColor = Color.white
     @State private var cornerRadius: CGFloat = 16
     @State private var bgIndex = 0
+    @State private var selectedPreset: String?
 
     private let backgrounds: [(String, Color)] = [
         ("White", .white),
@@ -94,26 +95,27 @@ struct ShadowExplorerView: View {
             }
 
             Section("Presets") {
-                ForEach(ShadowPreset.all) { preset in
-                    Button {
-                        withAnimation(.spring(duration: 0.3)) {
-                            radius = preset.radius
-                            x = preset.x
-                            y = preset.y
-                            opacity = preset.opacity
-                        }
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(preset.name).font(.subheadline).foregroundStyle(.primary)
-                                Text(preset.description).font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Text("r:\(Int(preset.radius)) y:\(Int(preset.y))")
-                                .font(.mono(.caption2)).foregroundStyle(.tertiary)
-                        }
+                PresetChipRow(
+                    chips: ShadowPreset.all.map { preset in
+                        PresetChip(
+                            name: preset.name,
+                            detail: preset.description,
+                            code: "radius: \(Int(preset.radius)), x: \(Int(preset.x)), y: \(Int(preset.y)), opacity: \(String(format: "%.2f", preset.opacity))"
+                        )
+                    },
+                    selectedID: $selectedPreset
+                ) { chip in
+                    guard let preset = ShadowPreset.all.first(where: { $0.name == chip.name }) else { return }
+                    withAnimation(.spring(duration: 0.3)) {
+                        radius = preset.radius
+                        x = preset.x
+                        y = preset.y
+                        opacity = preset.opacity
                     }
                 }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
         }
         .navigationTitle("Shadow Explorer")
