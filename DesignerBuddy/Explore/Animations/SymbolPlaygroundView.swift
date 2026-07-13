@@ -575,7 +575,10 @@ struct SymbolPlaygroundView: View {
                     }
                 }
                 .padding(.vertical, 4)
+                .padding(.horizontal, 32)
             }
+            .scrollClipDisabled()
+            .padding(.horizontal, -32)
         } label: {
             Text(label).font(.subheadline.weight(.medium))
         }

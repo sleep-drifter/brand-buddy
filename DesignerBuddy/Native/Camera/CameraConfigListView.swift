@@ -27,7 +27,10 @@ struct CameraConfigListView: View {
                         }
                         .padding(.vertical, 6)
                     }
-                    .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 0))
+                    .scrollClipDisabled()
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 }
             }
 

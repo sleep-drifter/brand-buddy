@@ -126,6 +126,9 @@ struct DynamicTypeExploreView: View {
                         }
                     }
                 }
+            }
+
+            Section {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Body text across all sizes")
                         .font(.caption.weight(.semibold))
@@ -147,7 +150,11 @@ struct DynamicTypeExploreView: View {
                         }
                         .padding(.vertical, 8)
                     }
+                    .scrollClipDisabled()
                 }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
 
             Section("Truncation & Wrapping") {

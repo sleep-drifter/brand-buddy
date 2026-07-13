@@ -301,6 +301,10 @@ struct TagsView: View {
                     }
                     .padding(.vertical, 4)
                 }
+                .scrollClipDisabled()
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
 
             Section("Bordered Tags") {
@@ -317,6 +321,10 @@ struct TagsView: View {
                     }
                     .padding(.vertical, 4)
                 }
+                .scrollClipDisabled()
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
         }
         .navigationTitle("Tags")

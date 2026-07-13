@@ -130,6 +130,10 @@ struct TypographyReferenceView: View {
                     }
                     .padding(.vertical, 8)
                 }
+                .scrollClipDisabled()
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
 
             Section("Label Styles") {
