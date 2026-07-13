@@ -173,6 +173,12 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Physics Tag",           section: "Playgrounds", tab: "Playgrounds", icon: "tag.circle",              keywords: ["physics", "spritekit", "gravity", "motion", "tilt", "coremotion", "tag cloud", "drag", "throw", "collision", "my-toybox", "toybox"]),
         .init(name: "Stable Fluid",          section: "Playgrounds", tab: "Playgrounds", icon: "drop.degreesign",        keywords: ["fluid", "stable fluid", "navier stokes", "simulation", "smoke", "ink", "metal", "compute", "gpu", "jos stam", "my-toybox", "toybox"]),
         .init(name: "Liquid Wallet",         section: "Playgrounds", tab: "Playgrounds", icon: "wallet.pass",             keywords: ["glass", "liquid glass", "wallet", "carousel", "stack", "deck", "merge", "union", "morph", "metaball", "glasseffect", "glasseffectcontainer", "ios 26"]),
+<<<<<<< Updated upstream
+=======
+        .init(name: "Liquid Carousel",       section: "Playgrounds", tab: "Playgrounds", icon: "rectangle.split.2x1",     keywords: ["glass", "liquid glass", "carousel", "merge", "blend", "proximity", "spacing", "metaball", "train", "dock", "scrub", "neck", "glasseffectcontainer", "ios 26"]),
+        .init(name: "Safe Areas",            section: "Reference",   tab: "Playgrounds", icon: "iphone",                  keywords: ["insets", "home indicator", "notch", "status bar"]),
+        .init(name: "Sheet Detents",         section: "Reference",   tab: "Playgrounds", icon: "rectangle.bottomhalf.inset.filled"),
+>>>>>>> Stashed changes
     ]
 
     // MARK: - Shaders
