@@ -26,46 +26,6 @@ struct SpringPhysicsView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    // Live preview
-                    ZStack(alignment: .bottom) {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(.quaternary)
-                            .frame(height: 200)
-
-                        Circle()
-                            .fill(.tint)
-                            .frame(width: 56, height: 56)
-                            .shadow(color: Color.accentColor.opacity(0.4), radius: 12, y: 6)
-                            .offset(y: animating ? -140 : -16)
-                            .animation(currentAnimation, value: animating)
-                    }
-                    .onTapGesture {
-                        animating.toggle()
-                    }
-                    .overlay(alignment: .center) {
-                        if !animating {
-                            Text("Tap to animate")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-
-                    Button("Replay") {
-                        animating = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            animating = true
-                        }
-                    }
-                    .buttonStyle(.bordered)
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
             Section("API") {
                 Picker("Spring API", selection: $springAPI) {
                     ForEach(SpringAPI.allCases, id: \.self) { Text($0.rawValue) }
@@ -126,6 +86,41 @@ struct SpringPhysicsView: View {
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
+            }
+        }
+        .pinnedPreview {
+            ZStack(alignment: .bottom) {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.quaternary)
+                    .frame(height: 170)
+
+                Circle()
+                    .fill(.tint)
+                    .frame(width: 56, height: 56)
+                    .shadow(color: Color.accentColor.opacity(0.4), radius: 12, y: 6)
+                    .offset(y: animating ? -108 : -16)
+                    .animation(currentAnimation, value: animating)
+            }
+            .onTapGesture {
+                animating.toggle()
+            }
+            .overlay(alignment: .center) {
+                if !animating {
+                    Text("Tap to animate")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Button("Replay") {
+                    animating = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        animating = true
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .padding(8)
             }
         }
         .navigationTitle("Spring Physics")

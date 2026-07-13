@@ -592,7 +592,12 @@ struct StableFluidView: View {
     @State private var viewModel = StableFluidViewModel()
 
     var body: some View {
-        VStack(spacing: 16) {
+        ScrollView {
+            controls
+                .padding(.horizontal)
+                .padding(.vertical)
+        }
+        .pinnedPreview {
             GeometryReader { geometry in
                 MetalStableFluidView(viewModel: viewModel)
                     .blur(radius: CGFloat(viewModel.softenBlur))
@@ -607,15 +612,9 @@ struct StableFluidView: View {
                     .overlay { obstacleOverlay(size: geometry.size) }
                     .gesture(brushGesture(size: geometry.size))
             }
-            .aspectRatio(1, contentMode: .fit)
+            .frame(height: 280)
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-
-            ScrollView {
-                controls
-                    .padding(.horizontal)
-            }
         }
-        .padding(.vertical)
         .tint(.blue)
         .navigationTitle("Stable Fluid")
         .navigationBarTitleDisplayMode(.inline)

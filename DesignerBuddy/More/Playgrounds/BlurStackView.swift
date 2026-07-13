@@ -16,57 +16,10 @@ struct BlurStackView: View {
     var body: some View {
         List {
             Section {
-                VStack(spacing: 24) {
-                    ZStack {
-                        backgroundContent
-                            .frame(height: 280)
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                        // Layer 3 (bottom)
-                        if showLayer3 {
-                            blurLayer(
-                                radius: layer3Radius,
-                                opacity: layer3Opacity,
-                                size: CGSize(width: 220, height: 180),
-                                cornerRadius: 20,
-                                label: "Layer 3 (back)"
-                            )
-                            .offset(x: 0, y: 8)
-                        }
-
-                        // Layer 2 (middle)
-                        if showLayer2 {
-                            blurLayer(
-                                radius: layer2Radius,
-                                opacity: layer2Opacity,
-                                size: CGSize(width: 180, height: 140),
-                                cornerRadius: 16,
-                                label: "Layer 2"
-                            )
-                            .offset(x: 0, y: 0)
-                        }
-
-                        // Layer 1 (front)
-                        blurLayer(
-                            radius: layer1Radius,
-                            opacity: layer1Opacity,
-                            size: CGSize(width: 140, height: 100),
-                            cornerRadius: 12,
-                            label: "Layer 1 (front)"
-                        )
-                        .offset(x: 0, y: -8)
-                    }
-
-                    Text("Blur layers do NOT compound — each blurs the content beneath it independently.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
+                Text("Blur layers do NOT compound — each blurs the content beneath it independently.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
 
             Section("Background") {
                 Picker("Background", selection: $selectedBackground) {
@@ -118,6 +71,44 @@ struct BlurStackView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 4)
+            }
+        }
+        .pinnedPreview {
+            ZStack {
+                backgroundContent
+                    .frame(height: 200)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                if showLayer3 {
+                    blurLayer(
+                        radius: layer3Radius,
+                        opacity: layer3Opacity,
+                        size: CGSize(width: 220, height: 170),
+                        cornerRadius: 20,
+                        label: "Layer 3 (back)"
+                    )
+                    .offset(x: 0, y: 8)
+                }
+
+                if showLayer2 {
+                    blurLayer(
+                        radius: layer2Radius,
+                        opacity: layer2Opacity,
+                        size: CGSize(width: 180, height: 130),
+                        cornerRadius: 16,
+                        label: "Layer 2"
+                    )
+                    .offset(x: 0, y: 0)
+                }
+
+                blurLayer(
+                    radius: layer1Radius,
+                    opacity: layer1Opacity,
+                    size: CGSize(width: 140, height: 90),
+                    cornerRadius: 12,
+                    label: "Layer 1 (front)"
+                )
+                .offset(x: 0, y: -8)
             }
         }
         .navigationTitle("Blur Stack")

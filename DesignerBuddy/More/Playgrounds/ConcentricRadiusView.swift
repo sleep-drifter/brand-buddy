@@ -10,51 +10,20 @@ struct ConcentricRadiusView: View {
     var body: some View {
         List {
             Section {
-                VStack(spacing: 32) {
-                    // Side-by-side comparison
-                    HStack(spacing: 20) {
-                        VStack(spacing: 10) {
-                            concentricCard(innerRadius: innerConcentric, label: "Concentric\n(R − p)")
-                                .overlay(alignment: .topLeading) {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(.green)
-                                        .padding(8)
-                                }
-                            Text("inner = \(Int(innerConcentric))pt")
-                                .font(.mono(.caption))
-                                .foregroundStyle(.secondary)
-                        }
-
-                        VStack(spacing: 10) {
-                            concentricCard(innerRadius: outerRadius, label: "Naive\n(same R)")
-                                .overlay(alignment: .topLeading) {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundStyle(.red)
-                                        .padding(8)
-                                }
-                            Text("inner = \(Int(outerRadius))pt")
-                                .font(.mono(.caption))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    // Formula callout
-                    VStack(spacing: 6) {
-                        Text("inner radius = outer radius − padding")
-                            .font(.mono(.subheadline))
-                            .multilineTextAlignment(.center)
-                        Text("\(Int(innerConcentric)) = \(Int(outerRadius)) − \(Int(padding))")
-                            .font(.mono(.title3))
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.tint)
-                            .contentTransition(.numericText())
-                            .animation(.spring(duration: 0.3), value: innerConcentric)
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                VStack(spacing: 6) {
+                    Text("inner radius = outer radius − padding")
+                        .font(.mono(.subheadline))
+                        .multilineTextAlignment(.center)
+                    Text("\(Int(innerConcentric)) = \(Int(outerRadius)) − \(Int(padding))")
+                        .font(.mono(.title3))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.tint)
+                        .contentTransition(.numericText())
+                        .animation(.spring(duration: 0.3), value: innerConcentric)
                 }
+                .padding(16)
                 .frame(maxWidth: .infinity)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
@@ -96,6 +65,33 @@ struct ConcentricRadiusView: View {
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
+            }
+        }
+        .pinnedPreview {
+            HStack(spacing: 20) {
+                VStack(spacing: 10) {
+                    concentricCard(innerRadius: innerConcentric, label: "Concentric\n(R − p)")
+                        .overlay(alignment: .topLeading) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .padding(8)
+                        }
+                    Text("inner = \(Int(innerConcentric))pt")
+                        .font(.mono(.caption))
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(spacing: 10) {
+                    concentricCard(innerRadius: outerRadius, label: "Naive\n(same R)")
+                        .overlay(alignment: .topLeading) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.red)
+                                .padding(8)
+                        }
+                    Text("inner = \(Int(outerRadius))pt")
+                        .font(.mono(.caption))
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .navigationTitle("Concentric Radius")

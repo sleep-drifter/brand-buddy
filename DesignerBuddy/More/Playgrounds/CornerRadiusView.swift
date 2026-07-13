@@ -8,50 +8,6 @@ struct CornerRadiusView: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 24) {
-                    // Live comparison
-                    if showBothStyles {
-                        HStack(spacing: 24) {
-                            VStack(spacing: 8) {
-                                Rectangle()
-                                    .fill(.tint)
-                                    .frame(width: shapeSize, height: shapeSize)
-                                    .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-                                Text(".continuous")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            VStack(spacing: 8) {
-                                Rectangle()
-                                    .fill(.tint.opacity(0.6))
-                                    .frame(width: shapeSize, height: shapeSize)
-                                    .clipShape(RoundedRectangle(cornerRadius: radius, style: .circular))
-                                Text(".circular")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .padding(.vertical, 12)
-                    } else {
-                        Rectangle()
-                            .fill(.tint)
-                            .frame(width: shapeSize, height: shapeSize)
-                            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-                            .padding(.vertical, 12)
-                    }
-
-                    Text("radius: \(Int(radius))pt")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .monospacedDigit()
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
             Section("Controls") {
                 LabeledContent("Corner Radius: \(Int(radius))") {
                     Slider(value: $radius, in: 0...shapeSize / 2)
@@ -106,6 +62,43 @@ struct CornerRadiusView: View {
                 }
                 .padding(.vertical, 4)
             }
+        }
+        .pinnedPreview {
+            VStack(spacing: 10) {
+                if showBothStyles {
+                    HStack(spacing: 24) {
+                        VStack(spacing: 6) {
+                            Rectangle()
+                                .fill(.tint)
+                                .frame(width: shapeSize, height: shapeSize)
+                                .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+                            Text(".continuous")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        VStack(spacing: 6) {
+                            Rectangle()
+                                .fill(.tint.opacity(0.6))
+                                .frame(width: shapeSize, height: shapeSize)
+                                .clipShape(RoundedRectangle(cornerRadius: radius, style: .circular))
+                            Text(".circular")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } else {
+                    Rectangle()
+                        .fill(.tint)
+                        .frame(width: shapeSize, height: shapeSize)
+                        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+                }
+
+                Text("radius: \(Int(radius))pt")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .monospacedDigit()
+            }
+            .frame(height: 200)
         }
         .navigationTitle("Corner Radius")
         .navigationBarTitleDisplayMode(.large)

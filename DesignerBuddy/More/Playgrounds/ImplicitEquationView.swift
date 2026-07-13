@@ -66,19 +66,6 @@ struct ImplicitEquationView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                TimelineView(.animation(paused: !animate)) { context in
-                    let phase = animate ? Float(context.date.timeIntervalSince(startDate)) : 0
-                    GeometryReader { geo in
-                        Rectangle().fill(gradient(size: geo.size))
-                    }
-                    .aspectRatio(1, contentMode: .fit)
-                    .frame(maxWidth: .infinity)
-                    .layerEffect(shader(phase: phase), maxSampleOffset: .zero)
-                }
-                .aspectRatio(1, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .shadow(color: .black.opacity(0.18), radius: 16, y: 6)
-
                 Text(verbatim: "f(x,y) = \(function.formula)")
                     .font(.callout.monospaced())
                     .foregroundStyle(.secondary)
@@ -95,6 +82,21 @@ struct ImplicitEquationView: View {
             .animation(.default, value: radialFreq + mixFreq + isoLevel + zoom + levels + thickness)
         }
         .background(Color(.systemGroupedBackground))
+        .pinnedPreview {
+            TimelineView(.animation(paused: !animate)) { context in
+                let phase = animate ? Float(context.date.timeIntervalSince(startDate)) : 0
+                GeometryReader { geo in
+                    Rectangle().fill(gradient(size: geo.size))
+                }
+                .aspectRatio(1, contentMode: .fit)
+                .frame(maxWidth: .infinity)
+                .layerEffect(shader(phase: phase), maxSampleOffset: .zero)
+            }
+            .aspectRatio(1, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: .black.opacity(0.18), radius: 16, y: 6)
+            .frame(height: 240)
+        }
         .navigationTitle("Implicit Equation")
         .navigationBarTitleDisplayMode(.inline)
     }

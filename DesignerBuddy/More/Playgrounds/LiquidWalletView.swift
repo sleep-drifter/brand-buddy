@@ -88,13 +88,15 @@ struct LiquidWalletView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                stage
                 controls
                 caption
             }
             .padding(16)
         }
         .background(Color(.systemGroupedBackground))
+        .pinnedPreview {
+            stage
+        }
         .navigationTitle("Liquid Wallet")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: count) {
@@ -115,12 +117,12 @@ struct LiquidWalletView: View {
                     .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
                     .padding(.top, 0)
             }
-            .padding(.top, 44)
+            .padding(.top, 24)
             .contentShape(Rectangle())
             .gesture(dragGesture)
             .onTapGesture { advance() }
         }
-        .frame(height: 400)
+        .frame(height: 280)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .animation(.snappy, value: peek)
         .animation(.snappy, value: depthInset)

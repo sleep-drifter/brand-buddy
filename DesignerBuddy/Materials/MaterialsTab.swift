@@ -34,7 +34,6 @@ struct GlassEffectPlayground: View {
     @State private var backgroundType: GlassBG = .blobs
     @State private var bgColor1 = Color.purple
     @State private var bgColor2 = Color.blue
-    @State private var showControls = true
 
     enum GlassBG: String, CaseIterable {
         case blobs = "Blobs"
@@ -44,57 +43,43 @@ struct GlassEffectPlayground: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 20) {
-                    ZStack {
-                        bgContent
-                            .frame(height: 300)
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                        VStack(spacing: 16) {
-                            glassCard(label: "Hello, glass.")
-                            HStack(spacing: 12) {
-                                glassChip("Confirm")
-                                glassChip("Cancel")
-                            }
-                        }
-                    }
-
-                    Button(showControls ? "Hide Controls" : "Show Controls") {
-                        withAnimation(.spring(duration: 0.3)) { showControls.toggle() }
-                    }
-                    .buttonStyle(.bordered)
+            Section("Background") {
+                Picker("Background", selection: $backgroundType) {
+                    ForEach(GlassBG.allCases, id: \.self) { Text($0.rawValue) }
                 }
-                .frame(maxWidth: .infinity)
+                .pickerStyle(.segmented)
+                if backgroundType == .gradient {
+                    ColorPicker("Color 1", selection: $bgColor1, supportsOpacity: false)
+                    ColorPicker("Color 2", selection: $bgColor2, supportsOpacity: false)
+                }
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
 
-            if showControls {
-                Section("Background") {
-                    Picker("Background", selection: $backgroundType) {
-                        ForEach(GlassBG.allCases, id: \.self) { Text($0.rawValue) }
-                    }
-                    .pickerStyle(.segmented)
-                    if backgroundType == .gradient {
-                        ColorPicker("Color 1", selection: $bgColor1, supportsOpacity: false)
-                        ColorPicker("Color 2", selection: $bgColor2, supportsOpacity: false)
-                    }
+            Section("GlassEffect") {
+                LabeledContent("Corner Radius: \(Int(cornerRadius))") {
+                    Slider(value: $cornerRadius, in: 0...56)
                 }
+                Toggle(".interactive", isOn: $isInteractive)
+            }
 
-                Section("GlassEffect") {
-                    LabeledContent("Corner Radius: \(Int(cornerRadius))") {
-                        Slider(value: $cornerRadius, in: 0...56)
+            Section("How it works") {
+                Text("`.glassEffect(in:)` is the iOS 26 liquid glass modifier. The system synthesizes the blur, specular highlights, and refraction — you only specify the shape.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Text("`.interactive` makes the glass surface respond to press gestures with a physical scale-and-dim feedback, matching system button behavior.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .pinnedPreview {
+            ZStack {
+                bgContent
+                    .frame(height: 200)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                VStack(spacing: 16) {
+                    glassCard(label: "Hello, glass.")
+                    HStack(spacing: 12) {
+                        glassChip("Confirm")
+                        glassChip("Cancel")
                     }
-                    Toggle(".interactive", isOn: $isInteractive)
-                }
-
-                Section("How it works") {
-                    Text("`.glassEffect(in:)` is the iOS 26 liquid glass modifier. The system synthesizes the blur, specular highlights, and refraction — you only specify the shape.")
-                        .font(.caption).foregroundStyle(.secondary)
-                    Text("`.interactive` makes the glass surface respond to press gestures with a physical scale-and-dim feedback, matching system button behavior.")
-                        .font(.caption).foregroundStyle(.secondary)
                 }
             }
         }
@@ -207,8 +192,6 @@ struct GlassPlayground: View {
     @State private var shadowRadius: Double = 20
     @State private var shadowY: Double = 10
 
-    @State private var showControls = true
-
     enum BackgroundType: String, CaseIterable {
         case gradient = "Gradient"
         case mesh = "Mesh"
@@ -235,28 +218,14 @@ struct GlassPlayground: View {
 
     var body: some View {
         List {
-            Section {
-                VStack(spacing: 20) {
-                    ZStack {
-                        backgroundContent
-                            .frame(height: 280)
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        glassCard
-                    }
-
-                    Button(showControls ? "Hide Controls" : "Show Controls") {
-                        withAnimation(.spring(duration: 0.3)) { showControls.toggle() }
-                    }
-                    .buttonStyle(.bordered)
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-
-            if showControls {
-                controlSections
+            controlSections
+        }
+        .pinnedPreview {
+            ZStack {
+                backgroundContent
+                    .frame(height: 200)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                glassCard
             }
         }
     }
@@ -578,53 +547,10 @@ struct VibrancyPlayground: View {
     var body: some View {
         List {
             Section {
-                ZStack {
-                    backgroundContent
-                        .frame(height: 300)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                    VStack(spacing: 16) {
-                        Text("Vibrancy adapts label and fill colors to stand out against any background material.")
-                            .font(.caption)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(materialThickness.material)
-                            .frame(width: 260, height: 160)
-                            .overlay(
-                                VStack(alignment: .leading, spacing: 8) {
-                                    if showPrimary {
-                                        Label("Primary label", systemImage: "star.fill")
-                                            .font(.subheadline)
-                                    }
-                                    if showSecondary {
-                                        Label("Secondary label", systemImage: "circle.fill")
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    if showTertiary {
-                                        Label("Tertiary label", systemImage: "triangle.fill")
-                                            .font(.subheadline)
-                                            .foregroundStyle(.tertiary)
-                                    }
-                                    if showQuaternary {
-                                        Divider()
-                                        Text("Separator above")
-                                            .font(.caption)
-                                            .foregroundStyle(.quaternary)
-                                    }
-                                }
-                                .padding(16)
-                            )
-                            .animation(.spring(duration: 0.3), value: cornerRadius)
-                            .animation(.spring(duration: 0.3), value: [showPrimary, showSecondary, showTertiary, showQuaternary])
-                    }
-                }
+                Text("Vibrancy adapts label and fill colors to stand out against any background material.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
 
             Section("Background") {
                 Picker("Background", selection: $backgroundType) {
@@ -667,6 +593,44 @@ struct VibrancyPlayground: View {
                 Text("Vibrancy effects are automatic when using .foregroundStyle(.primary/.secondary/.tertiary) on views placed inside a material background. The system synthesizes appropriate contrast.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+        }
+        .pinnedPreview {
+            ZStack {
+                backgroundContent
+                    .frame(height: 200)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(materialThickness.material)
+                    .frame(width: 240, height: 140)
+                    .overlay(
+                        VStack(alignment: .leading, spacing: 8) {
+                            if showPrimary {
+                                Label("Primary label", systemImage: "star.fill")
+                                    .font(.subheadline)
+                            }
+                            if showSecondary {
+                                Label("Secondary label", systemImage: "circle.fill")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            if showTertiary {
+                                Label("Tertiary label", systemImage: "triangle.fill")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.tertiary)
+                            }
+                            if showQuaternary {
+                                Divider()
+                                Text("Separator above")
+                                    .font(.caption)
+                                    .foregroundStyle(.quaternary)
+                            }
+                        }
+                        .padding(16)
+                    )
+                    .animation(.spring(duration: 0.3), value: cornerRadius)
+                    .animation(.spring(duration: 0.3), value: [showPrimary, showSecondary, showTertiary, showQuaternary])
             }
         }
     }

@@ -36,13 +36,15 @@ struct FluidGradientView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                preview
                 controls
                 caption
             }
             .padding(16)
         }
         .background(Color(.systemGroupedBackground))
+        .pinnedPreview {
+            preview
+        }
         .navigationTitle("Fluid Gradient")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -56,7 +58,7 @@ struct FluidGradientView: View {
                 Color.black.colorEffect(fluidShader(size: geo.size, time: t))
             }
         }
-        .frame(height: 340)
+        .frame(height: 240)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: .black.opacity(0.18), radius: 16, y: 6)
     }

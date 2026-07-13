@@ -34,13 +34,15 @@ struct RandomMetaball2DView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                preview
                 controls
                 caption
             }
             .padding(16)
         }
         .background(Color(.systemGroupedBackground))
+        .pinnedPreview {
+            preview
+        }
         .navigationTitle("Random Metaball 2D")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -58,7 +60,7 @@ struct RandomMetaball2DView: View {
                        sizeFactor: sizeFactor,
                        blur: blur,
                        threshold: threshold)
-            .frame(height: 340)
+            .frame(height: 240)
             .frame(maxWidth: .infinity)
             .background(Color.black)
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
