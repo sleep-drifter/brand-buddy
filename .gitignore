@@ -27,3 +27,6 @@ Pods/
 # macOS
 .DS_Store
 *.swp
+
+# Generated export archives (source lives in the folder alongside)
+Export/*.zip
