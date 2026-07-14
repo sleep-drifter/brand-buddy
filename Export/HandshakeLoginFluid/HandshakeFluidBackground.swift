@@ -3,23 +3,35 @@
 //
 //  A self-contained, ambient GPU fluid background for the Handshake login /
 //  home screen. Drop this file and `HandshakeFluidKernels.metal` into the app
-//  target — no assets, no other dependencies.
+//  target — no assets, no packages, no other source files.
 //
-//  Usage:
+//  Production usage (static, power-saving defaults):
 //      ZStack {
 //          HandshakeFluidBackground()
-//              .ignoresSafeArea()
 //          LoginContent()
 //      }
 //
-//  The background animates on its own (a set of slow orbiting vortices keep the
-//  flow alive) and also reacts to drags on any exposed area. Everything is
-//  tunable via `HandshakeFluidConfig`.
+//  Live-tuning usage (debug builds) — share a store with the debug panel:
+//      @StateObject private var fluid = HandshakeFluidStore()
+//      ...
+//      ZStack {
+//          HandshakeFluidBackground(store: fluid)
+//          LoginContent()
+//      }
+//      .sheet(isPresented: $showDebug) {
+//          HandshakeFluidDebugPanel(store: fluid)   // dial in the values
+//      }
 //
-//  Requires iOS 14+ and a Metal-capable device. On the (rare) device with no
-//  Metal support it falls back to a static gradient built from the same colours.
+//  The background animates on its own (slow orbiting currents keep the flow
+//  alive), reacts to drags on any exposed area, pauses when off-screen or
+//  backgrounded, and is capped to 30 fps by default. All of it is tunable via
+//  `HandshakeFluidConfig` / the debug panel.
+//
+//  Requires iOS 14+ and a Metal-capable device; falls back to a static
+//  gradient (same palette) where Metal is unavailable.
 //
 
+import Combine
 import MetalKit
 import QuartzCore
 import SwiftUI
@@ -28,9 +40,9 @@ import UIKit
 
 // MARK: - Configuration
 
-/// Look-and-feel knobs for ``HandshakeFluidBackground``. The defaults reproduce
-/// the cool Handshake login treatment; tweak a value and rebuild to retune.
-public struct HandshakeFluidConfig {
+/// Look-and-feel + performance knobs. Defaults reproduce the cool Handshake
+/// login treatment at a battery-friendly 30 fps.
+public struct HandshakeFluidConfig: Equatable {
     // Flow-direction palette (the four corners of the direction gradient).
     public var anchorA: Color = Color(red: 0.204, green: 0.780, blue: 0.349)
     public var anchorB: Color = Color(red: 0.200, green: 0.830, blue: 0.930)
@@ -58,43 +70,73 @@ public struct HandshakeFluidConfig {
     /// Enable drag-to-stir on exposed background.
     public var interactive: Bool = true
 
-    // Simulation tuning — the defaults are calm and stable; touch rarely.
-    public var deltaTime: Float = 0.20
+    // Simulation tuning.
+    public var deltaTime: Float = 0.30
     public var ambientStrength: Float = 0.60
     public var ambientDecay: Float = 0.995
     public var viscosity: Float = 0.0
     public var vorticity: Float = 0.0
-    public var solverIterations: Int = 18
+
+    // Performance.
+    /// Render loop cap in frames/sec. 30 is a good ambient-background budget;
+    /// note that lowering fps also slows real-time flow (raise `deltaTime` to
+    /// compensate).
+    public var frameRateCap: Int = 30
+    /// Jacobi iterations for the pressure solve. 10–12 is plenty for a
+    /// background; 18 is smoother but costs more GPU.
+    public var solverIterations: Int = 12
+    /// Simulation grid resolution (square). 256 = crisp, 128 = ~4× cheaper.
     public var gridSize: Int = 256
 
     public init() {}
 }
 
+// MARK: - Shared store (for live tuning)
+
+/// Observable wrapper so a debug panel and the background can share one live
+/// config. In production you don't need this — use `HandshakeFluidBackground()`.
+public final class HandshakeFluidStore: ObservableObject {
+    @Published public var config: HandshakeFluidConfig
+    public init(config: HandshakeFluidConfig = HandshakeFluidConfig()) {
+        self.config = config
+    }
+}
+
 // MARK: - Public view
 
 public struct HandshakeFluidBackground: View {
-    private let config: HandshakeFluidConfig
+    @ObservedObject private var store: HandshakeFluidStore
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var isVisible = true
 
+    /// Static configuration (production).
     public init(config: HandshakeFluidConfig = HandshakeFluidConfig()) {
-        self.config = config
+        self.store = HandshakeFluidStore(config: config)
+    }
+
+    /// Shared store (debug / live tuning).
+    public init(store: HandshakeFluidStore) {
+        self.store = store
     }
 
     public var body: some View {
         Group {
             if MTLCreateSystemDefaultDevice() != nil {
-                FluidMetalView(config: config)
-                    .blur(radius: config.soften)
+                FluidMetalView(store: store, isPaused: !isVisible || scenePhase != .active)
+                    .blur(radius: store.config.soften)
             } else {
                 fallbackGradient
             }
         }
         .ignoresSafeArea()
+        .onAppear { isVisible = true }
+        .onDisappear { isVisible = false }
     }
 
-    /// Shown only when the device has no Metal support (e.g. some simulators).
     private var fallbackGradient: some View {
         LinearGradient(
-            colors: [config.anchorC, config.anchorB, config.anchorA, config.anchorD],
+            colors: [store.config.anchorC, store.config.anchorB,
+                     store.config.anchorA, store.config.anchorD],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -103,7 +145,7 @@ public struct HandshakeFluidBackground: View {
 
 // MARK: - Color helper
 
-private extension Color {
+fileprivate extension Color {
     var rgbSIMD3: SIMD3<Float> {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a)
@@ -114,10 +156,11 @@ private extension Color {
 // MARK: - Metal-backed representable
 
 private struct FluidMetalView: UIViewRepresentable {
-    let config: HandshakeFluidConfig
+    let store: HandshakeFluidStore
+    let isPaused: Bool
 
     func makeCoordinator() -> FluidCoordinator {
-        FluidCoordinator(config: config)
+        FluidCoordinator(store: store)
     }
 
     func makeUIView(context: Context) -> MTKView {
@@ -130,16 +173,24 @@ private struct FluidMetalView: UIViewRepresentable {
         view.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
         view.delegate = coordinator
 
-        if config.interactive {
-            let pan = UIPanGestureRecognizer(target: coordinator,
-                                             action: #selector(FluidCoordinator.handlePan(_:)))
-            pan.maximumNumberOfTouches = 1
-            view.addGestureRecognizer(pan)
-        }
+        let pan = UIPanGestureRecognizer(target: coordinator,
+                                         action: #selector(FluidCoordinator.handlePan(_:)))
+        pan.maximumNumberOfTouches = 1
+        view.addGestureRecognizer(pan)
+        context.coordinator.panRecognizer = pan
         return view
     }
 
-    func updateUIView(_ uiView: MTKView, context: Context) {}
+    func updateUIView(_ uiView: MTKView, context: Context) {
+        let coordinator = context.coordinator
+        coordinator.store = store
+        let cfg = store.config
+
+        uiView.isPaused = isPaused
+        uiView.preferredFramesPerSecond = max(1, cfg.frameRateCap)
+        coordinator.panRecognizer?.isEnabled = cfg.interactive
+        coordinator.updateGridSizeIfNeeded(cfg.gridSize)
+    }
 }
 
 // MARK: - Simulation + render driver
@@ -174,7 +225,11 @@ private final class FluidCoordinator: NSObject, MTKViewDelegate {
     }
 
     let device: any MTLDevice
-    private let config: HandshakeFluidConfig
+    var store: HandshakeFluidStore
+    weak var panRecognizer: UIPanGestureRecognizer?
+
+    private var config: HandshakeFluidConfig { store.config }
+
     private let queue: any MTLCommandQueue
     private let sampler: any MTLSamplerState
 
@@ -195,16 +250,17 @@ private final class FluidCoordinator: NSObject, MTKViewDelegate {
     private var pressureTex: [any MTLTexture] = []
     private var divergenceTex: (any MTLTexture)!
     private var curlTex: (any MTLTexture)!
+    private var currentGridSize = 0
 
     private var velIndex = 0
     private var pressureIndex = 0
 
     private var brush = Brush()
     private var lastPanLocation: CGPoint?
-    private var startTime: CFTimeInterval = CACurrentMediaTime()
+    private let startTime: CFTimeInterval = CACurrentMediaTime()
 
-    init(config: HandshakeFluidConfig) {
-        self.config = config
+    init(store: HandshakeFluidStore) {
+        self.store = store
         self.device = MTLCreateSystemDefaultDevice()!
         self.queue = device.makeCommandQueue()!
 
@@ -217,7 +273,7 @@ private final class FluidCoordinator: NSObject, MTKViewDelegate {
 
         super.init()
         buildPipelines()
-        makeTextures(size: config.gridSize)
+        makeTextures(size: store.config.gridSize)
         clearFields()
     }
 
@@ -268,13 +324,21 @@ private final class FluidCoordinator: NSObject, MTKViewDelegate {
         curlTex = tex()
         velIndex = 0
         pressureIndex = 0
+        currentGridSize = size
+    }
+
+    /// Rebuild the field textures if the grid size changed (debug panel).
+    func updateGridSizeIfNeeded(_ size: Int) {
+        guard size != currentGridSize, size >= 32 else { return }
+        makeTextures(size: size)
+        clearFields()
     }
 
     /// Private textures start with undefined contents — zero them once so the
     /// first frames aren't garbage.
     private func clearFields() {
         guard let cb = queue.makeCommandBuffer(), let enc = cb.makeComputeCommandEncoder() else { return }
-        let g = config.gridSize
+        let g = currentGridSize
         let tpg = MTLSize(width: 16, height: 16, depth: 1)
         let groups = MTLSize(width: (g + 15) / 16, height: (g + 15) / 16, depth: 1)
         enc.setComputePipelineState(clearPSO)
@@ -308,19 +372,20 @@ private final class FluidCoordinator: NSObject, MTKViewDelegate {
 
     private func encodeSimulation(into cb: any MTLCommandBuffer, gridSize g: Int) {
         guard let enc = cb.makeComputeCommandEncoder() else { return }
+        let cfg = config
 
         let tpg = MTLSize(width: 16, height: 16, depth: 1)
         let groups = MTLSize(width: (g + 15) / 16, height: (g + 15) / 16, depth: 1)
         func dispatch() { enc.dispatchThreadgroups(groups, threadsPerThreadgroup: tpg) }
 
-        var sim = SimParams(deltaTime: config.deltaTime, viscosity: config.viscosity, vorticity: config.vorticity)
+        var sim = SimParams(deltaTime: cfg.deltaTime, viscosity: cfg.viscosity, vorticity: cfg.vorticity)
 
         // Ambient stir (+ energy decay) — always.
         var amb = AmbientParams(
             time: Float(CACurrentMediaTime() - startTime),
-            deltaTime: config.deltaTime,
-            strength: config.ambientStrength,
-            decay: config.ambientDecay
+            deltaTime: cfg.deltaTime,
+            strength: cfg.ambientStrength,
+            decay: cfg.ambientDecay
         )
         enc.setComputePipelineState(ambientPSO)
         enc.setTexture(velTex[velIndex], index: 0)
@@ -352,8 +417,8 @@ private final class FluidCoordinator: NSObject, MTKViewDelegate {
         dispatch(); velIndex = 1 - velIndex
 
         // Diffusion (only when viscous).
-        if config.viscosity > 0 {
-            for _ in 0 ..< config.solverIterations {
+        if cfg.viscosity > 0 {
+            for _ in 0 ..< cfg.solverIterations {
                 enc.setComputePipelineState(diffusionPSO)
                 enc.setTexture(velTex[velIndex], index: 0)
                 enc.setTexture(velTex[1 - velIndex], index: 1)
@@ -363,7 +428,7 @@ private final class FluidCoordinator: NSObject, MTKViewDelegate {
         }
 
         // Vorticity confinement (optional).
-        if config.vorticity > 0 {
+        if cfg.vorticity > 0 {
             enc.setComputePipelineState(curlPSO)
             enc.setTexture(velTex[velIndex], index: 0)
             enc.setTexture(curlTex, index: 1)
@@ -385,7 +450,7 @@ private final class FluidCoordinator: NSObject, MTKViewDelegate {
 
         // Pressure solve (Jacobi; warm-started from last frame).
         pressureIndex = 0
-        for _ in 0 ..< config.solverIterations {
+        for _ in 0 ..< cfg.solverIterations {
             enc.setComputePipelineState(pressurePSO)
             enc.setTexture(pressureTex[pressureIndex], index: 0)
             enc.setTexture(divergenceTex, index: 1)
@@ -401,8 +466,8 @@ private final class FluidCoordinator: NSObject, MTKViewDelegate {
         dispatch(); velIndex = 1 - velIndex
 
         // Obstacle: fluid flows around the "H".
-        if config.showLogo {
-            var ob = ObstacleParams(center: config.logoCenter, scale: config.logoScale, slant: config.logoSlant)
+        if cfg.showLogo {
+            var ob = ObstacleParams(center: cfg.logoCenter, scale: cfg.logoScale, slant: cfg.logoSlant)
             enc.setComputePipelineState(obstaclePSO)
             enc.setTexture(velTex[velIndex], index: 0)
             enc.setTexture(velTex[1 - velIndex], index: 1)
@@ -417,21 +482,22 @@ private final class FluidCoordinator: NSObject, MTKViewDelegate {
 
     private func encodeRender(into cb: any MTLCommandBuffer, rpd: MTLRenderPassDescriptor, drawableSize: CGSize) {
         guard let enc = cb.makeRenderCommandEncoder(descriptor: rpd) else { return }
+        let cfg = config
 
         let aspect = drawableSize.height > 0 ? Float(drawableSize.width / drawableSize.height) : 1
         var cool = CoolParams(
-            glow: config.glow,
+            glow: cfg.glow,
             viewAspect: aspect,
-            overscan: config.overscan,
-            markStrength: config.logoStrength,
-            anchorA: config.anchorA.rgbSIMD3,
-            anchorB: config.anchorB.rgbSIMD3,
-            anchorC: config.anchorC.rgbSIMD3,
-            anchorD: config.anchorD.rgbSIMD3,
-            obstacleCenter: config.logoCenter,
-            obstacleScale: config.logoScale,
-            obstacleSlant: config.logoSlant,
-            obstacleEnabled: config.showLogo ? 1 : 0
+            overscan: cfg.overscan,
+            markStrength: cfg.logoStrength,
+            anchorA: cfg.anchorA.rgbSIMD3,
+            anchorB: cfg.anchorB.rgbSIMD3,
+            anchorC: cfg.anchorC.rgbSIMD3,
+            anchorD: cfg.anchorD.rgbSIMD3,
+            obstacleCenter: cfg.logoCenter,
+            obstacleScale: cfg.logoScale,
+            obstacleSlant: cfg.logoSlant,
+            obstacleEnabled: cfg.showLogo ? 1 : 0
         )
 
         enc.setRenderPipelineState(coolFieldPSO)
@@ -477,7 +543,7 @@ private final class FluidCoordinator: NSObject, MTKViewDelegate {
     /// Map a view-space point to grid coordinates, inverting the fragment's
     /// aspect-fill + overscan remap so the stir lands under the finger.
     private func gridPos(from loc: CGPoint, size: CGSize) -> SIMD2<Int32> {
-        let gridN = Float(config.gridSize)
+        let gridN = Float(currentGridSize)
         let aspect = Float(size.width / size.height)
         var u = Float(loc.x / size.width)
         var v = Float(1.0 - loc.y / size.height)   // flip: grid y is up
@@ -494,9 +560,178 @@ private final class FluidCoordinator: NSObject, MTKViewDelegate {
         let gx = Int32((u * gridN).rounded())
         let gy = Int32((v * gridN).rounded())
         return SIMD2<Int32>(
-            max(0, min(Int32(config.gridSize - 1), gx)),
-            max(0, min(Int32(config.gridSize - 1), gy))
+            max(0, min(Int32(currentGridSize - 1), gx)),
+            max(0, min(Int32(currentGridSize - 1), gy))
         )
+    }
+}
+
+// MARK: - Debug tuning panel
+
+/// A live tuning panel for `HandshakeFluidBackground`. Present it in a sheet
+/// (a bottom sheet reads well) sharing the same `HandshakeFluidStore` as the
+/// background, adjust to taste, then tap **Copy Swift config** to paste the
+/// dialed-in values into your production `HandshakeFluidConfig`.
+///
+/// Wrap this whole view in `#if DEBUG` at the call site so it never ships.
+public struct HandshakeFluidDebugPanel: View {
+    @ObservedObject private var store: HandshakeFluidStore
+    @State private var copied = false
+
+    public init(store: HandshakeFluidStore) {
+        self.store = store
+    }
+
+    public var body: some View {
+        NavigationView {
+            Form {
+                paletteSection
+                markSection
+                motionSection
+                performanceSection
+                exportSection
+            }
+            .navigationTitle("Fluid Tuner")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    // MARK: Sections
+
+    private var paletteSection: some View {
+        Section(header: Text("Palette")) {
+            ColorPicker("Anchor A", selection: $store.config.anchorA, supportsOpacity: false)
+            ColorPicker("Anchor B", selection: $store.config.anchorB, supportsOpacity: false)
+            ColorPicker("Anchor C", selection: $store.config.anchorC, supportsOpacity: false)
+            ColorPicker("Anchor D", selection: $store.config.anchorD, supportsOpacity: false)
+            slider("Glow", floatBinding(\.glow), 0 ... 1)
+            slider("Soften", cgFloatBinding(\.soften), 0 ... 12)
+            slider("Overscan", floatBinding(\.overscan), 1 ... 1.3)
+        }
+    }
+
+    private var markSection: some View {
+        Section(header: Text("Handshake “H” mark")) {
+            Toggle("Show mark", isOn: $store.config.showLogo)
+            if store.config.showLogo {
+                slider("Size", floatBinding(\.logoScale), 0.04 ... 0.22)
+                slider("Slant", floatBinding(\.logoSlant), -0.4 ... 0.4)
+                slider("Strength", floatBinding(\.logoStrength), 0 ... 1)
+                slider("Center X", Binding(get: { store.config.logoCenter.x },
+                                           set: { store.config.logoCenter.x = $0 }), 0 ... 1)
+                slider("Center Y", Binding(get: { store.config.logoCenter.y },
+                                           set: { store.config.logoCenter.y = $0 }), 0 ... 1)
+            }
+        }
+    }
+
+    private var motionSection: some View {
+        Section(header: Text("Motion")) {
+            Toggle("Drag to stir", isOn: $store.config.interactive)
+            slider("Time Step", floatBinding(\.deltaTime), 0.05 ... 1.5)
+            slider("Ambient Strength", floatBinding(\.ambientStrength), 0 ... 3)
+            slider("Ambient Decay", floatBinding(\.ambientDecay), 0.95 ... 1.0, decimals: 4)
+            slider("Viscosity", floatBinding(\.viscosity), 0 ... 0.01, decimals: 6)
+            slider("Swirl", floatBinding(\.vorticity), 0 ... 5, decimals: 1)
+        }
+    }
+
+    private var performanceSection: some View {
+        Section(header: Text("Performance")) {
+            Picker("Frame Rate", selection: $store.config.frameRateCap) {
+                Text("24").tag(24); Text("30").tag(30); Text("60").tag(60)
+            }
+            .pickerStyle(.segmented)
+            Stepper("Solver Iterations: \(store.config.solverIterations)",
+                    value: $store.config.solverIterations, in: 4 ... 30)
+            Picker("Grid Size", selection: $store.config.gridSize) {
+                Text("128").tag(128); Text("192").tag(192); Text("256").tag(256)
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    private var exportSection: some View {
+        Section(header: Text("Export")) {
+            Button {
+                UIPasteboard.general.string = configCode
+                copied = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
+            } label: {
+                Label(copied ? "Copied!" : "Copy Swift config", systemImage: copied ? "checkmark" : "doc.on.doc")
+            }
+            Text(configCode)
+                .font(.system(.caption, design: .monospaced))
+                .foregroundColor(.secondary)
+        }
+    }
+
+    // MARK: Slider helpers
+
+    private func slider(_ title: String, _ value: Binding<Float>, _ range: ClosedRange<Float>,
+                        decimals: Int = 2) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text(String(format: "%.\(decimals)f", value.wrappedValue))
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundColor(.secondary)
+            }
+            Slider(value: value, in: range)
+        }
+    }
+
+    private func slider(_ title: String, _ value: Binding<CGFloat>, _ range: ClosedRange<CGFloat>,
+                        decimals: Int = 1) -> some View {
+        slider(title,
+               Binding(get: { Float(value.wrappedValue) }, set: { value.wrappedValue = CGFloat($0) }),
+               Float(range.lowerBound) ... Float(range.upperBound), decimals: decimals)
+    }
+
+    private func floatBinding(_ keyPath: WritableKeyPath<HandshakeFluidConfig, Float>) -> Binding<Float> {
+        Binding(get: { store.config[keyPath: keyPath] }, set: { store.config[keyPath: keyPath] = $0 })
+    }
+
+    private func cgFloatBinding(_ keyPath: WritableKeyPath<HandshakeFluidConfig, CGFloat>) -> Binding<CGFloat> {
+        Binding(get: { store.config[keyPath: keyPath] }, set: { store.config[keyPath: keyPath] = $0 })
+    }
+
+    // MARK: Config → Swift snippet
+
+    private var configCode: String {
+        let c = store.config
+        func f(_ x: Float, _ d: Int = 3) -> String { String(format: "%.\(d)f", x) }
+        func col(_ name: String, _ color: Color) -> String {
+            let v = UIColor(color)
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            v.getRed(&r, green: &g, blue: &b, alpha: &a)
+            return "cfg.\(name) = Color(red: \(f(Float(r))), green: \(f(Float(g))), blue: \(f(Float(b))))"
+        }
+        return [
+            "var cfg = HandshakeFluidConfig()",
+            col("anchorA", c.anchorA),
+            col("anchorB", c.anchorB),
+            col("anchorC", c.anchorC),
+            col("anchorD", c.anchorD),
+            "cfg.glow = \(f(c.glow))",
+            "cfg.soften = \(f(Float(c.soften), 1))",
+            "cfg.overscan = \(f(c.overscan))",
+            "cfg.showLogo = \(c.showLogo)",
+            "cfg.logoScale = \(f(c.logoScale))",
+            "cfg.logoSlant = \(f(c.logoSlant))",
+            "cfg.logoStrength = \(f(c.logoStrength))",
+            "cfg.logoCenter = SIMD2(\(f(c.logoCenter.x)), \(f(c.logoCenter.y)))",
+            "cfg.interactive = \(c.interactive)",
+            "cfg.deltaTime = \(f(c.deltaTime))",
+            "cfg.ambientStrength = \(f(c.ambientStrength))",
+            "cfg.ambientDecay = \(f(c.ambientDecay, 4))",
+            "cfg.viscosity = \(f(c.viscosity, 6))",
+            "cfg.vorticity = \(f(c.vorticity, 1))",
+            "cfg.frameRateCap = \(c.frameRateCap)",
+            "cfg.solverIterations = \(c.solverIterations)",
+            "cfg.gridSize = \(c.gridSize)",
+        ].joined(separator: "\n")
     }
 }
 
@@ -504,23 +739,35 @@ private final class FluidCoordinator: NSObject, MTKViewDelegate {
 
 #if DEBUG
 struct HandshakeFluidBackground_Previews: PreviewProvider {
-    static var previews: some View {
-        ZStack {
-            HandshakeFluidBackground()
-            VStack(spacing: 16) {
-                Spacer()
-                Text("Welcome to Handshake")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.white)
-                Text("Log in")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.black)
-                    .padding(.horizontal, 40).padding(.vertical, 14)
-                    .background(Capsule().fill(.white))
-                    .padding(.bottom, 60)
+    struct Demo: View {
+        @StateObject private var fluid = HandshakeFluidStore()
+        @State private var showDebug = false
+        var body: some View {
+            ZStack {
+                HandshakeFluidBackground(store: fluid)
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button { showDebug = true } label: {
+                            Image(systemName: "slider.horizontal.3")
+                                .padding(10)
+                                .background(Circle().fill(Color.white.opacity(0.2)))
+                        }
+                        .foregroundColor(.white).padding()
+                    }
+                    Spacer()
+                    Text("Welcome to Handshake")
+                        .font(.title2.weight(.semibold)).foregroundColor(.white)
+                    Text("Log in")
+                        .font(.body.weight(.semibold)).foregroundColor(.black)
+                        .padding(.horizontal, 40).padding(.vertical, 14)
+                        .background(Capsule().fill(.white)).padding(.bottom, 60)
+                }
             }
+            .sheet(isPresented: $showDebug) { HandshakeFluidDebugPanel(store: fluid) }
+            .preferredColorScheme(.dark)
         }
-        .preferredColorScheme(.dark)
     }
+    static var previews: some View { Demo() }
 }
 #endif

@@ -68,13 +68,19 @@ cfg.showLogo = true        // frosted "H" mark
 cfg.logoScale = 0.11       // "H" half-height in field space
 cfg.logoSlant = 0.16       // italic lean
 cfg.logoStrength = 0.55    // how visible the mark is (0…1)
-cfg.deltaTime = 0.20       // flow speed (smaller = calmer)
+cfg.deltaTime = 0.30       // flow speed (smaller = calmer)
 cfg.ambientStrength = 0.60 // how hard the ambient currents stir
 cfg.interactive = true     // drag-to-stir
+cfg.frameRateCap = 30      // fps budget (see Performance)
+cfg.solverIterations = 12  // pressure-solve quality vs. cost
+cfg.gridSize = 256         // sim resolution (128 = ~4× cheaper)
 // palette corners: cfg.anchorA / B / C / D
 
 HandshakeFluidBackground(config: cfg)
 ```
+
+You don't have to guess these numbers — use the **live debug panel** below to
+dial them in on-device, then copy the exact config out.
 
 Recolor by setting `anchorA…anchorD` — the flow direction bilinearly blends
 those four colours. The defaults are the Handshake cool palette:
@@ -96,6 +102,78 @@ those four colours. The defaults are the Handshake cool palette:
   the italic lean) — there's no logo asset to ship. If you'd rather use the real
   brand mark, replace `sdHandshakeH` in the `.metal` file or swap the fragment
   mark for a composited PNG.
+
+## Live debug panel (dial in the values)
+
+`HandshakeFluidDebugPanel` is a self-contained SwiftUI tuner (also in
+`HandshakeFluidBackground.swift`). Share one `HandshakeFluidStore` between the
+background and the panel; every change applies to the live simulation
+instantly. When it looks right, tap **Copy Swift config** — it puts a ready-to-
+paste `HandshakeFluidConfig` on the clipboard for your production code.
+
+Present it however you like; a bottom sheet reads well:
+
+```swift
+struct LoginScreen: View {
+    @StateObject private var fluid = HandshakeFluidStore()
+    @State private var showTuner = false
+
+    var body: some View {
+        ZStack {
+            HandshakeFluidBackground(store: fluid)   // note: store:, not config:
+            LoginContent()
+        }
+        #if DEBUG
+        // Any trigger you like — a hidden long-press, a shake, a debug menu row.
+        .onLongPressGesture { showTuner = true }
+        .sheet(isPresented: $showTuner) {
+            HandshakeFluidDebugPanel(store: fluid)
+                .presentationDetents([.medium, .large])   // iOS 16+
+        }
+        #endif
+    }
+}
+```
+
+Workflow: ship production with a static `HandshakeFluidBackground(config:)`;
+only wire up the store + panel behind `#if DEBUG`. Tune on a real device, copy
+the config, paste the values into your production `HandshakeFluidConfig`, and
+the panel never ships.
+
+The panel exposes: the four palette anchors, glow / soften / overscan, the "H"
+mark (show, size, slant, strength, position), motion (drag-to-stir, time step,
+ambient strength + decay, viscosity, swirl), and the performance knobs below.
+
+## Performance & battery
+
+Each frame is cheap — a 256×256 grid (~65K cells), ~22 compute dispatches
+(mostly the pressure solve) plus one fullscreen draw, all on-GPU with no CPU
+readback. On an A14 or newer a frame is well under a millisecond. The cost that
+matters is that it's an **always-on GPU workload**, so the defaults are tuned
+to keep it light:
+
+- **30 fps cap** (`frameRateCap`). Without a cap, `MTKView` runs at the display
+  max — **120 fps on ProMotion phones**, doubling power for a background nobody
+  studies. 30 looks smooth for slow ambient flow. (Lowering fps also slows
+  real-time flow, since the sim uses a fixed per-frame `deltaTime` — raise
+  `deltaTime` to compensate.)
+- **Pauses when off-screen or backgrounded.** The view sets `isPaused` on
+  `onDisappear` and when `scenePhase` leaves `.active`, so it stops the instant
+  the user logs in or leaves the app — no GPU burn behind other screens.
+- **12 pressure iterations** (`solverIterations`), down from 18. Visually
+  indistinguishable for a background; drop further to 8–10 to save more.
+
+If you're targeting older devices or see thermals/drain:
+
+- Lower `gridSize` to 192 or 128 (roughly 1.8× / 4× cheaper).
+- Drop `frameRateCap` to 24.
+- Set `soften = 0` to skip the SwiftUI blur pass (it forces an offscreen
+  composite each frame).
+
+Measure with Instruments (**Metal System Trace**, **GPU counters**) and Xcode's
+**Energy** gauge. At 30 fps + pause-off-screen + 12 iterations this behaves like
+a well-mannered live wallpaper; left uncapped and always drawing it will warm a
+ProMotion phone on a lingering login screen.
 
 ## Where this came from
 
