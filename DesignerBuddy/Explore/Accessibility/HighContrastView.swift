@@ -128,7 +128,7 @@ struct HighContrastView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "High Contrast") {
             VStack(spacing: 8) {
                 sampleCluster
                     .padding(10)
@@ -145,7 +145,6 @@ struct HighContrastView: View {
             .animation(.spring(duration: 0.3), value: effectiveHighContrast)
         }
         .navigationTitle("High Contrast")
-        .navigationBarTitleDisplayMode(.large)
     }
 
     // MARK: - Canvas sample
@@ -223,4 +222,5 @@ struct HighContrastView: View {
 
 #Preview {
     NavigationStack { HighContrastView() }
+        .environmentObject(PinsStore())
 }

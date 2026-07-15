@@ -82,7 +82,7 @@ struct AudioPlaybackPatternsView: View {
                     .disabled(style != .expanded)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Playback UI Patterns") {
             Group {
                 switch style {
                 case .mini:
@@ -97,7 +97,6 @@ struct AudioPlaybackPatternsView: View {
             .animation(.spring(duration: 0.3), value: canvasState)
         }
         .navigationTitle("Playback UI Patterns")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var canvasState: [AnyHashable] {
@@ -470,4 +469,5 @@ private struct EqualizerView: View {
     NavigationStack {
         AudioPlaybackPatternsView()
     }
+    .environmentObject(PinsStore())
 }

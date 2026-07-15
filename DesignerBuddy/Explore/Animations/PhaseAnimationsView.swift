@@ -37,7 +37,7 @@ struct PhaseAnimationsView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Phase Animations") {
             VStack(spacing: 10) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -96,7 +96,6 @@ struct PhaseAnimationsView: View {
             manualIndex = 0
         }
         .navigationTitle("Phase Animations")
-        .navigationBarTitleDisplayMode(.large)
     }
 
     private var currentManualPhase: DemoPhase {
@@ -191,4 +190,5 @@ private enum PhaseSet: String, CaseIterable {
 
 #Preview {
     NavigationStack { PhaseAnimationsView() }
+        .environmentObject(PinsStore())
 }

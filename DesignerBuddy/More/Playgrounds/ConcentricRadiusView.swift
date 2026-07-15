@@ -67,7 +67,7 @@ struct ConcentricRadiusView: View {
                 .listRowSeparator(.hidden)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Concentric Radius") {
             HStack(spacing: 20) {
                 VStack(spacing: 10) {
                     concentricCard(innerRadius: innerConcentric, label: "Concentric\n(R − p)")
@@ -95,7 +95,6 @@ struct ConcentricRadiusView: View {
             }
         }
         .navigationTitle("Concentric Radius")
-        .navigationBarTitleDisplayMode(.large)
     }
 
     @ViewBuilder
@@ -152,4 +151,5 @@ struct ConcentricExample: Identifiable {
     NavigationStack {
         ConcentricRadiusView()
     }
+    .environmentObject(PinsStore())
 }

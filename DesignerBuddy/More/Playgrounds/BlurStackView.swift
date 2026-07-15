@@ -73,7 +73,7 @@ struct BlurStackView: View {
                 .padding(.vertical, 4)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Blur Stack") {
             ZStack {
                 backgroundContent
                     .frame(height: 200)
@@ -112,7 +112,6 @@ struct BlurStackView: View {
             }
         }
         .navigationTitle("Blur Stack")
-        .navigationBarTitleDisplayMode(.large)
     }
 
     @ViewBuilder
@@ -160,4 +159,5 @@ struct BlurStackView: View {
     NavigationStack {
         BlurStackView()
     }
+    .environmentObject(PinsStore())
 }

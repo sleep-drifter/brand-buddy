@@ -42,7 +42,7 @@ struct ContentTransitionView: View {
                 .listRowSeparator(.hidden)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Content Transition", shuffle: { value = Int.random(in: 1000...9999) }) {
             ZStack {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(.quaternary)
@@ -71,7 +71,6 @@ struct ContentTransitionView: View {
             }
         }
         .navigationTitle("Content Transition")
-        .navigationBarTitleDisplayMode(.large)
     }
 
     private var styleSelection: Binding<String?> {
@@ -132,4 +131,5 @@ private enum MorphStyle: String, CaseIterable {
 
 #Preview {
     NavigationStack { ContentTransitionView() }
+        .environmentObject(PinsStore())
 }

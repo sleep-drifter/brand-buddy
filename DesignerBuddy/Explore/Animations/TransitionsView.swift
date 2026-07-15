@@ -39,7 +39,7 @@ struct TransitionsView: View {
                 .listRowSeparator(.hidden)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Transitions") {
             ZStack {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(.quaternary)
@@ -70,7 +70,6 @@ struct TransitionsView: View {
             }
         }
         .navigationTitle("Transitions")
-        .navigationBarTitleDisplayMode(.large)
     }
 
     private var transitionSelection: Binding<String?> {
@@ -201,4 +200,5 @@ private enum CurveKind: String, CaseIterable {
 
 #Preview {
     NavigationStack { TransitionsView() }
+        .environmentObject(PinsStore())
 }

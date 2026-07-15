@@ -42,11 +42,10 @@ struct FluidGradientView: View {
             .padding(16)
         }
         .background(Color(.systemGroupedBackground))
-        .pinnedPreview {
+        .pinnedPreview(entry: "Fluid Gradient") {
             preview
         }
         .navigationTitle("Fluid Gradient")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Preview
@@ -248,4 +247,5 @@ struct FluidGradientView: View {
     NavigationStack {
         FluidGradientView()
     }
+    .environmentObject(PinsStore())
 }

@@ -57,7 +57,7 @@ struct SlidersView: View {
                 .padding(.vertical, 4)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Sliders") {
             ZStack {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color(.secondarySystemGroupedBackground))
@@ -80,7 +80,6 @@ struct SlidersView: View {
             }
         }
         .navigationTitle("Sliders")
-        .navigationBarTitleDisplayMode(.large)
     }
 
     private var readout: String {
@@ -120,4 +119,5 @@ struct SlidersView: View {
     NavigationStack {
         SlidersView()
     }
+    .environmentObject(PinsStore())
 }

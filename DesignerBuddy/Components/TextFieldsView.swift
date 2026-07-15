@@ -176,7 +176,7 @@ struct TextFieldsView: View {
                 Text("Tap any field to trigger that keyboard type.")
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Text Fields") {
             ZStack {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color(.secondarySystemGroupedBackground))
@@ -201,7 +201,6 @@ struct TextFieldsView: View {
             }
         }
         .navigationTitle("Text Fields")
-        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -311,4 +310,5 @@ struct KeyboardTypeItem: Identifiable {
     NavigationStack {
         TextFieldsView()
     }
+    .environmentObject(PinsStore())
 }

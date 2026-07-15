@@ -40,11 +40,10 @@ struct RandomMetaball2DView: View {
             .padding(16)
         }
         .background(Color(.systemGroupedBackground))
-        .pinnedPreview {
+        .pinnedPreview(entry: "Random Metaball 2D") {
             preview
         }
         .navigationTitle("Random Metaball 2D")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if particles.count != Int(count) { rebuild() } else { toggle() }
         }
@@ -214,4 +213,5 @@ private struct MetaballCanvas: View {
     NavigationStack {
         RandomMetaball2DView()
     }
+    .environmentObject(PinsStore())
 }

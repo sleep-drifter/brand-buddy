@@ -58,7 +58,7 @@ struct ReduceMotionView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Reduce Motion") {
             ZStack {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color(.secondarySystemGroupedBackground))
@@ -82,7 +82,6 @@ struct ReduceMotionView: View {
             }
         }
         .navigationTitle("Reduce Motion")
-        .navigationBarTitleDisplayMode(.large)
     }
 
     // MARK: - Canvas tiles
@@ -197,4 +196,5 @@ private struct PulsingModifier: ViewModifier {
 
 #Preview {
     NavigationStack { ReduceMotionView() }
+        .environmentObject(PinsStore())
 }

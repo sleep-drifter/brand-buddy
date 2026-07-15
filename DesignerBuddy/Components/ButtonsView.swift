@@ -147,7 +147,7 @@ struct ButtonsView: View {
                 .padding(.vertical, 4)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Buttons") {
             ZStack {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color(.secondarySystemGroupedBackground))
@@ -165,7 +165,6 @@ struct ButtonsView: View {
             .animation(.spring(duration: 0.3), value: isLoading)
         }
         .navigationTitle("Buttons")
-        .navigationBarTitleDisplayMode(.large)
     }
 
     // MARK: - Configured button
@@ -260,4 +259,5 @@ extension ControlSize {
     NavigationStack {
         ButtonsView()
     }
+    .environmentObject(PinsStore())
 }

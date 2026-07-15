@@ -175,7 +175,7 @@ struct ProgressIndicatorsView: View {
                 .padding(.vertical, 4)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Progress Indicators") {
             VStack {
                 indicator
                     .tint(tint)
@@ -188,7 +188,6 @@ struct ProgressIndicatorsView: View {
             .animation(.spring(duration: 0.3), value: showLabel)
         }
         .navigationTitle("Progress Indicators")
-        .navigationBarTitleDisplayMode(.large)
     }
 
     @ViewBuilder private var indicator: some View {

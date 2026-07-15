@@ -82,7 +82,7 @@ struct ShadowExplorerView: View {
                 .listRowSeparator(.hidden)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Shadow Explorer") {
             ZStack {
                 backgrounds[bgIndex].1
                     .frame(height: 180)
@@ -110,7 +110,6 @@ struct ShadowExplorerView: View {
             }
         }
         .navigationTitle("Shadow Explorer")
-        .navigationBarTitleDisplayMode(.large)
     }
 }
 
@@ -139,4 +138,5 @@ struct ShadowPreset: Identifiable {
     NavigationStack {
         ShadowExplorerView()
     }
+    .environmentObject(PinsStore())
 }

@@ -45,7 +45,7 @@ struct CaptureUIPatternView: View {
                 .pickerStyle(.segmented)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Camera") {
             VStack(spacing: 8) {
                 PhoneFrame {
                     selectedPattern
@@ -444,4 +444,5 @@ struct CornerBracketView: View {
     NavigationStack {
         CaptureUIPatternView()
     }
+    .environmentObject(PinsStore())
 }

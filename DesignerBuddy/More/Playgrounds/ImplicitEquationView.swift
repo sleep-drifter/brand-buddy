@@ -82,7 +82,7 @@ struct ImplicitEquationView: View {
             .animation(.default, value: radialFreq + mixFreq + isoLevel + zoom + levels + thickness)
         }
         .background(Color(.systemGroupedBackground))
-        .pinnedPreview {
+        .pinnedPreview(entry: "Implicit Equation") {
             TimelineView(.animation(paused: !animate)) { context in
                 let phase = animate ? Float(context.date.timeIntervalSince(startDate)) : 0
                 GeometryReader { geo in
@@ -98,7 +98,6 @@ struct ImplicitEquationView: View {
             .frame(height: 240)
         }
         .navigationTitle("Implicit Equation")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var controls: some View {
@@ -191,4 +190,4 @@ struct ImplicitEquationView: View {
 
 // MARK: - Preview
 
-#Preview { NavigationStack { ImplicitEquationView().preferredColorScheme(.dark) } }
+#Preview { NavigationStack { ImplicitEquationView().preferredColorScheme(.dark) }.environmentObject(PinsStore()) }

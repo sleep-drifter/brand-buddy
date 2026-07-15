@@ -44,7 +44,7 @@ struct PhotoLibraryPatternsView: View {
                 }
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Photo Library Patterns") {
             Group {
                 switch pattern {
                 case .avatar:
@@ -378,4 +378,5 @@ struct FullBleedPatternView: View {
     NavigationStack {
         PhotoLibraryPatternsView()
     }
+    .environmentObject(PinsStore())
 }

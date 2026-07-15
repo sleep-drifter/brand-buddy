@@ -156,7 +156,7 @@ struct CustomHapticsView: View {
                 RefRow(type: "CHHapticPatternPlayer", detail: "Plays a pattern, can be paused/stopped")
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Custom Haptics") {
             VStack(spacing: 12) {
                 VStack(spacing: 8) {
                     envelopePlot
@@ -198,7 +198,6 @@ struct CustomHapticsView: View {
             }
         }
         .navigationTitle("Custom Haptics")
-        .navigationBarTitleDisplayMode(.large)
         .onAppear { hapticsEngine.start() }
         .onDisappear { hapticsEngine.stop() }
     }
@@ -419,4 +418,5 @@ class HapticsEngine: ObservableObject {
 
 #Preview {
     NavigationStack { CustomHapticsView() }
+        .environmentObject(PinsStore())
 }

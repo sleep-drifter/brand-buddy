@@ -177,11 +177,10 @@ struct SheetsModalsView: View {
                 }
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Sheets & Modals") {
             detentCanvas
         }
         .navigationTitle("Sheets & Modals")
-        .navigationBarTitleDisplayMode(.large)
         .onChange(of: customFraction) { oldValue, newValue in
             if selectedDetent == .fraction(oldValue) {
                 selectedDetent = .fraction(newValue)
@@ -452,11 +451,10 @@ struct ToastsView: View {
                     .padding(.vertical, 4)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Toasts & Banners") {
             toastCanvas
         }
         .navigationTitle("Toasts & Banners")
-        .navigationBarTitleDisplayMode(.large)
         .onChange(of: autoDismiss) { _, isOn in
             if !isOn { dismissTask?.cancel() }
         }
@@ -506,4 +504,5 @@ struct ToastsView: View {
     NavigationStack {
         SheetsModalsView()
     }
+    .environmentObject(PinsStore())
 }

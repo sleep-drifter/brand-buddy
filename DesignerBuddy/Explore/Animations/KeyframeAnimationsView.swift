@@ -164,7 +164,7 @@ struct KeyframeAnimationsView: View {
                 )
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Keyframe Animations") {
             ZStack {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(.quaternary)
@@ -235,7 +235,6 @@ struct KeyframeAnimationsView: View {
             }
         }
         .navigationTitle("Keyframe Animations")
-        .navigationBarTitleDisplayMode(.large)
     }
 
     // MARK: - Keyframe Row
@@ -435,4 +434,5 @@ private struct CustomAnimValues {
 
 #Preview {
     NavigationStack { KeyframeAnimationsView() }
+        .environmentObject(PinsStore())
 }

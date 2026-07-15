@@ -597,7 +597,8 @@ struct StableFluidView: View {
                 .padding(.horizontal)
                 .padding(.vertical)
         }
-        .pinnedPreview {
+        .background(Color(.systemGroupedBackground))
+        .pinnedPreview(entry: "Stable Fluid") {
             GeometryReader { geometry in
                 MetalStableFluidView(viewModel: viewModel)
                     .blur(radius: CGFloat(viewModel.softenBlur))
@@ -617,7 +618,6 @@ struct StableFluidView: View {
         }
         .tint(.blue)
         .navigationTitle("Stable Fluid")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     @ViewBuilder
@@ -828,4 +828,4 @@ struct StableFluidView: View {
 
 // MARK: - Preview
 
-#Preview { NavigationStack { StableFluidView().preferredColorScheme(.dark) } }
+#Preview { NavigationStack { StableFluidView().preferredColorScheme(.dark) }.environmentObject(PinsStore()) }

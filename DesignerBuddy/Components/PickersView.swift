@@ -46,7 +46,7 @@ struct PickersView: View {
                 .listRowSeparator(.hidden)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Pickers") {
             VStack(spacing: 10) {
                 VStack {
                     Spacer(minLength: 0)
@@ -69,7 +69,6 @@ struct PickersView: View {
             .animation(.spring(duration: 0.3), value: style)
         }
         .navigationTitle("Pickers")
-        .navigationBarTitleDisplayMode(.large)
         .onAppear { selectionFeedback.prepare() }
         .onChange(of: selection) { _, _ in selectionFeedback.selectionChanged() }
         .onChange(of: optionCount) { _, _ in
@@ -307,4 +306,5 @@ struct ColorPickerView: View {
     NavigationStack {
         PickersView()
     }
+    .environmentObject(PinsStore())
 }

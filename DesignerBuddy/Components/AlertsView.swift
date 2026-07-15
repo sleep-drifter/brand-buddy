@@ -54,7 +54,7 @@ struct AlertsView: View {
                 .padding(.vertical, 4)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Alerts & Dialogs") {
             ZStack {
                 Color(.secondarySystemGroupedBackground)
                 Color.black.opacity(0.3)
@@ -74,7 +74,6 @@ struct AlertsView: View {
             .animation(.spring(duration: 0.3), value: includeMockTextField)
         }
         .navigationTitle("Alerts & Dialogs")
-        .navigationBarTitleDisplayMode(.large)
         .alert("Enable Notifications?", isPresented: $showSimple) {
             Button("OK") {}
         } message: {
@@ -187,4 +186,5 @@ struct AlertAnatomyRow: View {
     NavigationStack {
         AlertsView()
     }
+    .environmentObject(PinsStore())
 }

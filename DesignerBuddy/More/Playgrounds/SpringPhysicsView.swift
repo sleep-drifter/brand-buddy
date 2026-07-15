@@ -88,7 +88,7 @@ struct SpringPhysicsView: View {
                 .listRowSeparator(.hidden)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Spring Physics") {
             ZStack(alignment: .bottom) {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(.quaternary)
@@ -124,7 +124,6 @@ struct SpringPhysicsView: View {
             }
         }
         .navigationTitle("Spring Physics")
-        .navigationBarTitleDisplayMode(.large)
     }
 }
 
@@ -149,4 +148,5 @@ struct SpringPreset: Identifiable {
     NavigationStack {
         SpringPhysicsView()
     }
+    .environmentObject(PinsStore())
 }

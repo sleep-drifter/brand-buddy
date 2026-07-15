@@ -76,7 +76,7 @@ struct SymbolEffectsView: View {
                 Text("The playground adds color palettes, rendering modes, symbol search, and code export.")
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Symbol Effects") {
             ZStack {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(.quaternary)
@@ -94,7 +94,6 @@ struct SymbolEffectsView: View {
             }
         }
         .navigationTitle("Symbol Effects")
-        .navigationBarTitleDisplayMode(.large)
     }
 
     private var effectSelection: Binding<String?> {
@@ -280,4 +279,5 @@ private enum EffectOption: String, CaseIterable {
 
 #Preview {
     NavigationStack { SymbolEffectsView() }
+        .environmentObject(PinsStore())
 }

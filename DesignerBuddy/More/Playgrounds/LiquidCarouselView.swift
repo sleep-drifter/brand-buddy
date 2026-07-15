@@ -69,11 +69,10 @@ struct LiquidCarouselView: View {
             .padding(16)
         }
         .background(Color(.systemGroupedBackground))
-        .pinnedPreview {
+        .pinnedPreview(entry: "Liquid Carousel") {
             stage
         }
         .navigationTitle("Liquid Carousel")
-        .navigationBarTitleDisplayMode(.inline)
         .onChange(of: count) { t = 0 }
         .onChange(of: behind) { t = t.rounded() }
     }
@@ -311,4 +310,5 @@ struct LiquidCarouselView: View {
 
 #Preview {
     NavigationStack { LiquidCarouselView() }
+        .environmentObject(PinsStore())
 }

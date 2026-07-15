@@ -68,7 +68,7 @@ struct GlassEffectPlayground: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "iOS 26 Glass") {
             ZStack {
                 bgContent
                     .frame(height: 200)
@@ -83,6 +83,7 @@ struct GlassEffectPlayground: View {
                 }
             }
         }
+        .navigationTitle("iOS 26 Glass")
     }
 
     @ViewBuilder
@@ -220,7 +221,7 @@ struct GlassPlayground: View {
         List {
             controlSections
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Material (blur)") {
             ZStack {
                 backgroundContent
                     .frame(height: 200)
@@ -228,6 +229,7 @@ struct GlassPlayground: View {
                 glassCard
             }
         }
+        .navigationTitle("Material (blur)")
     }
 
     @ViewBuilder
@@ -595,7 +597,7 @@ struct VibrancyPlayground: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Vibrancy") {
             ZStack {
                 backgroundContent
                     .frame(height: 200)
@@ -633,6 +635,7 @@ struct VibrancyPlayground: View {
                     .animation(.spring(duration: 0.3), value: [showPrimary, showSecondary, showTertiary, showQuaternary])
             }
         }
+        .navigationTitle("Vibrancy")
     }
 
     @ViewBuilder
@@ -690,4 +693,5 @@ struct BlobBackground: View {
     NavigationStack {
         CombinedGlassTab()
     }
+    .environmentObject(PinsStore())
 }

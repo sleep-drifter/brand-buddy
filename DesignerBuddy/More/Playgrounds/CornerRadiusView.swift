@@ -63,7 +63,7 @@ struct CornerRadiusView: View {
                 .padding(.vertical, 4)
             }
         }
-        .pinnedPreview {
+        .pinnedPreview(entry: "Corner Radius") {
             VStack(spacing: 10) {
                 if showBothStyles {
                     HStack(spacing: 24) {
@@ -101,7 +101,6 @@ struct CornerRadiusView: View {
             .frame(height: 200)
         }
         .navigationTitle("Corner Radius")
-        .navigationBarTitleDisplayMode(.large)
     }
 }
 
@@ -128,4 +127,5 @@ struct StandardRadius: Identifiable {
     NavigationStack {
         CornerRadiusView()
     }
+    .environmentObject(PinsStore())
 }

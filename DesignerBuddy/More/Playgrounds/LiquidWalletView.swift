@@ -94,11 +94,10 @@ struct LiquidWalletView: View {
             .padding(16)
         }
         .background(Color(.systemGroupedBackground))
-        .pinnedPreview {
+        .pinnedPreview(entry: "Liquid Wallet") {
             stage
         }
         .navigationTitle("Liquid Wallet")
-        .navigationBarTitleDisplayMode(.inline)
         .onChange(of: count) {
             topIndex = 0
             progress = 0
@@ -464,4 +463,5 @@ struct LiquidWalletView: View {
 
 #Preview {
     NavigationStack { LiquidWalletView() }
+        .environmentObject(PinsStore())
 }
