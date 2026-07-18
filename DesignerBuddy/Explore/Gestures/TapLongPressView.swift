@@ -111,7 +111,7 @@ struct TapLongPressView: View {
                                     }
                                 }
                         )
-                    Text(".simultaneously(with:) lets both gestures run at the same time. The combined value carries both results.")
+                    Text("Simultaneous recognition lets both gestures run at the same time — the tile can tell a tap and a long press apart.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -151,7 +151,7 @@ struct TapLongPressView: View {
                                     }
                                 }
                         )
-                    Text(".sequenced(before:) requires the first gesture to succeed before the second begins — classic drag-to-reorder pattern.")
+                    Text("Sequencing requires the first gesture to succeed before the second begins — the classic drag-to-reorder pattern.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

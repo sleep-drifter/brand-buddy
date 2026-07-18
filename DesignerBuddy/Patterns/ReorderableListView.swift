@@ -35,11 +35,6 @@ struct ReorderableListView: View {
                     }
                 }
                 .padding(.vertical, 4)
-
-                Text(codeSnippet)
-                    .font(.mono(.caption))
-                    .padding(8)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             }
         }
         .navigationTitle("Reorderable List")
@@ -72,28 +67,11 @@ struct ReorderableListView: View {
     }
 
     private let notes = [
-        "Copy items into a draft array on Edit so Cancel is always safe",
-        ".onMove only fires when editMode is .active",
-        "Use .confirmationAction / .cancellationAction for correct button placement",
-        "Save replaces the source-of-truth; Cancel simply discards the draft",
+        "Edit works on a draft copy of the list, so Cancel is always safe",
+        "Rows can only be dragged while edit mode is active",
+        "Save and Cancel sit in the standard confirmation/cancellation slots",
+        "Save replaces the real order; Cancel simply discards the draft",
     ]
-
-    private let codeSnippet = """
-// Enter edit mode — snapshot current order
-editingItems = items
-isEditing = true
-
-// Reorder handler (fires while dragging)
-.onMove { source, destination in
-    editingItems.move(fromOffsets: source, toOffset: destination)
-}
-
-// Save
-items = editingItems; isEditing = false
-
-// Cancel
-editingItems = []; isEditing = false
-"""
 }
 
 struct ReorderItem: Identifiable {

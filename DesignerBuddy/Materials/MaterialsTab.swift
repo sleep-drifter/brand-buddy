@@ -200,11 +200,11 @@ struct GlassPlayground: View {
     }
 
     enum MaterialThickness: String, CaseIterable {
-        case ultraThin = "ultraThin"
-        case thin = "thin"
-        case regular = "regular"
-        case thick = "thick"
-        case ultraThick = "ultraThick"
+        case ultraThin = "Ultra Thin"
+        case thin = "Thin"
+        case regular = "Regular"
+        case thick = "Thick"
+        case ultraThick = "Ultra Thick"
 
         var material: Material {
             switch self {
@@ -273,8 +273,8 @@ struct GlassPlayground: View {
             Text("Glass Surface")
                 .font(.headline)
                 .foregroundStyle(.white)
-            Text(".\(materialThickness.rawValue)Material")
-                .font(.mono(.caption))
+            Text("\(materialThickness.rawValue) material")
+                .font(.caption)
                 .foregroundStyle(.white.opacity(0.8))
         }
         .padding(24)
@@ -394,15 +394,15 @@ struct SurfacesPlayground: View {
 
             Section("When to use each") {
                 VStack(alignment: .leading, spacing: 10) {
-                    UsageRow(token: ".systemBackground", note: "Root view background — the canvas everything sits on")
-                    UsageRow(token: ".secondarySystemBackground", note: "Cards, inset grouped sections, raised surfaces")
-                    UsageRow(token: ".tertiarySystemBackground", note: "Nested cards or a third layer within a view")
-                    UsageRow(token: ".systemGroupedBackground", note: "Form / settings screen base")
-                    UsageRow(token: ".secondarySystemGroupedBackground", note: "List rows inside a grouped form")
-                    UsageRow(token: ".systemFill", note: "Thin UI chrome: sliders, switches, progress bars")
-                    UsageRow(token: ".secondarySystemFill", note: "Text field backgrounds")
-                    UsageRow(token: ".tertiarySystemFill", note: "Input accessories, search bar fill")
-                    UsageRow(token: ".quaternarySystemFill", note: "Skeleton loaders, placeholder shapes")
+                    UsageRow(token: "System Background", note: "Root view background — the canvas everything sits on")
+                    UsageRow(token: "Secondary Background", note: "Cards, inset grouped sections, raised surfaces")
+                    UsageRow(token: "Tertiary Background", note: "Nested cards or a third layer within a view")
+                    UsageRow(token: "Grouped Background", note: "Form / settings screen base")
+                    UsageRow(token: "Secondary Grouped Background", note: "List rows inside a grouped form")
+                    UsageRow(token: "System Fill", note: "Thin UI chrome: sliders, switches, progress bars")
+                    UsageRow(token: "Secondary Fill", note: "Text field backgrounds")
+                    UsageRow(token: "Tertiary Fill", note: "Input accessories, search bar fill")
+                    UsageRow(token: "Quaternary Fill", note: "Skeleton loaders, placeholder shapes")
                 }
                 .padding(.vertical, 4)
             }
@@ -417,27 +417,27 @@ struct SemanticSurface: Identifiable {
     let isTranslucent: Bool
 
     static let backgrounds: [SemanticSurface] = [
-        .init(name: ".systemBackground", color: Color(.systemBackground), isTranslucent: false),
-        .init(name: ".secondarySystemBackground", color: Color(.secondarySystemBackground), isTranslucent: false),
-        .init(name: ".tertiarySystemBackground", color: Color(.tertiarySystemBackground), isTranslucent: false),
+        .init(name: "System Background", color: Color(.systemBackground), isTranslucent: false),
+        .init(name: "Secondary Background", color: Color(.secondarySystemBackground), isTranslucent: false),
+        .init(name: "Tertiary Background", color: Color(.tertiarySystemBackground), isTranslucent: false),
     ]
 
     static let groupedBackgrounds: [SemanticSurface] = [
-        .init(name: ".systemGroupedBackground", color: Color(.systemGroupedBackground), isTranslucent: false),
-        .init(name: ".secondarySystemGroupedBackground", color: Color(.secondarySystemGroupedBackground), isTranslucent: false),
-        .init(name: ".tertiarySystemGroupedBackground", color: Color(.tertiarySystemGroupedBackground), isTranslucent: false),
+        .init(name: "Grouped Background", color: Color(.systemGroupedBackground), isTranslucent: false),
+        .init(name: "Secondary Grouped Background", color: Color(.secondarySystemGroupedBackground), isTranslucent: false),
+        .init(name: "Tertiary Grouped Background", color: Color(.tertiarySystemGroupedBackground), isTranslucent: false),
     ]
 
     static let fills: [SemanticSurface] = [
-        .init(name: ".systemFill", color: Color(.systemFill), isTranslucent: true),
-        .init(name: ".secondarySystemFill", color: Color(.secondarySystemFill), isTranslucent: true),
-        .init(name: ".tertiarySystemFill", color: Color(.tertiarySystemFill), isTranslucent: true),
-        .init(name: ".quaternarySystemFill", color: Color(.quaternarySystemFill), isTranslucent: true),
+        .init(name: "System Fill", color: Color(.systemFill), isTranslucent: true),
+        .init(name: "Secondary Fill", color: Color(.secondarySystemFill), isTranslucent: true),
+        .init(name: "Tertiary Fill", color: Color(.tertiarySystemFill), isTranslucent: true),
+        .init(name: "Quaternary Fill", color: Color(.quaternarySystemFill), isTranslucent: true),
     ]
 
     static let separators: [SemanticSurface] = [
-        .init(name: ".separator", color: Color(.separator), isTranslucent: true),
-        .init(name: ".opaqueSeparator", color: Color(.opaqueSeparator), isTranslucent: false),
+        .init(name: "Separator", color: Color(.separator), isTranslucent: true),
+        .init(name: "Opaque Separator", color: Color(.opaqueSeparator), isTranslucent: false),
     ]
 }
 
@@ -463,7 +463,7 @@ struct SurfaceRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(surface.name)
-                    .font(.mono(.caption))
+                    .font(.caption.weight(.medium))
                 if surface.isTranslucent {
                     Text("translucent")
                         .font(.caption2)
@@ -505,7 +505,7 @@ struct UsageRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(token).font(.mono(.caption)).foregroundStyle(.primary)
+            Text(token).font(.caption.weight(.medium)).foregroundStyle(.primary)
             Text(note).font(.caption).foregroundStyle(.secondary)
         }
     }
@@ -529,11 +529,11 @@ struct VibrancyPlayground: View {
     }
 
     private enum MaterialThickness: String, CaseIterable {
-        case ultraThin = "ultraThin"
-        case thin = "thin"
-        case regular = "regular"
-        case thick = "thick"
-        case ultraThick = "ultraThick"
+        case ultraThin = "Ultra Thin"
+        case thin = "Thin"
+        case regular = "Regular"
+        case thick = "Thick"
+        case ultraThick = "Ultra Thick"
 
         var material: Material {
             switch self {
@@ -572,17 +572,17 @@ struct VibrancyPlayground: View {
             }
 
             Section("Labels") {
-                Toggle(".primary", isOn: $showPrimary)
-                Toggle(".secondary", isOn: $showSecondary)
-                Toggle(".tertiary", isOn: $showTertiary)
-                Toggle(".quaternary", isOn: $showQuaternary)
+                Toggle("Primary", isOn: $showPrimary)
+                Toggle("Secondary", isOn: $showSecondary)
+                Toggle("Tertiary", isOn: $showTertiary)
+                Toggle("Quaternary", isOn: $showQuaternary)
             }
 
             Section("Vibrancy Labels") {
                 ForEach(["primary", "secondary", "tertiary", "quaternary"], id: \.self) { level in
                     HStack {
-                        Text(".\(level)")
-                            .font(.mono(.caption))
+                        Text(level.capitalized)
+                            .font(.caption.weight(.medium))
                         Spacer()
                         Text("Label")
                             .foregroundStyle(labelStyle(for: level))
@@ -592,7 +592,7 @@ struct VibrancyPlayground: View {
                 }
             }
             Section("Usage") {
-                Text("Vibrancy effects are automatic when using .foregroundStyle(.primary/.secondary/.tertiary) on views placed inside a material background. The system synthesizes appropriate contrast.")
+                Text("Vibrancy is automatic for primary/secondary/tertiary label styles placed inside a material background. The system synthesizes appropriate contrast.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

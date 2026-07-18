@@ -48,7 +48,7 @@ struct ScrollingSheetDemo: View {
         NavigationStack {
             List {
                 Section {
-                    Text("At **.medium** detent, dragging up on the scroll content expands the sheet first. Once at **.large**, scrolling takes over.")
+                    Text("At the **medium** detent, dragging up on the scroll content expands the sheet first. Once at **large**, scrolling takes over.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } header: {
@@ -79,8 +79,8 @@ struct ScrollingSheetDemo: View {
                     Button("Done") { dismiss() }
                 }
                 ToolbarItem(placement: .bottomBar) {
-                    Text("Detent: \(selectedDetent == .medium ? ".medium" : ".large")")
-                        .font(.mono(.caption))
+                    Text("Detent: \(selectedDetent == .medium ? "Medium" : "Large")")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -92,32 +92,31 @@ struct ScrollingSheetDemo: View {
 
 struct DetentReferenceItem: Identifiable {
     let id = UUID()
-    let token: String
+    let name: String
     let description: String
     let example: String?
 
     static let all: [DetentReferenceItem] = [
-        DetentReferenceItem(token: ".medium", description: "Approximately 50% of screen height. Ideal for quick tasks and peeking at content beneath.", example: "Quick actions, share sheets"),
-        DetentReferenceItem(token: ".large", description: "Full available height (below safe area top). Default when no detent is specified.", example: "Full forms, detail views"),
-        DetentReferenceItem(token: ".fraction(0.0...1.0)", description: "Percentage of available height. 0.4 = 40% of screen.", example: ".fraction(0.35) for a mini sheet"),
-        DetentReferenceItem(token: ".height(points)", description: "Fixed point height measured from the bottom.", example: ".height(400) for a fixed map preview"),
-        DetentReferenceItem(token: "Custom (PresentationDetent.custom)", description: "Height derived from a type conforming to CustomPresentationDetent. Reacts to environment changes.", example: "Content-sized sheet that adapts to text"),
+        DetentReferenceItem(name: "Medium", description: "Approximately 50% of screen height. Ideal for quick tasks and peeking at content beneath.", example: "Quick actions, share sheets"),
+        DetentReferenceItem(name: "Large", description: "Full available height (below safe area top). The default when nothing else is specified.", example: "Full forms, detail views"),
+        DetentReferenceItem(name: "Fraction", description: "Percentage of available height. 40% = a bit under half the screen.", example: "35% for a mini sheet"),
+        DetentReferenceItem(name: "Fixed height", description: "Fixed point height measured from the bottom.", example: "400pt for a fixed map preview"),
+        DetentReferenceItem(name: "Custom", description: "Height derived from custom rules — can adapt to content or environment changes.", example: "Content-sized sheet that adapts to text"),
     ]
 }
 
 struct SheetModifierItem: Identifiable {
     let id = UUID()
-    let modifier: String
+    let name: String
     let description: String
 
     static let all: [SheetModifierItem] = [
-        SheetModifierItem(modifier: ".presentationDetents([.medium, .large])", description: "Define which detents the sheet can snap to."),
-        SheetModifierItem(modifier: ".presentationDetents([...], selection: $detent)", description: "Bind current detent to observe or control programmatically."),
-        SheetModifierItem(modifier: ".presentationDragIndicator(.visible)", description: "Show the grab bar at the top of the sheet."),
-        SheetModifierItem(modifier: ".presentationBackgroundInteraction(.enabled)", description: "Allow tapping/scrolling content behind the sheet."),
-        SheetModifierItem(modifier: ".presentationCornerRadius(24)", description: "Override the sheet's corner radius."),
-        SheetModifierItem(modifier: ".presentationBackground(.regularMaterial)", description: "Apply a material background to the sheet."),
-        SheetModifierItem(modifier: ".interactiveDismissDisabled()", description: "Prevent swipe-to-dismiss — requires explicit button."),
+        SheetModifierItem(name: "Snap detents", description: "Define which detents the sheet can snap to."),
+        SheetModifierItem(name: "Drag indicator", description: "Show the grab bar at the top of the sheet."),
+        SheetModifierItem(name: "Background interaction", description: "Allow tapping/scrolling content behind the sheet."),
+        SheetModifierItem(name: "Corner radius", description: "Override the sheet's corner radius."),
+        SheetModifierItem(name: "Background material", description: "Apply a material background to the sheet."),
+        SheetModifierItem(name: "Dismiss lock", description: "Prevent swipe-to-dismiss — requires an explicit button."),
     ]
 }
 

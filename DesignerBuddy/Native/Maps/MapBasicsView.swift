@@ -62,11 +62,11 @@ private struct MapBasicsControlCard: View {
     let onNYC: () -> Void
     let onLondon: () -> Void
 
-    private var styleAPICaption: String {
+    private var styleCaption: String {
         switch styleIndex {
-        case 1: return ".mapStyle(.imagery)"
-        case 2: return ".mapStyle(.hybrid)"
-        default: return ".mapStyle(.standard)"
+        case 1: return "Imagery — satellite photography"
+        case 2: return "Hybrid — imagery with roads and labels"
+        default: return "Standard — the default cartographic map"
         }
     }
 
@@ -84,10 +84,9 @@ private struct MapBasicsControlCard: View {
                 }
                 .pickerStyle(.segmented)
 
-                Text(styleAPICaption)
+                Text(styleCaption)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                    .fontDesign(.monospaced)
             }
 
             Divider()
@@ -103,10 +102,9 @@ private struct MapBasicsControlCard: View {
                     MapPresetButton(title: "London", action: onLondon)
                 }
 
-                Text("MapCameraPosition.region(MKCoordinateRegion(...))")
+                Text("Presets animate the camera to a saved region")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                    .fontDesign(.monospaced)
             }
 
             Divider()
@@ -118,10 +116,9 @@ private struct MapBasicsControlCard: View {
                         .font(.subheadline.weight(.semibold))
                 }
 
-                Text(".mapControls { MapUserLocationButton() }")
+                Text("Adds the system location button over the map")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                    .fontDesign(.monospaced)
 
                 if showUserLocation {
                     HStack(spacing: 6) {

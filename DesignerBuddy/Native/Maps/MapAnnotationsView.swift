@@ -107,14 +107,13 @@ private struct AnnotationControlCard: View {
 
                 Group {
                     if useMarker {
-                        Text("Marker(landmark.name, coordinate:)\n    .tint(landmark.color)")
+                        Text("Marker — the standard system balloon pin, tinted per landmark")
                     } else {
-                        Text("Annotation(name, coordinate:) { CustomView() }\n    .annotationTitles(.hidden)")
+                        Text("Annotation — a fully custom view in place of the pin, titles hidden")
                     }
                 }
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-                .fontDesign(.monospaced)
             }
 
             if !useMarker {

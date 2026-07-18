@@ -353,7 +353,7 @@ struct GrantedCard: View {
                 .font(.title3)
                 .fontWeight(.bold)
 
-            Text("\(type.rawValue) permission is now active. Your app can use the \(type.rawValue.lowercased()) APIs immediately — no restart required.")
+            Text("\(type.rawValue) permission is now active. \(type.rawValue) features work immediately — no restart required.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

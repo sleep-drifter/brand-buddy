@@ -190,8 +190,8 @@ struct StreamingTextView: View {
                 }
             }
 
-            Text(".fill(LinearGradient) with animated UnitPoint(x: phase ± 0.4)")
-                .font(.caption2.monospaced())
+            Text("A gradient highlight sweeps across each placeholder line")
+                .font(.caption2)
                 .foregroundStyle(.secondary)
         }
         .padding(16)

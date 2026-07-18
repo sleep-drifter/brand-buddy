@@ -58,7 +58,7 @@ private struct MapOverlaysControlCard: View {
         VStack(spacing: 16) {
             // Polyline section
             VStack(alignment: .leading, spacing: 10) {
-                Label("MapPolyline", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+                Label("Route Line", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
                     .font(.subheadline.weight(.semibold))
 
                 HStack {
@@ -84,18 +84,17 @@ private struct MapOverlaysControlCard: View {
                         .tint(strokeColor)
                 }
 
-                // Caption uses lineWidth directly; color shown as a swatch since
-                // Color doesn't have a reliable display name after ColorPicker changes.
+                // Color shown as a swatch since Color doesn't have a reliable
+                // display name after ColorPicker changes.
                 HStack(spacing: 4) {
-                    Text("MapPolyline(coordinates: route)\n    .stroke(")
+                    Text("Route stroked with")
                     RoundedRectangle(cornerRadius: 3)
                         .fill(strokeColor)
                         .frame(width: 14, height: 10)
-                    Text(", lineWidth: \(Int(lineWidth)))")
+                    Text("at \(Int(lineWidth))pt")
                 }
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-                .fontDesign(.monospaced)
             }
 
             Divider()
@@ -103,7 +102,7 @@ private struct MapOverlaysControlCard: View {
             // Circle section
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Label("MapCircle", systemImage: "circle.dashed")
+                    Label("Circle Overlay", systemImage: "circle.dashed")
                         .font(.subheadline.weight(.semibold))
                     Spacer()
                     Toggle("Show circle", isOn: $showCircle)
@@ -125,10 +124,9 @@ private struct MapOverlaysControlCard: View {
                             .tint(.blue)
                     }
 
-                    Text("MapCircle(center: center, radius: \(Int(circleRadius)))\n    .foregroundStyle(.blue.opacity(0.15))\n    .stroke(.blue, lineWidth: 2)")
+                    Text("\(Int(circleRadius))m radius — semi-transparent fill with a 2pt stroke")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                        .fontDesign(.monospaced)
                 }
             }
         }

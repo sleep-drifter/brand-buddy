@@ -190,7 +190,7 @@ struct CardsView: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader(number: "035", title: "Glass Card — Layered")
             glassCardDemo
-            Text(".ultraThinMaterial + RoundedRectangle stroke LinearGradient + animated MeshGradient background")
+            Text("Frosted ultra-thin glass over an animated mesh gradient, edged with a hairline gradient stroke")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -231,7 +231,7 @@ struct CardsView: View {
                 .font(.title2)
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
-            Text("Frosted glass over a vivid animated gradient. .ultraThinMaterial refracts the shifting colors below.")
+            Text("Frosted glass over a vivid animated gradient. The ultra-thin material refracts the shifting colors below.")
                 .font(.subheadline)
                 .foregroundStyle(.primary.opacity(0.8))
                 .multilineTextAlignment(.center)

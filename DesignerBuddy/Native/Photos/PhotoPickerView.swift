@@ -141,18 +141,16 @@ struct PhotoPickerView: View {
         .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
     }
 
-    // MARK: - API Notes Section
+    // MARK: - Behavior Notes Section
 
     private var apiNotesSection: some View {
-        Section("API Notes") {
+        Section("Behavior Notes") {
             VStack(alignment: .leading, spacing: 10) {
-                apiRow(modifier: ".matching(.images)", note: "Filter by asset type (images, videos, livePhotos)")
+                apiRow(modifier: "Type filter", note: "The picker can be limited to images, videos, or Live Photos")
                 Divider()
-                apiRow(modifier: "maxSelectionCount:", note: "Limit how many items can be selected at once")
+                apiRow(modifier: "Selection limit", note: "Limit how many items can be selected at once")
                 Divider()
-                apiRow(modifier: ".loadTransferable(type: Data.self)", note: "Async load item content from picker handle")
-                Divider()
-                apiRow(modifier: "PhotosPickerItem", note: "The opaque handle for a selected photo asset")
+                apiRow(modifier: "Async loading", note: "Selected photos load in the background — design a loading state")
             }
             .padding(12)
             .background(Color(uiColor: .secondarySystemGroupedBackground))
@@ -165,7 +163,7 @@ struct PhotoPickerView: View {
     private func apiRow(modifier: String, note: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(modifier)
-                .font(.system(.caption, design: .monospaced).weight(.medium))
+                .font(.caption.weight(.medium))
                 .foregroundStyle(.primary)
             Text(note)
                 .font(.caption)

@@ -20,12 +20,6 @@ struct ShadowExplorerView: View {
 
     var body: some View {
         List {
-            Section("Code") {
-                Text(".shadow(\n  color: \(shadowColor == .black ? ".black" : "color").opacity(\(opacity, specifier: "%.2f")),\n  radius: \(Int(radius)),\n  x: \(Int(x)), y: \(Int(y))\n)")
-                    .font(.mono(.caption))
-                    .foregroundStyle(.secondary)
-            }
-
             Section("Shadow") {
                 LabeledContent("radius: \(Int(radius))") {
                     Slider(value: $radius, in: 0...60)

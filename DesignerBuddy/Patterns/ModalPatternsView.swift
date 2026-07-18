@@ -29,39 +29,39 @@ struct ModalPatternsView: View {
 
             Section("Modal Types — Live Demos") {
                 ModalDemoRow(
-                    name: "Sheet (.medium)",
+                    name: "Sheet (medium)",
                     useWhen: "Quick action or short form. Content is secondary to what's behind.",
-                    buttonLabel: ".sheet + .medium",
+                    buttonLabel: "Show medium sheet",
                     action: { showMediumSheet = true }
                 )
                 ModalDemoRow(
-                    name: "Sheet (.large)",
+                    name: "Sheet (large)",
                     useWhen: "Multi-step flow or rich content that needs space but can be dismissed.",
-                    buttonLabel: ".sheet + .large",
+                    buttonLabel: "Show large sheet",
                     action: { showLargeSheet = true }
                 )
                 ModalDemoRow(
                     name: "Sheet (switchable)",
                     useWhen: "When user needs to expand for more detail — medium and large detents.",
-                    buttonLabel: ".medium + .large",
+                    buttonLabel: "Show switchable sheet",
                     action: { showSwitchableSheet = true }
                 )
                 ModalDemoRow(
                     name: "Full Screen Cover",
                     useWhen: "Onboarding, immersive flows where going back should not be trivial.",
-                    buttonLabel: ".fullScreenCover",
+                    buttonLabel: "Show full screen cover",
                     action: { showFullScreen = true }
                 )
                 ModalDemoRow(
                     name: "Confirmation Dialog",
                     useWhen: "Destructive or irreversible actions with 2–3 choices.",
-                    buttonLabel: ".confirmationDialog",
+                    buttonLabel: "Show dialog",
                     action: { showConfirmation = true }
                 )
                 ModalDemoRow(
                     name: "Alert",
                     useWhen: "Critical decisions or errors with 1–2 choices.",
-                    buttonLabel: ".alert",
+                    buttonLabel: "Show alert",
                     action: { showAlert = true }
                 )
             }

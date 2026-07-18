@@ -8,12 +8,6 @@ struct ContentTransitionView: View {
 
     var body: some View {
         List {
-            Section("Code") {
-                Text(generatedCode)
-                    .font(.mono(.caption))
-                    .foregroundStyle(.secondary)
-            }
-
             Section("Controls") {
                 HStack(spacing: 12) {
                     Button("−1") { value = max(value - 1, 0) }
@@ -31,7 +25,7 @@ struct ContentTransitionView: View {
             Section("Transition Types") {
                 PresetChipRow(
                     chips: MorphStyle.allCases.map { s in
-                        PresetChip(name: s.rawValue, detail: s.detail, code: s.code)
+                        PresetChip(name: s.rawValue, detail: s.detail)
                     },
                     selectedID: styleSelection
                 ) { _ in
@@ -83,20 +77,16 @@ struct ContentTransitionView: View {
         )
     }
 
-    private var generatedCode: String {
-        let animation = String(format: ".easeInOut(duration: %.2f)", duration)
-        return "Text(\"\\(value)\")\n    .contentTransition(\(style.code))\n    .animation(\(animation), value: value)"
-    }
 }
 
 // MARK: - Morph Styles
 
 private enum MorphStyle: String, CaseIterable {
-    case numericText = "numericText"
-    case numericTextDown = "numericText (counts down)"
-    case interpolate = "interpolate"
-    case opacity = "opacity"
-    case identity = "identity"
+    case numericText = "Numeric Roll"
+    case numericTextDown = "Numeric Roll (down)"
+    case interpolate = "Interpolate"
+    case opacity = "Cross-fade"
+    case identity = "Instant"
 
     var transition: ContentTransition {
         switch self {
@@ -105,16 +95,6 @@ private enum MorphStyle: String, CaseIterable {
         case .interpolate:     return .interpolate
         case .opacity:         return .opacity
         case .identity:        return .identity
-        }
-    }
-
-    var code: String {
-        switch self {
-        case .numericText:     return ".numericText()"
-        case .numericTextDown: return ".numericText(countsDown: true)"
-        case .interpolate:     return ".interpolate"
-        case .opacity:         return ".opacity"
-        case .identity:        return ".identity"
         }
     }
 

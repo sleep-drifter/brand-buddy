@@ -329,8 +329,8 @@ private struct WrapFlowLayout: Layout {
 struct FlowLayoutView: View {
     @State private var width: CGFloat = 240
 
-    private let tags = ["Objective-C", "Swift", "SwiftUI", "Ruby", "Python", "JavaScript",
-                        "Java", "C++", "C#", "Go", "Kotlin", "Rust", "Metal", "Combine"]
+    private let tags = ["Typography", "Color", "Motion", "Layout", "Iconography", "Spacing",
+                        "Elevation", "Haptics", "Accessibility", "Grids", "Materials", "Shadows"]
 
     var body: some View {
         ScrollView {

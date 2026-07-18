@@ -80,7 +80,7 @@ struct ScrollViewsView: View {
             }
             .padding(.horizontal, -16)
 
-            captionText("ScrollView(.horizontal) { HStack { ... } }")
+            captionText("Horizontal scroller — cards overflow the edge to invite a swipe")
         }
         .padding(16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
@@ -114,7 +114,7 @@ struct ScrollViewsView: View {
             }
             .frame(height: 240)
 
-            captionText("LazyVStack for efficient rendering of tall lists")
+            captionText("Rows load lazily as they scroll into view — smooth even for very tall lists")
         }
         .padding(16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
@@ -151,8 +151,8 @@ struct ScrollViewsView: View {
             .scrollTargetBehavior(.paging)
             .frame(height: 200)
 
-            Text(".scrollTargetBehavior(.paging) + .containerRelativeFrame(.horizontal, count: 1, spacing: 0)")
-                .font(.mono(.caption2))
+            Text("Full-width pages snap one screen at a time")
+                .font(.caption2)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 4)
@@ -208,8 +208,8 @@ struct ScrollViewsView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                captionText("iOS 26+: .scrollEdgeEffectStyle(.soft, for: .horizontal) — requires iOS 26")
-                captionText("iOS 17 fallback: LinearGradient overlay on leading + trailing edges")
+                captionText("iOS 26+: the soft edge fade is a built-in scroll effect")
+                captionText("iOS 17 fallback: gradient overlays on the leading and trailing edges")
             }
         }
         .padding(16)
@@ -255,7 +255,7 @@ struct ScrollViewsView: View {
             .contentMargins(.horizontal, 16, for: .scrollContent)
             .padding(.horizontal, -16)
 
-            captionText(".scrollPosition(id:) — tracks the leading-aligned item")
+            captionText("The readout above tracks the leading-aligned item as you scroll")
         }
         .padding(16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
@@ -270,7 +270,7 @@ struct ScrollViewsView: View {
 
     private func captionText(_ text: String) -> some View {
         Text(text)
-            .font(.mono(.caption2))
+            .font(.caption2)
             .foregroundStyle(.secondary)
     }
 

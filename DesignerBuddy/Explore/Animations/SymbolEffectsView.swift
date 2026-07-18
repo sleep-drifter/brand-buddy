@@ -13,19 +13,12 @@ struct SymbolEffectsView: View {
 
     var body: some View {
         List {
-            Section("Code") {
-                Text(generatedCode)
-                    .font(.mono(.caption))
-                    .foregroundStyle(.secondary)
-            }
-
             Section("Effect") {
                 PresetChipRow(
                     chips: EffectOption.allCases.map { effect in
                         PresetChip(
                             name: effect.rawValue,
-                            detail: "\(effect.detail) \(effect.nature)",
-                            code: effect.code
+                            detail: "\(effect.detail) \(effect.nature)"
                         )
                     },
                     selectedID: effectSelection
@@ -54,18 +47,18 @@ struct SymbolEffectsView: View {
                 .pickerStyle(.menu)
 
                 if selectedEffect.supportsByLayer {
-                    Toggle("byLayer", isOn: $byLayer)
+                    Toggle("By layer", isOn: $byLayer)
                 }
 
                 if selectedEffect == .variableColor {
-                    LabeledContent("variableValue: \(variableValue, specifier: "%.2f")") {
+                    LabeledContent("variable value: \(variableValue, specifier: "%.2f")") {
                         Slider(value: $variableValue, in: 0...1)
                     }
                 }
             } header: {
                 Text("Controls")
             } footer: {
-                Text(".byLayer applies the effect to each symbol path layer independently, creating a staggered sequential animation.")
+                Text("By layer applies the effect to each symbol path layer independently, creating a staggered sequential animation.")
             }
 
             Section {
@@ -73,7 +66,7 @@ struct SymbolEffectsView: View {
                     SymbolPlaygroundView()
                 }
             } footer: {
-                Text("The playground adds color palettes, rendering modes, symbol search, and code export.")
+                Text("The playground adds color palettes, rendering modes, and symbol search.")
             }
         }
         .pinnedPreview(entry: "Symbol Effects") {
@@ -181,52 +174,21 @@ struct SymbolEffectsView: View {
         }
     }
 
-    // MARK: - Code
-
-    private var generatedCode: String {
-        switch selectedEffect {
-        case .bounce:
-            return wrap(byLayer ? ".symbolEffect(.bounce.byLayer, value: trigger)" : ".symbolEffect(.bounce, value: trigger)")
-        case .pulse:
-            return wrap(".symbolEffect(.pulse, value: trigger)")
-        case .wiggle:
-            return wrap(byLayer ? ".symbolEffect(.wiggle.byLayer, value: trigger)" : ".symbolEffect(.wiggle, value: trigger)")
-        case .rotate:
-            return wrap(byLayer ? ".symbolEffect(.rotate.byLayer, value: trigger)" : ".symbolEffect(.rotate, value: trigger)")
-        case .breathe:
-            return wrap(byLayer ? ".symbolEffect(.breathe.byLayer, isActive: isActive)" : ".symbolEffect(.breathe, isActive: isActive)")
-        case .pulseContinuous:
-            return wrap(".symbolEffect(.pulse, isActive: isActive)")
-        case .variableColor:
-            let value = String(format: "%.2f", variableValue)
-            return "Image(systemName: \"\(symbolName)\", variableValue: \(value))\n    .symbolEffect(.variableColor.iterative.reversing, isActive: isActive)"
-        case .appear:
-            return wrap(byLayer ? ".symbolEffect(.appear.byLayer, isActive: isActive)" : ".symbolEffect(.appear, isActive: isActive)")
-        case .disappear:
-            return wrap(byLayer ? ".symbolEffect(.disappear.byLayer, isActive: isActive)" : ".symbolEffect(.disappear, isActive: isActive)")
-        case .replace:
-            return "Image(systemName: playing ? \"pause.fill\" : \"play.fill\")\n    .contentTransition(.symbolEffect(.replace))\n    .animation(.default, value: playing)"
-        }
-    }
-
-    private func wrap(_ effect: String) -> String {
-        "Image(systemName: \"\(symbolName)\")\n    \(effect)"
-    }
 }
 
 // MARK: - Effect Options
 
 private enum EffectOption: String, CaseIterable {
-    case bounce = ".bounce"
-    case pulse = ".pulse"
-    case wiggle = ".wiggle"
-    case rotate = ".rotate"
-    case breathe = ".breathe"
-    case pulseContinuous = ".pulse (continuous)"
-    case variableColor = ".variableColor"
-    case appear = ".appear"
-    case disappear = ".disappear"
-    case replace = ".replace"
+    case bounce = "Bounce"
+    case pulse = "Pulse"
+    case wiggle = "Wiggle"
+    case rotate = "Rotate"
+    case breathe = "Breathe"
+    case pulseContinuous = "Pulse (continuous)"
+    case variableColor = "Variable Color"
+    case appear = "Appear"
+    case disappear = "Disappear"
+    case replace = "Replace"
 
     var isDiscrete: Bool {
         switch self {
@@ -249,7 +211,7 @@ private enum EffectOption: String, CaseIterable {
         case .wiggle:          return "Rocks side to side to demand attention."
         case .rotate:          return "Spins the symbol once around its anchor."
         case .breathe:         return "Gently scales in and out while active."
-        case .pulseContinuous: return "Continuous pulse, distinct from .breathe."
+        case .pulseContinuous: return "Continuous pulse, distinct from Breathe."
         case .variableColor:   return "Cycles variable layers — waveforms, wifi bars."
         case .appear:          return "Animates the symbol into view when toggled."
         case .disappear:       return "Animates the symbol out of view when toggled."
@@ -259,21 +221,6 @@ private enum EffectOption: String, CaseIterable {
 
     var nature: String {
         isDiscrete ? "Discrete — plays once per trigger." : "Indefinite — runs while active."
-    }
-
-    var code: String {
-        switch self {
-        case .bounce:          return ".symbolEffect(.bounce, value: trigger)"
-        case .pulse:           return ".symbolEffect(.pulse, value: trigger)"
-        case .wiggle:          return ".symbolEffect(.wiggle, value: trigger)"
-        case .rotate:          return ".symbolEffect(.rotate, value: trigger)"
-        case .breathe:         return ".symbolEffect(.breathe, isActive: isActive)"
-        case .pulseContinuous: return ".symbolEffect(.pulse, isActive: isActive)"
-        case .variableColor:   return ".symbolEffect(.variableColor.iterative.reversing, isActive: isActive)"
-        case .appear:          return ".symbolEffect(.appear, isActive: isActive)"
-        case .disappear:       return ".symbolEffect(.disappear, isActive: isActive)"
-        case .replace:         return ".contentTransition(.symbolEffect(.replace))"
-        }
     }
 }
 

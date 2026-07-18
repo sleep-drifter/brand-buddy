@@ -159,8 +159,8 @@ struct MatchedGeometryView: View {
                         Spacer()
                     }
                     .padding(.vertical, 8)
-                    Text("matchedGeometryEffect(id: \"tab\", in: namespace) — shared capsule slides between tabs")
-                        .font(.caption.monospaced())
+                    Text("A shared capsule slides between tabs — both states are geometry-matched")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 .padding(16)
@@ -216,7 +216,7 @@ struct MatchedGeometryView: View {
                     }
                     .padding(.vertical, 8)
                     Text("Mirrors iOS Music mini-player expand pattern")
-                        .font(.caption.monospaced())
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 .padding(16)
@@ -265,7 +265,7 @@ struct MatchedGeometryView: View {
                     }
                     .padding(.vertical, 8)
                     Text("SF Symbol morphs from icon to full-bleed hero banner")
-                        .font(.caption.monospaced())
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 .padding(16)

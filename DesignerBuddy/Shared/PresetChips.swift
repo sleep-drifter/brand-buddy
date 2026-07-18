@@ -2,7 +2,7 @@ import SwiftUI
 
 // Compact preset/reference selector: capsule chips in a full-bleed horizontal
 // scroller. The selected chip grows an info button that pops the preset's
-// detail text and optional code hint in a popover.
+// detail text and optional spec values (e.g. "radius 8, y 4") in a popover.
 //
 // Drop directly into a List and pair with:
 //   .listRowInsets(EdgeInsets())

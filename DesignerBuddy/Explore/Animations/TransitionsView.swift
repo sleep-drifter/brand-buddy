@@ -8,12 +8,6 @@ struct TransitionsView: View {
 
     var body: some View {
         List {
-            Section("Code") {
-                Text(generatedCode)
-                    .font(.mono(.caption))
-                    .foregroundStyle(.secondary)
-            }
-
             Section("Controls") {
                 LabeledContent("duration: \(duration, specifier: "%.2f")s") {
                     Slider(value: $duration, in: 0.1...1.5)
@@ -28,7 +22,7 @@ struct TransitionsView: View {
             Section("Transition Types") {
                 PresetChipRow(
                     chips: TransitionKind.allCases.map { kind in
-                        PresetChip(name: kind.rawValue, detail: kind.detail, code: kind.snippet)
+                        PresetChip(name: kind.rawValue, detail: kind.detail)
                     },
                     selectedID: transitionSelection
                 ) { _ in
@@ -121,18 +115,6 @@ struct TransitionsView: View {
         }
     }
 
-    private var animationCode: String {
-        switch curve {
-        case .easeInOut: return String(format: ".easeInOut(duration: %.2f)", duration)
-        case .spring:    return String(format: ".spring(duration: %.2f)", duration)
-        case .linear:    return String(format: ".linear(duration: %.2f)", duration)
-        }
-    }
-
-    private var generatedCode: String {
-        "withAnimation(\(animationCode)) {\n  show.toggle()\n}\n\nif show {\n  tile\n    \(transitionKind.code)\n}"
-    }
-
     private func toggle() {
         withAnimation(currentAnimation) {
             isShowing.toggle()
@@ -160,27 +142,6 @@ private enum TransitionKind: String, CaseIterable {
     case asymmetric = "Asymmetric"
     case push = "Push"
 
-    var snippet: String {
-        switch self {
-        case .slide:      return ".slide"
-        case .scale:      return ".scale"
-        case .opacity:    return ".opacity"
-        case .asymmetric: return ".asymmetric"
-        case .push:       return ".push(from:)"
-        }
-    }
-
-    var code: String {
-        switch self {
-        case .slide:   return ".transition(.slide)"
-        case .scale:   return ".transition(.scale)"
-        case .opacity: return ".transition(.opacity)"
-        case .asymmetric:
-            return ".transition(.asymmetric(\n      insertion: .move(edge: .trailing)\n        .combined(with: .opacity),\n      removal: .scale\n        .combined(with: .opacity)))"
-        case .push:    return ".transition(.push(from: .leading))"
-        }
-    }
-
     var detail: String {
         switch self {
         case .slide:      return "Moves in from the leading edge, out toward trailing."
@@ -193,7 +154,7 @@ private enum TransitionKind: String, CaseIterable {
 }
 
 private enum CurveKind: String, CaseIterable {
-    case easeInOut = "EaseInOut"
+    case easeInOut = "Ease In Out"
     case spring = "Spring"
     case linear = "Linear"
 }

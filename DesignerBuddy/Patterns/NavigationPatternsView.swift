@@ -5,7 +5,7 @@ struct NavigationPatternsView: View {
         List {
             Section("Push Navigation") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("NavigationStack replaces NavigationView in iOS 16+. Always prefer NavigationStack for new code.")
+                    Text("Each push slides a new screen in over the current one and adds an automatic back button.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     NavigationLink("Tap to push") { PushedView(depth: 1) }
@@ -13,24 +13,11 @@ struct NavigationPatternsView: View {
                 .padding(.vertical, 4)
             }
 
-            Section("Navigation Path") {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("NavigationPath enables programmatic navigation — push/pop without a user tap.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Text("""
-NavigationStack(path: $path) {
-    ...
-    .navigationDestination(for: Item.self) { item in
-        ItemDetailView(item: item)
-    }
-}
-""")
-                    .font(.mono(.caption))
-                    .padding(8)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                }
-                .padding(.vertical, 4)
+            Section("Programmatic Navigation") {
+                Text("Navigation can also be driven without a user tap — deep links, notifications, and multi-step flows can push or pop screens directly.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 4)
             }
 
             Section("Back Button Behavior") {
@@ -127,8 +114,7 @@ struct BackBehaviorItem: Identifiable {
 
     static let all: [BackBehaviorItem] = [
         BackBehaviorItem(pattern: "Standard back button", description: "Auto-generated with previous screen title. Don't override unless title is too long."),
-        BackBehaviorItem(pattern: ".navigationBackButtonHidden()", description: "Hide back button for forced flows (onboarding, payment). Always provide explicit dismiss."),
-        BackBehaviorItem(pattern: ".navigationBarBackButtonHidden(true)", description: "Legacy API. Prefer the newer modifier above."),
+        BackBehaviorItem(pattern: "Hidden back button", description: "Hide the back button for forced flows (onboarding, payment). Always provide explicit dismiss."),
         BackBehaviorItem(pattern: "Swipe-to-go-back", description: "Always supported unless back button is hidden. Don't disable unless UX requires it."),
     ]
 }

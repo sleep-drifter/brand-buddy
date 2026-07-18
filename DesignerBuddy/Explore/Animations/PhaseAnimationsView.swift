@@ -153,7 +153,7 @@ private enum PhaseMode: String, CaseIterable {
 
 private enum StepStyle: String, CaseIterable {
     case spring = "Spring"
-    case easeInOut = "EaseInOut"
+    case easeInOut = "Ease In Out"
 }
 
 private enum PhaseSet: String, CaseIterable {

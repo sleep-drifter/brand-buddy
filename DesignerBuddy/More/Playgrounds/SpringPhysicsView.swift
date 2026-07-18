@@ -11,8 +11,8 @@ struct SpringPhysicsView: View {
     @State private var selectedPreset: String?
 
     enum SpringAPI: String, CaseIterable {
-        case modern = "spring(duration:bounce:)"
-        case classic = "spring(response:dampingFraction:)"
+        case modern = "Duration & bounce"
+        case classic = "Response & damping"
     }
 
     var currentAnimation: Animation {
@@ -26,8 +26,8 @@ struct SpringPhysicsView: View {
 
     var body: some View {
         List {
-            Section("API") {
-                Picker("Spring API", selection: $springAPI) {
+            Section("Spring Model") {
+                Picker("Spring model", selection: $springAPI) {
                     ForEach(SpringAPI.allCases, id: \.self) { Text($0.rawValue) }
                 }
                 .pickerStyle(.inline)
@@ -43,25 +43,15 @@ struct SpringPhysicsView: View {
                         Slider(value: $bounce, in: 0.0...1.0)
                     }
                 }
-                Section("Code") {
-                    Text(".animation(.spring(duration: \(duration, specifier: "%.2f"), bounce: \(bounce, specifier: "%.2f")), value: animating)")
-                        .font(.mono(.caption))
-                        .foregroundStyle(.secondary)
-                }
 
             case .classic:
                 Section("Parameters") {
                     LabeledContent("response: \(response, specifier: "%.2f")") {
                         Slider(value: $response, in: 0.1...2.0)
                     }
-                    LabeledContent("dampingFraction: \(dampingFraction, specifier: "%.2f")") {
+                    LabeledContent("damping fraction: \(dampingFraction, specifier: "%.2f")") {
                         Slider(value: $dampingFraction, in: 0.0...1.0)
                     }
-                }
-                Section("Code") {
-                    Text(".animation(.spring(response: \(response, specifier: "%.2f"), dampingFraction: \(dampingFraction, specifier: "%.2f")), value: animating)")
-                        .font(.mono(.caption))
-                        .foregroundStyle(.secondary)
                 }
             }
 

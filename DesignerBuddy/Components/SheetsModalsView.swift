@@ -25,11 +25,11 @@ struct SheetsModalsView: View {
     }
 
     private var selectedDetentLabel: String {
-        if selectedDetent == .medium { return ".medium" }
-        if selectedDetent == .large { return ".large" }
-        if selectedDetent == .fraction(customFraction) { return ".fraction(\(String(format: "%.2f", customFraction)))" }
-        if selectedDetent == .height(customHeight) { return ".height(\(Int(customHeight)))" }
-        return ".large"
+        if selectedDetent == .medium { return "Medium" }
+        if selectedDetent == .large { return "Large" }
+        if selectedDetent == .fraction(customFraction) { return "Fraction" }
+        if selectedDetent == .height(customHeight) { return "Height \(Int(customHeight))pt" }
+        return "Large"
     }
 
     private var detentCanvas: some View {
@@ -92,26 +92,26 @@ struct SheetsModalsView: View {
         List {
             Section("Presentation") {
                 Picker("Selected detent", selection: $selectedDetent) {
-                    Text(".medium").tag(PresentationDetent.medium)
-                    Text(".large").tag(PresentationDetent.large)
-                    Text(".fraction").tag(PresentationDetent.fraction(customFraction))
-                    Text(".height").tag(PresentationDetent.height(customHeight))
+                    Text("Medium").tag(PresentationDetent.medium)
+                    Text("Large").tag(PresentationDetent.large)
+                    Text("Fraction").tag(PresentationDetent.fraction(customFraction))
+                    Text("Height").tag(PresentationDetent.height(customHeight))
                 }
                 .pickerStyle(.segmented)
                 Toggle("Show drag indicator", isOn: $showDragIndicator)
             }
 
             Section("Active Detents") {
-                Toggle(".medium", isOn: Binding(
+                Toggle("Medium", isOn: Binding(
                     get: { availableDetents.contains(.medium) },
                     set: { if $0 { availableDetents.insert(.medium) } else { availableDetents.remove(.medium) } }
                 ))
-                Toggle(".large", isOn: Binding(
+                Toggle("Large", isOn: Binding(
                     get: { availableDetents.contains(.large) },
                     set: { if $0 { availableDetents.insert(.large) } else { availableDetents.remove(.large) } }
                 ))
                 VStack(alignment: .leading, spacing: 6) {
-                    Toggle(".fraction(\(customFraction, specifier: "%.2f"))", isOn: Binding(
+                    Toggle("Fraction (\(Int((customFraction * 100).rounded()))%)", isOn: Binding(
                         get: { availableDetents.contains(.fraction(customFraction)) },
                         set: { if $0 { availableDetents.insert(.fraction(customFraction)) } else { availableDetents.remove(.fraction(customFraction)) } }
                     ))
@@ -119,7 +119,7 @@ struct SheetsModalsView: View {
                         .padding(.leading, 4)
                 }
                 VStack(alignment: .leading, spacing: 6) {
-                    Toggle(".height(\(Int(customHeight)))", isOn: Binding(
+                    Toggle("Height (\(Int(customHeight))pt)", isOn: Binding(
                         get: { availableDetents.contains(.height(customHeight)) },
                         set: { if $0 { availableDetents.insert(.height(customHeight)) } else { availableDetents.remove(.height(customHeight)) } }
                     ))
@@ -146,8 +146,8 @@ struct SheetsModalsView: View {
             Section("Detent Reference") {
                 ForEach(DetentReferenceItem.all) { item in
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(item.token)
-                            .font(.mono(.subheadline))
+                        Text(item.name)
+                            .font(.subheadline)
                             .fontWeight(.medium)
                         Text(item.description)
                             .font(.caption)
@@ -163,11 +163,12 @@ struct SheetsModalsView: View {
                 }
             }
 
-            Section("Sheet Modifiers") {
+            Section("Sheet Options") {
                 ForEach(SheetModifierItem.all) { item in
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(item.modifier)
-                            .font(.mono(.caption))
+                        Text(item.name)
+                            .font(.caption)
+                            .fontWeight(.medium)
                             .foregroundStyle(.tint)
                         Text(item.description)
                             .font(.caption)

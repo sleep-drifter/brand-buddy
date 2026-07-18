@@ -121,7 +121,6 @@ struct SymbolPlaygroundView: View {
                     optionsSection
                     appearanceSection
                     colorPickerRow
-                    codeCard
                 }
                 .padding(16)
             }
@@ -591,98 +590,6 @@ struct SymbolPlaygroundView: View {
         color == .white ? .gray : .white
     }
 
-    // MARK: - Code Card
-
-    private var codeCard: some View {
-        GroupBox {
-            Text(generatedCode)
-                .font(.caption.monospaced())
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
-        } label: {
-            Label("Swift", systemImage: "doc.plaintext")
-                .font(.subheadline.weight(.medium))
-        }
-    }
-
-    private var generatedCode: String {
-        let sym = symbolName
-        let layer = byLayer
-
-        // Build Image init and shared modifier lines
-        let varArg = variableEnabled ? String(format: ", variableValue: %.2f", variableValue) : ""
-        var prefix = ""
-        if renderingMode != .monochrome {
-            prefix += "\n    .symbolRenderingMode(.\(renderingMode.rawValue.lowercased()))"
-        }
-        if renderingMode == .palette {
-            prefix += "\n    .foregroundStyle(primary, secondary, tertiary)"
-        }
-
-        func wrap(_ effect: String) -> String {
-            "Image(systemName: \"\(sym)\"\(varArg))\(prefix)\n    \(effect)"
-        }
-
-        switch selectedEffect {
-        case .bounce:
-            return wrap(layer
-                ? ".symbolEffect(.bounce.byLayer, value: trigger)"
-                : ".symbolEffect(.bounce, value: trigger)")
-        case .pulse:
-            return wrap(".symbolEffect(.pulse, value: trigger)")
-        case .wiggle:
-            return wrap(layer
-                ? ".symbolEffect(.wiggle.byLayer, value: trigger)"
-                : ".symbolEffect(.wiggle, value: trigger)")
-        case .rotate:
-            return wrap(layer
-                ? ".symbolEffect(.rotate.byLayer, value: trigger)"
-                : ".symbolEffect(.rotate, value: trigger)")
-        case .breathe:
-            return wrap(layer
-                ? ".symbolEffect(.breathe.byLayer, isActive: isActive)"
-                : ".symbolEffect(.breathe, isActive: isActive)")
-        case .variableColor:
-            return wrap(".symbolEffect(.variableColor)")
-        case .appear:
-            return wrap(layer
-                ? ".symbolEffect(.appear.byLayer, isActive: isActive)"
-                : ".symbolEffect(.appear, isActive: isActive)")
-        case .disappear:
-            return wrap(layer
-                ? ".symbolEffect(.disappear.byLayer, isActive: isActive)"
-                : ".symbolEffect(.disappear, isActive: isActive)")
-        case .drawOn:
-            return wrap(layer
-                ? ".symbolEffect(.drawOn.byLayer, isActive: isActive)"
-                : ".symbolEffect(.drawOn, isActive: isActive)")
-        case .drawOff:
-            return wrap(layer
-                ? ".symbolEffect(.drawOff.byLayer, isActive: isActive)"
-                : ".symbolEffect(.drawOff, isActive: isActive)")
-        case .replace:
-            let rep = replaceSymbol
-            let dir = replaceDirection
-            let magic = preferMagicReplace
-            let rLayer = replaceByLayer
-            let dirStr: String
-            switch dir {
-            case .downUp: dirStr = ".replace.downUp"
-            case .upUp:   dirStr = ".replace.upUp"
-            case .offUp:  dirStr = ".replace.offUp"
-            }
-            let layeredDir = rLayer ? "\(dirStr).byLayer" : dirStr
-            let effectStr = magic
-                ? ".replace.magic(fallback: \(layeredDir))"
-                : layeredDir
-            return """
-            Image(systemName: showState ? "\(sym)" : "\(rep)"\(varArg))\(prefix)
-                .contentTransition(.symbolEffect(\(effectStr)))
-                .animation(.default, value: showState)
-            """
-        }
-    }
 }
 
 // MARK: - Symbol Picker Sheet

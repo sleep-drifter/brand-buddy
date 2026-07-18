@@ -5,15 +5,6 @@ private enum ButtonStyleKind: String, CaseIterable {
     case bordered = "Bordered"
     case borderless = "Borderless"
     case plain = "Plain"
-
-    var token: String {
-        switch self {
-        case .borderedProminent: return ".borderedProminent"
-        case .bordered: return ".bordered"
-        case .borderless: return ".borderless"
-        case .plain: return ".plain"
-        }
-    }
 }
 
 private enum ButtonLabelKind: String, CaseIterable {
@@ -60,12 +51,6 @@ struct ButtonsView: View {
 
     var body: some View {
         List {
-            Section("Code") {
-                Text(codeSnippet)
-                    .font(.mono(.caption))
-                    .foregroundStyle(.secondary)
-            }
-
             Section("Style") {
                 Picker("Style", selection: $style) {
                     ForEach(ButtonStyleKind.allCases, id: \.self) { kind in
@@ -126,8 +111,6 @@ struct ButtonsView: View {
                                 Text(preset.description).font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Text(preset.style.token)
-                                .font(.mono(.caption2)).foregroundStyle(.tertiary)
                         }
                     }
                 }
@@ -135,13 +118,9 @@ struct ButtonsView: View {
 
             Section("Notes") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Button · .buttonStyle · .controlSize · .tint")
-                        .font(.mono(.caption)).fontWeight(.medium)
-                    Text("Use one .borderedProminent button per view — it marks the primary action. .bordered suits secondary actions; .borderless and .plain work inline and in bars.")
+                    Text("Use one prominent button per view — it marks the primary action. Bordered suits secondary actions; borderless and plain work inline and in bars.")
                         .font(.caption).foregroundStyle(.secondary)
-                    Text("role: .destructive turns the button red and positions it correctly in menus, confirmation dialogs, and swipe actions.")
-                        .font(.caption).foregroundStyle(.secondary)
-                    Text("Full-width buttons need .frame(maxWidth: .infinity) inside the label — outside the style it widens the tap target but not the visible background.")
+                    Text("A destructive role turns the button red and positions it correctly in menus, confirmation dialogs, and swipe actions.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 4)
@@ -215,42 +194,17 @@ struct ButtonsView: View {
         }
     }
 
-    private var codeSnippet: String {
-        let roleArg = roleKind == .destructive ? ", role: .destructive" : ""
-        var lines: [String] = []
-        switch labelKind {
-        case .title:
-            lines.append("Button(\"Share\"\(roleArg)) { }")
-        case .icon, .titleAndIcon:
-            lines.append("Button(\"Share\", systemImage: \"square.and.arrow.up\"\(roleArg)) { }")
-        }
-        if labelKind == .icon {
-            lines.append("  .labelStyle(.iconOnly)")
-        }
-        lines.append("  .buttonStyle(\(style.token))")
-        if size != .regular {
-            lines.append("  .controlSize(\(size.label))")
-        }
-        lines.append("  .tint(\(tint == .blue ? ".blue" : "tint"))")
-        if isDisabled {
-            lines.append("  .disabled(true)")
-        }
-        if fullWidth {
-            lines.append("  .frame(maxWidth: .infinity) // inside the label")
-        }
-        return lines.joined(separator: "\n")
-    }
 }
 
 extension ControlSize {
     var label: String {
         switch self {
-        case .mini: return ".mini"
-        case .small: return ".small"
-        case .regular: return ".regular"
-        case .large: return ".large"
-        case .extraLarge: return ".extraLarge"
-        @unknown default: return "unknown"
+        case .mini: return "Mini"
+        case .small: return "Small"
+        case .regular: return "Regular"
+        case .large: return "Large"
+        case .extraLarge: return "Extra Large"
+        @unknown default: return "Unknown"
         }
     }
 }

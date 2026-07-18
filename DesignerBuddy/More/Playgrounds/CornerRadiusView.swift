@@ -48,14 +48,14 @@ struct CornerRadiusView: View {
 
             Section("Continuous vs Circular") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(".continuous (squircle)")
+                    Text("Continuous (squircle)")
                         .font(.subheadline).fontWeight(.semibold)
                     Text("The curve starts earlier and ends later, creating a smoother transition from straight to curved. Used by Apple for all system UI since iOS 13: app icons, widgets, cards.")
                         .font(.caption).foregroundStyle(.secondary)
 
                     Divider()
 
-                    Text(".circular (classic)")
+                    Text("Circular (classic)")
                         .font(.subheadline).fontWeight(.semibold)
                     Text("A standard circular arc clamped to the corner. The corner feels more distinct. Used in some legacy contexts and by Android.")
                         .font(.caption).foregroundStyle(.secondary)
@@ -72,7 +72,7 @@ struct CornerRadiusView: View {
                                 .fill(.tint)
                                 .frame(width: shapeSize, height: shapeSize)
                                 .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-                            Text(".continuous")
+                            Text("Continuous")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -81,7 +81,7 @@ struct CornerRadiusView: View {
                                 .fill(.tint.opacity(0.6))
                                 .frame(width: shapeSize, height: shapeSize)
                                 .clipShape(RoundedRectangle(cornerRadius: radius, style: .circular))
-                            Text(".circular")
+                            Text("Circular")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

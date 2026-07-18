@@ -53,7 +53,7 @@ struct HighContrastView: View {
                     highContrastColor: Color.primary.opacity(0.3),
                     description: "Add a border to distinguish elements"
                 )
-                Text("Use @Environment(\\.colorSchemeContrast) == .increased to apply stricter color values. Semantic colors like .label and .systemBackground adapt automatically.")
+                Text("When Increase Contrast is on, apply stricter color values. Semantic system colors (labels, backgrounds) adapt automatically.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -138,8 +138,8 @@ struct HighContrastView: View {
                             .fill(Color(.secondarySystemGroupedBackground))
                     )
 
-                Text(effectiveHighContrast ? "colorSchemeContrast: .increased" : "colorSchemeContrast: .standard")
-                    .font(.mono(.caption))
+                Text(effectiveHighContrast ? "Increased contrast" : "Standard contrast")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
             .animation(.spring(duration: 0.3), value: effectiveHighContrast)

@@ -147,19 +147,19 @@ struct KeyframeAnimationsView: View {
 
             Section("Keyframe Types") {
                 keyframeTypeRow(
-                    name: "LinearKeyframe",
+                    name: "Linear",
                     desc: "Constant easing. Good for opacity or color."
                 )
                 keyframeTypeRow(
-                    name: "SpringKeyframe",
+                    name: "Spring",
                     desc: "Physics spring curve. Great for scale and position."
                 )
                 keyframeTypeRow(
-                    name: "CubicKeyframe",
+                    name: "Cubic",
                     desc: "Cubic Bézier easing. Precise control over acceleration."
                 )
                 keyframeTypeRow(
-                    name: "MoveKeyframe",
+                    name: "Move",
                     desc: "Instant jump to a value with no interpolation."
                 )
             }
@@ -298,7 +298,7 @@ struct KeyframeAnimationsView: View {
     private func keyframeTypeRow(name: String, desc: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text(name)
-                .font(.mono(.caption))
+                .font(.caption.weight(.medium))
                 .frame(width: 130, alignment: .leading)
             Text(desc)
                 .font(.caption)

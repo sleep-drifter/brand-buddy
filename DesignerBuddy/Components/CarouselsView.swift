@@ -141,7 +141,7 @@ struct CarouselsView: View {
             }
             .frame(height: 240)
 
-            captionText(".scrollTransition { .rotation3DEffect(axis: y) } — center-aligned snapping")
+            captionText("Cards tilt in 3D as they pass the center — center-aligned snapping")
                 .padding(.horizontal, 16)
         }
     }
@@ -171,7 +171,7 @@ struct CarouselsView: View {
             .scrollTargetBehavior(.viewAligned)
             .frame(height: 180)
 
-            captionText(".containerRelativeFrame(count:span:) leaves the next card peeking in")
+            captionText("Cards sized relative to the screen leave the next one peeking in")
                 .padding(.horizontal, 16)
         }
     }
@@ -202,7 +202,7 @@ struct CarouselsView: View {
                 .padding(.top, 2)
                 .sensoryFeedback(.selection, trigger: pagedPosition)
 
-            captionText(".scrollTargetBehavior(.paging) + .scrollPosition(id:) drives the dots")
+            captionText("Paged snapping — the current page drives the dots")
                 .padding(.horizontal, 16)
         }
     }
@@ -246,7 +246,7 @@ struct CarouselsView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.top, 2)
 
-            captionText("Timer.publish advances .scrollPosition; onScrollPhaseChange pauses on touch")
+            captionText("A timer advances the carousel automatically; touching it pauses auto-play")
                 .padding(.horizontal, 16)
         }
     }
@@ -324,7 +324,7 @@ struct CarouselsView: View {
                 }
             }
 
-            captionText("Overlapping ZStack + spring — tap to \(deckExpanded ? "collapse" : "expand")")
+            captionText("Overlapping card stack with a spring — tap to \(deckExpanded ? "collapse" : "expand")")
         }
         .padding(16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
@@ -351,7 +351,7 @@ struct CarouselsView: View {
             }
             .buttonStyle(.plain)
 
-            captionText("Vertical .scrollTargetBehavior(.paging) in a fullScreenCover — Reels-style")
+            captionText("Vertical paging in a full-screen cover — Reels-style")
         }
         .padding(16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
@@ -457,7 +457,7 @@ struct CarouselsView: View {
 
     private func captionText(_ text: String) -> some View {
         Text(text)
-            .font(.mono(.caption2))
+            .font(.caption2)
             .foregroundStyle(.secondary)
     }
 }

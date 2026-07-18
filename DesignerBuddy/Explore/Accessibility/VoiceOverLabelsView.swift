@@ -8,7 +8,7 @@ struct VoiceOverLabelsView: View {
                 // MARK: - accessibilityLabel
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Label(".accessibilityLabel", systemImage: "tag")
+                        Label("Labels", systemImage: "tag")
                             .font(.headline)
                         Spacer()
                     }
@@ -33,7 +33,7 @@ struct VoiceOverLabelsView: View {
                         .tint(.red)
                         .accessibilityLabel("Delete item")
                     }
-                    Text("Without a label, VoiceOver reads \"trash\" (the symbol name). With .accessibilityLabel(\"Delete item\") it reads the intent, not the icon.")
+                    Text("Without a label, VoiceOver reads \"trash\" (the symbol name). With the label \"Delete item\" it reads the intent, not the icon.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -43,7 +43,7 @@ struct VoiceOverLabelsView: View {
                 // MARK: - accessibilityHint
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Label(".accessibilityHint", systemImage: "questionmark.circle")
+                        Label("Hints", systemImage: "questionmark.circle")
                             .font(.headline)
                         Spacer()
                     }
@@ -61,7 +61,7 @@ struct VoiceOverLabelsView: View {
                             .accessibilityLabel("Play")
                             .accessibilityHint("Starts playback from the beginning")
                     }
-                    Text(".accessibilityHint is read after a brief pause following the label. Keep hints short and start with a verb.")
+                    Text("Hints are read after a brief pause following the label. Keep hints short and start with a verb.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -71,12 +71,12 @@ struct VoiceOverLabelsView: View {
                 // MARK: - accessibilityValue
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Label(".accessibilityValue", systemImage: "slider.horizontal.3")
+                        Label("Values", systemImage: "slider.horizontal.3")
                             .font(.headline)
                         Spacer()
                     }
                     AccessibilityValueDemo()
-                    Text(".accessibilityValue communicates dynamic state that changes at runtime — volume level, toggle state, progress percentage, etc.")
+                    Text("Values communicate dynamic state that changes at runtime — volume level, toggle state, progress percentage, etc.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -110,7 +110,7 @@ struct VoiceOverLabelsView: View {
                         .background(Color.teal.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                         .accessibilityElement(children: .combine)
                     }
-                    Text(".accessibilityHidden(true) removes decorative views from the VoiceOver tree. .accessibilityElement(children: .combine) merges a container's children into one focusable element.")
+                    Text("Hiding removes decorative views from the VoiceOver tree. Combining merges a container's children into one focusable element that reads naturally.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

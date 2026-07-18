@@ -3,13 +3,6 @@ import SwiftUI
 private enum TextFieldStyleKind: String, CaseIterable {
     case plain = "Plain"
     case roundedBorder = "Rounded Border"
-
-    var token: String {
-        switch self {
-        case .plain: return ".plain"
-        case .roundedBorder: return ".roundedBorder"
-        }
-    }
 }
 
 private enum SubmitLabelKind: String, CaseIterable {
@@ -62,12 +55,6 @@ struct TextFieldsView: View {
 
     var body: some View {
         List {
-            Section("Code") {
-                Text(codeSnippet)
-                    .font(.mono(.caption))
-                    .foregroundStyle(.secondary)
-            }
-
             Section("Field") {
                 Picker("Style", selection: $styleKind) {
                     ForEach(TextFieldStyleKind.allCases, id: \.self) { kind in
@@ -86,18 +73,18 @@ struct TextFieldsView: View {
 
             Section("Keyboard") {
                 Picker("Keyboard type", selection: $keyboard) {
-                    Text("default").tag(UIKeyboardType.default)
-                    Text("emailAddress").tag(UIKeyboardType.emailAddress)
-                    Text("numberPad").tag(UIKeyboardType.numberPad)
-                    Text("decimalPad").tag(UIKeyboardType.decimalPad)
+                    Text("Default").tag(UIKeyboardType.default)
+                    Text("Email Address").tag(UIKeyboardType.emailAddress)
+                    Text("Number Pad").tag(UIKeyboardType.numberPad)
+                    Text("Decimal Pad").tag(UIKeyboardType.decimalPad)
                     Text("URL").tag(UIKeyboardType.URL)
-                    Text("phonePad").tag(UIKeyboardType.phonePad)
+                    Text("Phone Pad").tag(UIKeyboardType.phonePad)
                 }
                 .pickerStyle(.menu)
 
                 Picker("Submit label", selection: $submit) {
                     ForEach(SubmitLabelKind.allCases, id: \.self) { kind in
-                        Text(".\(kind.rawValue)").tag(kind)
+                        Text(kind.rawValue.capitalized).tag(kind)
                     }
                 }
                 .pickerStyle(.menu)
@@ -106,7 +93,7 @@ struct TextFieldsView: View {
             Section("Presets") {
                 PresetChipRow(
                     chips: FieldPreset.all.map { preset in
-                        PresetChip(name: preset.name, detail: preset.detail, code: preset.style.token)
+                        PresetChip(name: preset.name, detail: preset.detail)
                     },
                     selectedID: $selectedPreset
                 ) { chip in
@@ -235,29 +222,6 @@ struct TextFieldsView: View {
         }
     }
 
-    private var keyboardToken: String {
-        switch keyboard {
-        case .emailAddress: return ".emailAddress"
-        case .numberPad: return ".numberPad"
-        case .decimalPad: return ".decimalPad"
-        case .URL: return ".URL"
-        case .phonePad: return ".phonePad"
-        default: return ".default"
-        }
-    }
-
-    private var codeSnippet: String {
-        let field = isSecure ? "SecureField" : "TextField"
-        var lines = ["\(field)(\"\(placeholder)\", text: $text)"]
-        lines.append("  .textFieldStyle(\(styleKind.token))")
-        if keyboard != .default {
-            lines.append("  .keyboardType(\(keyboardToken))")
-        }
-        if submit != .done {
-            lines.append("  .submitLabel(.\(submit.rawValue))")
-        }
-        return lines.joined(separator: "\n")
-    }
 }
 
 struct KeyboardTypeRow: View {
@@ -271,10 +235,6 @@ struct KeyboardTypeRow: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
                 .background(.quaternary, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-            Text(item.token)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .fixedSize()
         }
         .overlay(alignment: .topLeading) {
             Text(item.name)
@@ -289,20 +249,19 @@ struct KeyboardTypeRow: View {
 struct KeyboardTypeItem: Identifiable {
     let id = UUID()
     let name: String
-    let token: String
     let type: UIKeyboardType
 
     static let all: [KeyboardTypeItem] = [
-        KeyboardTypeItem(name: "Default", token: ".default", type: .default),
-        KeyboardTypeItem(name: "Numbers & Punctuation", token: ".numbersAndPunctuation", type: .numbersAndPunctuation),
-        KeyboardTypeItem(name: "Number Pad", token: ".numberPad", type: .numberPad),
-        KeyboardTypeItem(name: "Decimal Pad", token: ".decimalPad", type: .decimalPad),
-        KeyboardTypeItem(name: "Phone Pad", token: ".phonePad", type: .phonePad),
-        KeyboardTypeItem(name: "Email Address", token: ".emailAddress", type: .emailAddress),
-        KeyboardTypeItem(name: "URL", token: ".URL", type: .URL),
-        KeyboardTypeItem(name: "Twitter", token: ".twitter", type: .twitter),
-        KeyboardTypeItem(name: "Web Search", token: ".webSearch", type: .webSearch),
-        KeyboardTypeItem(name: "ASCII Capable", token: ".asciiCapable", type: .asciiCapable),
+        KeyboardTypeItem(name: "Default", type: .default),
+        KeyboardTypeItem(name: "Numbers & Punctuation", type: .numbersAndPunctuation),
+        KeyboardTypeItem(name: "Number Pad", type: .numberPad),
+        KeyboardTypeItem(name: "Decimal Pad", type: .decimalPad),
+        KeyboardTypeItem(name: "Phone Pad", type: .phonePad),
+        KeyboardTypeItem(name: "Email Address", type: .emailAddress),
+        KeyboardTypeItem(name: "URL", type: .URL),
+        KeyboardTypeItem(name: "Twitter", type: .twitter),
+        KeyboardTypeItem(name: "Web Search", type: .webSearch),
+        KeyboardTypeItem(name: "ASCII Capable", type: .asciiCapable),
     ]
 }
 

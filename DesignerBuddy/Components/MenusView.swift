@@ -55,7 +55,7 @@ struct MenusView: View {
             } header: {
                 Text("Context Menu (long press)")
             } footer: {
-                Text("Use contextMenu(menuItems:preview:) to show a custom preview — it can reveal content not visible in the list.")
+                Text("A context menu can show a custom preview — it can reveal content not visible in the list.")
             }
 
             Section("iMessage-style") {
@@ -110,11 +110,9 @@ struct MenusView: View {
                 }
             }
 
-            Section("API") {
+            Section("Notes") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(".contextMenu { actions } preview: { customView }")
-                        .font(.mono(.caption)).fontWeight(.medium)
-                    Text("The preview can be any SwiftUI view — completely different from the source. It scales in from the tap point and shows above the action menu.")
+                    Text("The preview can be any view — completely different from the source. It scales in from the tap point and shows above the action menu.")
                         .font(.caption).foregroundStyle(.secondary)
                     Text("Use previews to surface detail that wouldn't fit in the list row: full message bodies, album art + metadata, link thumbnails, contact cards.")
                         .font(.caption).foregroundStyle(.secondary)
@@ -161,13 +159,11 @@ struct ProgressIndicatorsView: View {
                 Toggle("Label", isOn: $showLabel)
             }
 
-            Section("API") {
+            Section("Notes") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("ProgressView(value:total:)")
-                        .font(.mono(.caption)).fontWeight(.medium)
-                    Text("A valueless ProgressView spins forever; give it a value for a linear bar, or apply .progressViewStyle(.circular) for a determinate ring.")
+                    Text("An indicator without a value spins forever; give it a value for a linear bar, or use the circular style for a determinate ring.")
                         .font(.caption).foregroundStyle(.secondary)
-                    Text("The label and currentValueLabel closures pair a title like Downloading… with a live percent readout — toggle Label above to see both.")
+                    Text("A label pairs a title like Downloading… with a live percent readout — toggle Label above to see both.")
                         .font(.caption).foregroundStyle(.secondary)
                     Text("For arcs, ranges, and min/max labels, see Gauges — the accessory gauge styles cover richer indicator shapes.")
                         .font(.caption).foregroundStyle(.secondary)
@@ -466,7 +462,7 @@ struct GaugesView: View {
                         }
                         .gaugeStyle(.accessoryCircular)
                         .tint(gradientTint)
-                        caption(".accessoryCircular")
+                        caption("Accessory circular")
                     }
                     VStack(spacing: 8) {
                         Gauge(value: value, in: minValue...maxValue) {
@@ -476,7 +472,7 @@ struct GaugesView: View {
                         }
                         .gaugeStyle(.accessoryCircularCapacity)
                         .tint(gradientTint)
-                        caption(".circularCapacity")
+                        caption("Circular capacity")
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -486,7 +482,7 @@ struct GaugesView: View {
             // ── Linear (built-in) ──────────────────────────────────────────
             Section(header: sectionHeader("Linear", tag: "Native")) {
                 VStack(alignment: .leading, spacing: 6) {
-                    caption(".accessoryLinear")
+                    caption("Accessory linear")
                     Gauge(value: value, in: minValue...maxValue) {
                         gaugeLabel
                     } currentValueLabel: {
@@ -502,7 +498,7 @@ struct GaugesView: View {
                 .padding(.vertical, 4)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    caption(".accessoryLinearCapacity")
+                    caption("Linear capacity")
                     Gauge(value: value, in: minValue...maxValue) {
                         gaugeLabel
                     } currentValueLabel: {
@@ -517,7 +513,7 @@ struct GaugesView: View {
             // ── Progress View ──────────────────────────────────────────────
             Section(header: sectionHeader("Progress View", tag: "Native")) {
                 VStack(alignment: .leading, spacing: 6) {
-                    caption(".linear")
+                    caption("Linear")
                     ProgressView(value: value, total: maxValue).tint(tint)
                 }
                 .padding(.vertical, 4)
@@ -525,12 +521,12 @@ struct GaugesView: View {
                 HStack(spacing: 32) {
                     VStack(spacing: 8) {
                         ProgressView().tint(tint)
-                        caption("indeterminate")
+                        caption("Indeterminate")
                     }
                     VStack(spacing: 8) {
                         ProgressView(value: value, total: maxValue)
                             .progressViewStyle(.circular).tint(tint)
-                        caption(".circular")
+                        caption("Circular")
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -681,7 +677,7 @@ struct GaugesView: View {
     @ViewBuilder
     private func caption(_ text: String) -> some View {
         Text(text)
-            .font(.system(.caption2, design: .monospaced))
+            .font(.caption2)
             .foregroundStyle(.secondary)
     }
 }
@@ -695,26 +691,26 @@ struct ImagesView: View {
                         Image(systemName: "star.fill")
                             .font(.largeTitle)
                             .symbolRenderingMode(.monochrome)
-                        Text(".monochrome").font(.mono(.caption2)).foregroundStyle(.secondary)
+                        Text("Monochrome").font(.caption2).foregroundStyle(.secondary)
                     }
                     VStack(spacing: 6) {
                         Image(systemName: "star.fill")
                             .font(.largeTitle)
                             .symbolRenderingMode(.hierarchical)
-                        Text(".hierarchical").font(.mono(.caption2)).foregroundStyle(.secondary)
+                        Text("Hierarchical").font(.caption2).foregroundStyle(.secondary)
                     }
                     VStack(spacing: 6) {
                         Image(systemName: "star.fill")
                             .font(.largeTitle)
                             .symbolRenderingMode(.multicolor)
-                        Text(".multicolor").font(.mono(.caption2)).foregroundStyle(.secondary)
+                        Text("Multicolor").font(.caption2).foregroundStyle(.secondary)
                     }
                     VStack(spacing: 6) {
                         Image(systemName: "star.fill")
                             .font(.largeTitle)
                             .symbolRenderingMode(.palette)
                             .foregroundStyle(.yellow, .orange)
-                        Text(".palette").font(.mono(.caption2)).foregroundStyle(.secondary)
+                        Text("Palette").font(.caption2).foregroundStyle(.secondary)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -735,8 +731,8 @@ struct ImagesView: View {
                                         .clipped()
                                         .foregroundStyle(.secondary)
                                 )
-                            Text(mode == .fit ? ".fit" : ".fill")
-                                .font(.mono(.caption2)).foregroundStyle(.secondary)
+                            Text(mode == .fit ? "Fit" : "Fill")
+                                .font(.caption2).foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -800,7 +796,7 @@ struct NavigationBarsAndToolbarsView: View {
             } header: {
                 Text("Navigation bar titles")
             } footer: {
-                Text("navigationBarTitleDisplayMode controls large vs. inline titles. Toolbar items attach via the .toolbar modifier.")
+                Text("Titles can display large or inline. Toolbar items attach to the navigation bar on either side of the title.")
             }
 
             // MARK: iOS 26 Glass Button Groups
@@ -810,45 +806,45 @@ struct NavigationBarsAndToolbarsView: View {
                 NavigationLink("Three-button group")         { ButtonGroupDemo(variant: .three) }
                 NavigationLink("Label + icon group (mixed)") { ButtonGroupDemo(variant: .mixed) }
                 NavigationLink("Leading + trailing groups")  { ButtonGroupDemo(variant: .bothSides) }
-                NavigationLink("ControlGroup")               { ButtonGroupDemo(variant: .controlGroup) }
+                NavigationLink("Grouped controls")           { ButtonGroupDemo(variant: .controlGroup) }
             } header: {
                 Text("iOS 26 glass button groups")
             } footer: {
-                Text("Adjacent buttons inside ToolbarItemGroup are merged into a glass pill. Use ControlGroup to force grouping across separate ToolbarItem blocks.")
+                Text("Adjacent toolbar buttons merge into a single glass pill. Grouping can also be forced explicitly for stepper-style controls.")
             }
 
             // MARK: Live demos
             Section {
                 NavigationLink("Primary action (Save + Cancel)") { PrimaryActionDemo() }
-                NavigationLink("Bottom bar (.bottomBar)")         { BottomBarDemo() }
+                NavigationLink("Bottom bar")                      { BottomBarDemo() }
                 NavigationLink("Keyboard toolbar")                { KeyboardToolbarDemo() }
                 NavigationLink("Confirmation / Cancellation")     { ConfirmationDemo() }
                 NavigationLink("Principal (center replace)")      { PrincipalDemo() }
             } header: {
                 Text("Live demos")
             } footer: {
-                Text("Per HIG, use .borderedProminent for confirm/save actions in modal sheets. Plain style for cancel.")
+                Text("Per HIG, use a prominent filled button for confirm/save actions in modal sheets. Plain style for cancel.")
             }
 
             // MARK: Placement reference
             Section {
-                PlacementRow(token: ".navigationBarLeading",  description: "Left side of the navigation bar",          example: "Cancel, back, edit")
-                PlacementRow(token: ".navigationBarTrailing", description: "Right side of the navigation bar",         example: "Done, Save, Add (+)")
-                PlacementRow(token: ".principal",             description: "Center — replaces the title",              example: "Segmented control, custom title")
-                PlacementRow(token: ".bottomBar",             description: "Bottom toolbar, above the tab bar",        example: "Mail compose, document actions")
-                PlacementRow(token: ".confirmationAction",    description: "Primary action, trailing",                 example: "Done, Send")
-                PlacementRow(token: ".cancellationAction",    description: "Cancel action, leading",                   example: "Cancel")
-                PlacementRow(token: ".destructiveAction",     description: "Destructive action (red)",                 example: "Delete")
-                PlacementRow(token: ".keyboard",              description: "Floats above the software keyboard",       example: "Format, done, emoji")
-                PlacementRow(token: ".automatic",             description: "System chooses the best placement",        example: "Default for most items")
+                PlacementRow(name: "Leading",             description: "Left side of the navigation bar",          example: "Cancel, back, edit")
+                PlacementRow(name: "Trailing",            description: "Right side of the navigation bar",         example: "Done, Save, Add (+)")
+                PlacementRow(name: "Principal",           description: "Center — replaces the title",              example: "Segmented control, custom title")
+                PlacementRow(name: "Bottom bar",          description: "Bottom toolbar, above the tab bar",        example: "Mail compose, document actions")
+                PlacementRow(name: "Confirmation action", description: "Primary action, trailing",                 example: "Done, Send")
+                PlacementRow(name: "Cancellation action", description: "Cancel action, leading",                   example: "Cancel")
+                PlacementRow(name: "Destructive action",  description: "Destructive action (red)",                 example: "Delete")
+                PlacementRow(name: "Keyboard",            description: "Floats above the software keyboard",       example: "Format, done, emoji")
+                PlacementRow(name: "Automatic",           description: "System chooses the best placement",        example: "Default for most items")
             } header: {
                 Text("Placements")
             }
 
             // MARK: Visibility
             Section {
-                PlacementRow(token: ".toolbar(.hidden)",                   description: "Hides the nav bar or tab bar",  example: "Full-screen reader, media player")
-                PlacementRow(token: ".toolbar(.hidden, for: .tabBar)",    description: "Hides only the tab bar",         example: "Detail views inside a tab")
+                PlacementRow(name: "Hidden — all bars",     description: "Hides the nav bar or tab bar",  example: "Full-screen reader, media player")
+                PlacementRow(name: "Hidden — tab bar only", description: "Hides only the tab bar",        example: "Detail views inside a tab")
             } header: {
                 Text("Visibility")
             }
@@ -875,7 +871,7 @@ private struct ButtonGroupDemo: View {
         case .three:        return "Three-button group"
         case .mixed:        return "Label + icon group"
         case .bothSides:    return "Both sides"
-        case .controlGroup: return "ControlGroup"
+        case .controlGroup: return "Grouped controls"
         }
     }
 
@@ -895,10 +891,6 @@ private struct ButtonGroupDemo: View {
                 }
                 .animation(.spring(duration: 0.3), value: lastTapped)
                 .padding(.vertical, 4)
-            }
-
-            Section("Pattern") {
-                CodeSnippetRow(code: codeSnippet)
             }
 
             Section("Notes") {
@@ -960,61 +952,6 @@ private struct ButtonGroupDemo: View {
         }
     }
 
-    private var codeSnippet: String {
-        switch variant {
-        case .single:
-            return """
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { } label: {
-                        Image(systemName: "square.grid.2x2")
-                    }
-                }
-                """
-        case .two:
-            return """
-                ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    Button { } label: { Image(systemName: "checkmark.circle") }
-                    Button { } label: { Image(systemName: "square.and.arrow.up") }
-                }
-                """
-        case .three:
-            return """
-                ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    Button { } label: { Image(systemName: "line.3.horizontal.decrease.circle") }
-                    Button { } label: { Image(systemName: "square.grid.2x2") }
-                    Button { } label: { Image(systemName: "ellipsis") }
-                }
-                """
-        case .mixed:
-            return """
-                ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    Button("Edit") { }
-                    Button { } label: { Image(systemName: "square.and.arrow.up") }
-                    Button { } label: { Image(systemName: "ellipsis") }
-                }
-                """
-        case .bothSides:
-            return """
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button { } label: { Image(systemName: "xmark") }
-                }
-                ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    Button { } label: { Image(systemName: "checkmark.circle") }
-                    Button { } label: { Image(systemName: "ellipsis") }
-                }
-                """
-        case .controlGroup:
-            return """
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    ControlGroup {
-                        Button { } label: { Image(systemName: "minus") }
-                        Button { } label: { Image(systemName: "plus") }
-                    }
-                }
-                """
-        }
-    }
-
     private var notes: String {
         switch variant {
         case .single:       return "A lone icon button gets the round glass pill shape. Text labels stay as plain buttons."
@@ -1022,7 +959,7 @@ private struct ButtonGroupDemo: View {
         case .three:        return "Three buttons form a wider pill. Beyond three, consider moving secondary actions to a menu."
         case .mixed:        return "Mixing a text label with icons breaks the automatic glass grouping on some seeds — test carefully."
         case .bothSides:    return "Leading and trailing groups render independently. The leading close/xmark gets its own pill."
-        case .controlGroup: return "ControlGroup provides explicit visual grouping regardless of how many separate ToolbarItem blocks you use. Ideal for stepper-style controls."
+        case .controlGroup: return "Grouped controls stay visually merged no matter how the individual buttons are defined. Ideal for stepper-style controls."
         }
     }
 }
@@ -1030,14 +967,14 @@ private struct ButtonGroupDemo: View {
 // MARK: - Sub-views
 
 private struct PlacementRow: View {
-    let token: String
+    let name: String
     let description: String
     let example: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(token)
-                .font(.mono(.subheadline))
+            Text(name)
+                .font(.subheadline.weight(.medium))
                 .foregroundStyle(.primary)
             Text(description)
                 .font(.subheadline)
@@ -1050,25 +987,13 @@ private struct PlacementRow: View {
     }
 }
 
-private struct CodeSnippetRow: View {
-    let code: String
-    var body: some View {
-        Text(code)
-            .font(.mono(.caption))
-            .foregroundStyle(.secondary)
-            .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
-    }
-}
-
 private struct PrimaryActionDemo: View {
     @State private var showSheet = false
 
     var body: some View {
         List {
             Section {
-                Text("The most common modal toolbar pattern: a plain **Cancel** on the leading side and a filled **.borderedProminent** **Save** on the trailing side.")
+                Text("The most common modal toolbar pattern: a plain **Cancel** on the leading side and a filled prominent **Save** on the trailing side.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Button("Open demo sheet") { showSheet = true }
@@ -1077,17 +1002,6 @@ private struct PrimaryActionDemo: View {
                 Text("Use a filled primary button for the confirmation action in modal sheets. It draws the eye to the intended next step and distinguishes it clearly from the destructive cancel path.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-            }
-            Section("Code") {
-                CodeSnippetRow(code: """
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { dismiss() }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Save") { save() }
-                            .buttonStyle(.borderedProminent)
-                    }
-                    """)
             }
         }
         .navigationTitle("Primary Action")
@@ -1132,7 +1046,7 @@ private struct BottomBarDemo: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("The three icons below are `.bottomBar` toolbar items. Tap any to confirm they respond.")
+                    Text("The three icons below live in the bottom toolbar. Tap any to confirm they respond.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     if let t = lastTapped {
@@ -1144,17 +1058,6 @@ private struct BottomBarDemo: View {
                 }
                 .animation(.spring(duration: 0.3), value: lastTapped)
                 .padding(.vertical, 4)
-            }
-            Section("Code") {
-                CodeSnippetRow(code: """
-                    ToolbarItemGroup(placement: .bottomBar) {
-                        Button { } label: { Image(systemName: "trash") }
-                        Spacer()
-                        Button { } label: { Image(systemName: "square.and.arrow.up") }
-                        Spacer()
-                        Button { } label: { Image(systemName: "folder") }
-                    }
-                    """)
             }
         }
         .navigationTitle("Bottom bar")
@@ -1183,16 +1086,6 @@ private struct KeyboardToolbarDemo: View {
                     .lineLimit(4...)
                     .focused($focused)
             }
-            Section("Code") {
-                CodeSnippetRow(code: """
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Button { } label: { Image(systemName: "bold") }
-                        Button { } label: { Image(systemName: "italic") }
-                        Spacer()
-                        Button("Done") { focused = false }
-                    }
-                    """)
-            }
         }
         .navigationTitle("Keyboard toolbar")
         .navigationBarTitleDisplayMode(.inline)
@@ -1216,20 +1109,10 @@ private struct ConfirmationDemo: View {
     var body: some View {
         List {
             Section {
-                Text("`.confirmationAction` and `.cancellationAction` auto-position Cancel (leading) and Done/Save (trailing) correctly across all platforms.")
+                Text("Confirmation and cancellation placements auto-position Cancel (leading) and Done/Save (trailing) correctly across all platforms.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Button("Open sheet demo") { showSheet = true }
-            }
-            Section("Code") {
-                CodeSnippetRow(code: """
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { dismiss() }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Save") { save() }
-                    }
-                    """)
             }
         }
         .navigationTitle("Confirmation / Cancel")
@@ -1274,23 +1157,11 @@ private struct PrincipalDemo: View {
     var body: some View {
         List {
             Section {
-                Text("The segmented control above is a `.principal` toolbar item — it replaces the navigation title in the center of the nav bar.")
+                Text("The segmented control above is a principal toolbar item — it replaces the navigation title in the center of the nav bar.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Text("Selected: **\(selection)**")
                     .font(.subheadline)
-            }
-            Section("Code") {
-                CodeSnippetRow(code: """
-                    ToolbarItem(placement: .principal) {
-                        Picker("", selection: $selection) {
-                            ForEach(segments, id: \\.self) {
-                                Text($0).tag($0)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                    }
-                    """)
             }
         }
         .navigationTitle("Principal")
@@ -1323,7 +1194,7 @@ struct SearchComponentView: View {
         List {
             if query.isEmpty {
                 Section {
-                    Text("Attach .searchable() to a List or ScrollView. When the query is empty, surface recent and suggested entries; while typing, show filtered results.")
+                    Text("Search attaches to the navigation bar above a list. When the query is empty, surface recent and suggested entries; while typing, show filtered results.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

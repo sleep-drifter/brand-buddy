@@ -135,37 +135,37 @@ struct PushPermissionView: View {
             // MARK: Content Types Reference
             Section("Notification Content Types") {
                 contentTypeRow(
-                    property: ".title",
+                    property: "Title",
                     example: "\"Your order has shipped\"",
                     detail: "Bold, largest text. Always required — the OS may truncate it.",
                     inPreview: true
                 )
                 contentTypeRow(
-                    property: ".subtitle",
+                    property: "Subtitle",
                     example: "\"2 items · Est. Wednesday\"",
                     detail: "Smaller line below the title. Optional — skip if it repeats the title."
                 )
                 contentTypeRow(
-                    property: ".body",
+                    property: "Body",
                     example: "\"Tap to track your delivery in real-time.\"",
                     detail: "Supporting detail. Only shown in expanded or banner view.",
                     inPreview: true
                 )
                 contentTypeRow(
-                    property: ".badge",
+                    property: "Badge",
                     example: "3",
-                    detail: "App icon badge count. Set to 0 to clear. Requires .badge auth option.",
+                    detail: "App icon badge count. Set to 0 to clear. Requires badge permission.",
                     inPreview: true
                 )
                 contentTypeRow(
-                    property: ".sound",
-                    example: ".default / .defaultCritical",
-                    detail: ".default respects silent mode. .defaultCritical plays through DND and silent — requires a special entitlement."
+                    property: "Sound",
+                    example: "Default / Critical",
+                    detail: "Default respects silent mode. Critical plays through Do Not Disturb and silent — requires a special entitlement."
                 )
                 contentTypeRow(
-                    property: ".interruptionLevel",
-                    example: ".passive / .active / .timeSensitive / .critical",
-                    detail: ".passive — silently added to notification list. .active — standard. .timeSensitive — breaks through Focus. .critical — bypasses all. Each requires escalating justification.",
+                    property: "Interruption level",
+                    example: "Passive / Active / Time-sensitive / Critical",
+                    detail: "Passive — silently added to notification list. Active — standard. Time-sensitive — breaks through Focus. Critical — bypasses all. Each requires escalating justification.",
                     inPreview: true
                 )
             }
@@ -328,7 +328,7 @@ struct PushPermissionView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(property)
-                    .font(.system(.caption, design: .monospaced))
+                    .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.tint)
                 Text(example)

@@ -37,7 +37,7 @@ struct PickersView: View {
             Section("Styles") {
                 PresetChipRow(
                     chips: StyleChoice.allCases.map { s in
-                        PresetChip(name: ".\(s.rawValue)", detail: s.note, code: ".pickerStyle(.\(s.rawValue))")
+                        PresetChip(name: s.rawValue.capitalized, detail: s.note)
                     },
                     selectedID: styleSelection
                 )
@@ -78,9 +78,9 @@ struct PickersView: View {
 
     private var styleSelection: Binding<String?> {
         Binding(
-            get: { ".\(style.rawValue)" },
+            get: { style.rawValue.capitalized },
             set: { name in
-                guard let name, let s = StyleChoice.allCases.first(where: { ".\($0.rawValue)" == name }) else { return }
+                guard let name, let s = StyleChoice.allCases.first(where: { $0.rawValue.capitalized == name }) else { return }
                 style = s
             }
         )
@@ -179,23 +179,11 @@ struct DateTimePickersView: View {
             case .dateAndTime: return [.date, .hourAndMinute]
             }
         }
-
-        var code: String {
-            switch self {
-            case .date:        return "[.date]"
-            case .time:        return "[.hourAndMinute]"
-            case .dateAndTime: return "[.date, .hourAndMinute]"
-            }
-        }
     }
 
     @State private var date = Date()
     @State private var style: StyleChoice = .compact
     @State private var componentsChoice: ComponentsChoice = .date
-
-    private var generatedCode: String {
-        "DatePicker(\"Select\", selection: $date,\n  displayedComponents: \(componentsChoice.code))\n.datePickerStyle(.\(style.rawValue))"
-    }
 
     var body: some View {
         List {
@@ -210,13 +198,6 @@ struct DateTimePickersView: View {
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 340)
                     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                    Text(generatedCode)
-                        .font(.mono(.caption))
-                        .foregroundStyle(.secondary)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .frame(maxWidth: .infinity)
                 .animation(.spring(duration: 0.3), value: style)
@@ -242,7 +223,7 @@ struct DateTimePickersView: View {
             Section("Styles") {
                 PresetChipRow(
                     chips: StyleChoice.allCases.map { s in
-                        PresetChip(name: ".\(s.rawValue)", detail: s.note, code: ".datePickerStyle(.\(s.rawValue))")
+                        PresetChip(name: s.rawValue.capitalized, detail: s.note)
                     },
                     selectedID: styleSelection
                 )
@@ -257,9 +238,9 @@ struct DateTimePickersView: View {
 
     private var styleSelection: Binding<String?> {
         Binding(
-            get: { ".\(style.rawValue)" },
+            get: { style.rawValue.capitalized },
             set: { name in
-                guard let name, let s = StyleChoice.allCases.first(where: { ".\($0.rawValue)" == name }) else { return }
+                guard let name, let s = StyleChoice.allCases.first(where: { $0.rawValue.capitalized == name }) else { return }
                 style = s
             }
         )

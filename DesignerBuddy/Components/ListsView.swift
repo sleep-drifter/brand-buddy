@@ -14,7 +14,7 @@ struct ListsView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Plain")
                             .font(.headline)
-                        Text(".listStyle(.plain)")
+                        Text("Edge-to-edge rows, no grouping — the default for dense content.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
@@ -42,7 +42,7 @@ struct ListsView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Inset Grouped")
                             .font(.headline)
-                        Text(".listStyle(.insetGrouped)")
+                        Text("Rounded cards inset from the screen edges — the iOS settings look.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
@@ -86,7 +86,7 @@ struct ListsView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Grouped")
                             .font(.headline)
-                        Text(".listStyle(.grouped)")
+                        Text("Full-width sections separated by spacing — the classic grouped table.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
@@ -220,15 +220,6 @@ struct GridsView: View {
         }
     }
 
-    private var generatedCode: String {
-        switch mode {
-        case .fixed:
-            return "LazyVGrid(columns: Array(\n  repeating: GridItem(.flexible(), spacing: \(Int(spacing))),\n  count: \(Int(columnCount))\n), spacing: \(Int(spacing)))"
-        case .adaptive:
-            return "LazyVGrid(columns: [GridItem(\n  .adaptive(minimum: \(Int(minWidth))),\n  spacing: \(Int(spacing))\n)], spacing: \(Int(spacing)))"
-        }
-    }
-
     var body: some View {
         List {
             Section {
@@ -246,13 +237,6 @@ struct GridsView: View {
                     .animation(.spring(duration: 0.3), value: mode)
                     .animation(.spring(duration: 0.3), value: Int(columnCount))
                     .animation(.spring(duration: 0.3), value: Int(itemCount))
-
-                    Text(generatedCode)
-                        .font(.mono(.caption))
-                        .foregroundStyle(.secondary)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .frame(maxWidth: .infinity)
             }

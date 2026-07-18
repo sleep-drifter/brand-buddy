@@ -25,7 +25,7 @@ struct ReduceMotionView: View {
                 .pickerStyle(.segmented)
                 Toggle("Simulate Reduce Motion for this demo", isOn: $overrideReduceMotion)
                 Text(canvasCaption)
-                    .font(.mono(.caption))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -44,13 +44,13 @@ struct ReduceMotionView: View {
                         .font(.title)
                         .foregroundStyle(reduceMotion ? .orange : .secondary)
                 }
-                Text("Enable via Settings → Accessibility → Motion → Reduce Motion. Read with @Environment(\\.accessibilityReduceMotion).")
+                Text("Enable via Settings → Accessibility → Motion → Reduce Motion.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Section("Guidance") {
-                Text("When reduce motion is on, swap spring/slide animations for a simple .opacity or .easeInOut transition. The content still changes — just without spatial movement.")
+                Text("When reduce motion is on, swap spring/slide animations for a simple cross-fade. The content still changes — just without spatial movement.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Text("Replace looping or auto-playing animations with a static placeholder when reduce motion is on, so the same information is conveyed without continuous movement.")
@@ -168,11 +168,11 @@ struct ReduceMotionView: View {
         switch mode {
         case .oneShot:
             return effectiveReduceMotion
-                ? "transition: .opacity (cross-fade)"
-                : "transition: slide + scale (spring)"
+                ? "Transition: cross-fade"
+                : "Transition: slide + scale (spring)"
         case .looping:
-            if effectiveReduceMotion { return "loop replaced with static placeholder" }
-            return animating ? "animation: .easeInOut.repeatForever" : "loop stopped"
+            if effectiveReduceMotion { return "Loop replaced with static placeholder" }
+            return animating ? "Animation: looping ease-in-out" : "Loop stopped"
         }
     }
 }
