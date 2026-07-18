@@ -46,6 +46,7 @@ struct HomeView: View {
                                 entries: AppEntry.playgrounds,
                                 dest: SectionDest.playgrounds
                             )
+                            HomeFullCatalogSection(entries: AppEntry.all)
                         }
                         .padding(.horizontal)
                         .padding(.top, 8)
@@ -198,6 +199,62 @@ struct EntryGridCard: View {
                     .foregroundStyle(.blue)
                     .padding(6)
             }
+        }
+    }
+}
+
+// MARK: - Full Catalog Section (flat list of every page, no card grid)
+
+struct HomeFullCatalogSection: View {
+    @EnvironmentObject var pinsStore: PinsStore
+    let entries: [AppEntry]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Full catalog")
+                .font(.title2.bold())
+                .foregroundStyle(.primary)
+
+            VStack(spacing: 0) {
+                ForEach(entries) { entry in
+                    NavigationLink(value: entry) {
+                        HStack(spacing: 12) {
+                            Image(systemName: entry.icon)
+                                .foregroundStyle(.primary)
+                                .frame(width: 28)
+                            Text(entry.name)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if pinsStore.isPinned(entry) {
+                                Image(systemName: "bookmark.fill")
+                                    .font(.caption2)
+                                    .foregroundStyle(.blue)
+                            }
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        Button {
+                            pinsStore.toggle(entry)
+                        } label: {
+                            Label(pinsStore.isPinned(entry) ? "Remove Bookmark" : "Bookmark",
+                                  systemImage: pinsStore.isPinned(entry) ? "bookmark.slash" : "bookmark")
+                        }
+                    }
+
+                    if entry.id != entries.last?.id {
+                        Divider()
+                            .padding(.leading, 56)
+                    }
+                }
+            }
+            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
     }
 }
