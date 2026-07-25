@@ -174,6 +174,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Stable Fluid",          section: "Playgrounds", tab: "Playgrounds", icon: "drop.degreesign",        keywords: ["fluid", "stable fluid", "navier stokes", "simulation", "smoke", "ink", "metal", "compute", "gpu", "jos stam", "my-toybox", "toybox"]),
         .init(name: "Liquid Wallet",         section: "Playgrounds", tab: "Playgrounds", icon: "wallet.pass",             keywords: ["glass", "liquid glass", "wallet", "carousel", "stack", "deck", "merge", "union", "morph", "metaball", "glasseffect", "glasseffectcontainer", "ios 26"]),
         .init(name: "Liquid Carousel",       section: "Playgrounds", tab: "Playgrounds", icon: "rectangle.split.2x1",     keywords: ["glass", "liquid glass", "carousel", "merge", "blend", "proximity", "spacing", "metaball", "train", "dock", "scrub", "neck", "glasseffectcontainer", "ios 26"]),
+        .init(name: "Glass Morph",           section: "Playgrounds", tab: "Playgrounds", icon: "circle.hexagonpath.fill", keywords: ["glass", "liquid glass", "morph", "identity", "glasseffectid", "namespace", "matched geometry", "materialize", "transition", "fab", "expand", "toolbar", "shape", "metaball", "stagger", "appear", "disappear", "glasseffectcontainer", "ios 26"]),
     ]
 
     // MARK: - Shaders
