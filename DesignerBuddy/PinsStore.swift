@@ -9,6 +9,7 @@ final class PinsStore: ObservableObject {
     // Second wave, seeded separately so installs that already ran wave 1 still get it.
     @AppStorage("didSeedQAPins_2026_07_07_wave2") private var didSeedQAPinsWave2 = false
     @AppStorage("didSeedQAPins_2026_07_07_wave3") private var didSeedQAPinsWave3 = false
+    @AppStorage("didSeedQAPins_2026_07_25") private var didSeedQAPinsWave4 = false
 
     /// Pages added or modified today — pinned once for QA. All live in the
     /// "Playgrounds" tab, so keys are "Playgrounds:<name>".
@@ -26,6 +27,10 @@ final class PinsStore: ObservableObject {
 
     private static let qaPinNamesWave3 = [
         "Liquid Carousel",
+    ]
+
+    private static let qaPinNamesWave4 = [
+        "Glass Morph",
     ]
 
     init() {
@@ -60,6 +65,12 @@ final class PinsStore: ObservableObject {
             keys.formUnion(Self.qaPinNamesWave3.map { "Playgrounds:\($0)" })
             pinnedKeys = keys
             didSeedQAPinsWave3 = true
+        }
+        if !didSeedQAPinsWave4 {
+            var keys = pinnedKeys
+            keys.formUnion(Self.qaPinNamesWave4.map { "Playgrounds:\($0)" })
+            pinnedKeys = keys
+            didSeedQAPinsWave4 = true
         }
     }
 
