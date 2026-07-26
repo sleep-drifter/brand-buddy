@@ -986,6 +986,156 @@ static float wf_fbm(float2 p, float t) {
     return half4(half3(clamp(col, 0.0, 1.0)), 1.0h) * color.a;
 }
 
+// MARK: - Painterly & print (round three)
+//
+// Original implementations of classic public algorithms: Kuwahara filtering
+// (oil paint), ordered Bayer dithering, crosshatch sketching, and a compact
+// rain-on-glass droplet lens.
+
+// Oil Paint: 4-sector Kuwahara — each pixel takes the mean of whichever
+// surrounding quadrant has the lowest color variance, which flattens texture
+// into brush-stroke-like patches while keeping edges crisp.
+[[ stitchable ]] half4 shaderOilPaint(float2 position, SwiftUI::Layer layer, float radius) {
+    const int r = int(clamp(radius, 1.0, 6.0));
+    const float cnt = float((r + 1) * (r + 1));
+
+    half3 bestMean = half3(0.0h);
+    float bestVar = 1e9;
+
+    for (int k = 0; k < 4; k++) {
+        float sx = (k % 2 == 0) ? -1.0 : 1.0;
+        float sy = (k < 2) ? -1.0 : 1.0;
+        float3 sum = float3(0.0);
+        float3 sumSq = float3(0.0);
+        for (int j = 0; j <= r; j++) {
+            for (int i = 0; i <= r; i++) {
+                float2 off = float2(float(i) * sx, float(j) * sy);
+                float3 c = float3(layer.sample(position + off).rgb);
+                sum += c;
+                sumSq += c * c;
+            }
+        }
+        float3 mean = sum / cnt;
+        float3 varc = sumSq / cnt - mean * mean;
+        float v = varc.r + varc.g + varc.b;
+        if (v < bestVar) {
+            bestVar = v;
+            bestMean = half3(mean);
+        }
+    }
+
+    return half4(bestMean, layer.sample(position).a);
+}
+
+// The canonical 8×8 Bayer threshold matrix.
+constant int ditherBayer8[64] = {
+     0, 32,  8, 40,  2, 34, 10, 42,
+    48, 16, 56, 24, 50, 18, 58, 26,
+    12, 44,  4, 36, 14, 46,  6, 38,
+    60, 28, 52, 20, 62, 30, 54, 22,
+     3, 35, 11, 43,  1, 33,  9, 41,
+    51, 19, 59, 27, 49, 17, 57, 25,
+    15, 47,  7, 39, 13, 45,  5, 37,
+    63, 31, 55, 23, 61, 29, 53, 21,
+};
+
+// Dither: ordered Bayer quantization — the retro print / Obra Dinn look.
+// Levels sets the quantization steps per channel; mono collapses to ink.
+[[ stitchable ]] half4 shaderDither(float2 position, half4 color,
+                                    float scale, float levels, float mono) {
+    float s = max(scale, 1.0);
+    int ix = int(floor(position.x / s)) % 8;
+    int iy = int(floor(position.y / s)) % 8;
+    float threshold = (float(ditherBayer8[iy * 8 + ix]) + 0.5) / 64.0 - 0.5;
+    float L = clamp(levels, 2.0, 8.0) - 1.0;
+
+    if (mono > 0.5) {
+        float luma = dot(float3(color.rgb), float3(0.299, 0.587, 0.114));
+        float v = clamp(round(luma * L + threshold) / L, 0.0, 1.0);
+        return half4(half3(v), 1.0h) * color.a;
+    }
+    float3 c = float3(color.rgb);
+    float3 v = clamp(round(c * L + threshold) / L, 0.0, 1.0);
+    return half4(half3(v), 1.0h) * color.a;
+}
+
+// GLSL-style positive mod, so hatch lines survive negative coordinates.
+static float hatchMod(float x, float y) {
+    return x - y * floor(x / y);
+}
+
+// Sketch: crosshatching — darker luminance accumulates more hatch
+// directions (45°, −45°, vertical, horizontal) in ink over paper.
+[[ stitchable ]] half4 shaderSketch(float2 position, half4 color,
+                                    float spacing, float thickness, float ink) {
+    float luma = dot(float3(color.rgb), float3(0.299, 0.587, 0.114));
+    float s = max(spacing, 3.0);
+    float t = clamp(thickness, 0.8, 4.0);
+
+    float hatch = 0.0;
+    if (luma < 0.85) { hatch += step(hatchMod(position.x + position.y, s), t); }
+    if (luma < 0.60) { hatch += step(hatchMod(position.x - position.y, s), t); }
+    if (luma < 0.35) { hatch += step(hatchMod(position.x, s * 0.8), t); }
+    if (luma < 0.15) { hatch += step(hatchMod(position.y, s * 0.8), t); }
+
+    float3 paper = float3(0.96, 0.95, 0.92) * (0.92 + 0.08 * luma);
+    float3 inkCol = float3(0.16, 0.15, 0.14);
+    float3 col = mix(paper, inkCol, clamp(hatch, 0.0, 1.0) * clamp(ink, 0.0, 1.0));
+    return half4(half3(col), 1.0h) * color.a;
+}
+
+// Compact 2D hash → two decorrelated 0…1 values per cell (Dave Hoskins'
+// "Hash without Sine" construction, MIT).
+static float2 rainHash22(float2 p) {
+    float3 p3 = fract(float3(p.x, p.y, p.x) * float3(0.1031, 0.1030, 0.0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.xx + p3.yz) * p3.zy);
+}
+
+// Rain: static droplets acting as tiny inverting lenses over the layer,
+// plus one falling bead per column. Amount is droplet density.
+[[ stitchable ]] half4 shaderRain(float2 position, SwiftUI::Layer layer, float2 size,
+                                  float time, float amount, float dropSize, float speed) {
+    float2 offset = float2(0.0);
+    float highlight = 0.0;
+
+    // Two scales of static droplets.
+    for (int i = 0; i < 2; i++) {
+        float cell = dropSize * ((i == 0) ? 1.0 : 1.7);
+        float2 g = position / cell;
+        float2 id = floor(g);
+        float2 rnd = rainHash22(id + float(i) * 17.0);
+        if (rnd.x < amount) {
+            float2 center = id + 0.25 + rnd * 0.5;
+            float2 d = (g - center) * cell;
+            float rad = cell * (0.12 + 0.15 * rnd.y);
+            float dist = length(d);
+            if (dist < rad) {
+                float k = 1.0 - dist / rad;
+                offset += -d * k * 1.2;
+                highlight = max(highlight, pow(k, 3.0));
+            }
+        }
+    }
+
+    // Falling bead per column.
+    float colW = dropSize * 1.4;
+    float colIdx = floor(position.x / colW);
+    float2 crnd = rainHash22(float2(colIdx, 7.7));
+    if (crnd.y < amount) {
+        float dripY = fract(time * speed * (0.15 + crnd.y * 0.2) + crnd.x) * (size.y + 80.0) - 40.0;
+        float dx = position.x - (colIdx + 0.5 + (crnd.x - 0.5) * 0.4) * colW;
+        float dy = position.y - dripY;
+        float head = exp(-(dx * dx + dy * dy) / 40.0);
+        offset.y -= head * 8.0;
+        highlight = max(highlight, head * 0.8);
+    }
+
+    half4 c = layer.sample(position + offset);
+    c.rgb += half3(half(highlight * 0.25));
+    return c;
+}
+
 // Domain Warp (distortion): displaces the layer beneath by noise-of-noise —
 // the wallpaper-smearing effect. Depth 1 uses a single fbm lookup for the
 // offset; depth 2 feeds that lookup through a second one first, which is

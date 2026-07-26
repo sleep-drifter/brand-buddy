@@ -35,6 +35,9 @@ struct GlassMorphView: View {
         case magnetic = "Magnetic Row"
         case swipe = "Swipe Actions"
         case slingshot = "Slingshot"
+        case thumb = "Liquid Thumb"
+        case stateMorph = "State Morph"
+        case badgeBud = "Badge Bud"
         var id: String { rawValue }
 
         var chip: PresetChip {
@@ -71,6 +74,18 @@ struct GlassMorphView: View {
                 PresetChip(name: rawValue,
                            detail: "Pull the drop back and release — it flies into the target, fuses, and gets spat back out.",
                            code: "withAnimation(_:completion:)")
+            case .thumb:
+                PresetChip(name: rawValue,
+                           detail: "A glass thumb slides between segments, stretching mid-flight and squishing on arrival. Tap a segment.",
+                           code: "Animatable travel + capsule glass")
+            case .stateMorph:
+                PresetChip(name: rawValue,
+                           detail: "One lens walks Download → progress → done. Tap to advance; morphs as state transitions.",
+                           code: "withAnimation completion chaining")
+            case .badgeBud:
+                PresetChip(name: rawValue,
+                           detail: "Tap the bell — a badge buds out of its glass and detaches to the corner. Tap the badge to add.",
+                           code: "proximity blend + offset")
             }
         }
     }
@@ -211,6 +226,9 @@ struct GlassMorphView: View {
         case .magnetic: MagneticRowScene(blend: blend, tinted: tinted, spring: morphAnimation)
         case .swipe: SwipeActionsScene(blend: blend, tinted: tinted, spring: morphAnimation)
         case .slingshot: SlingshotScene(blend: blend, tinted: tinted, spring: morphAnimation)
+        case .thumb: LiquidThumbScene(blend: blend, tinted: tinted, spring: morphAnimation)
+        case .stateMorph: StateMorphScene(blend: blend, tinted: tinted, spring: morphAnimation)
+        case .badgeBud: BadgeBudScene(blend: blend, tinted: tinted, spring: morphAnimation)
         }
     }
 
@@ -550,6 +568,21 @@ struct GlassMorphView: View {
             intro = "Pull the drop back against a rubber-band clamp and release: past the "
                 + "threshold it flies into the target, fuses into one lens, then gets spat "
                 + "back to the socket — chained spring animations with completion handlers."
+        case .thumb:
+            intro = "The iOS 26 segmented-control feel: an `Animatable` travel fraction "
+                + "drives the thumb's position, width, and squish together, so the lens "
+                + "stretches in flight and settles on arrival. Longer jumps stretch more — "
+                + "tap Day, then Year."
+        case .stateMorph:
+            intro = "Morphs as semantics: one glass identity is a Download pill, then a "
+                + "progress bar (a linear animation whose completion hands off to the "
+                + "spring), then a checkmark circle. Every shape is the same capsule "
+                + "riding a different frame."
+        case .badgeBud:
+            intro = "The badge hides exactly under the bell's lens; toggling offsets it "
+                + "26pt to the corner, and the container's blending does the budding, "
+                + "necking, and detach on the way. Push Blend up and it stays fused "
+                + "into a single blob."
         }
         return intro
             + " Carousel merges by proximity, Wallet by unions; this page is identity and "
