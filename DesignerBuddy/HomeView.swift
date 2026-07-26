@@ -205,57 +205,178 @@ struct EntryGridCard: View {
 
 // MARK: - Full Catalog Section (flat list of every page, no card grid)
 
+enum CatalogSort: String, CaseIterable, Identifiable {
+    case updated = "Recently Updated"
+    case section = "Section"
+    case alphabetical = "A to Z"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .updated: "clock"
+        case .section: "list.bullet.indent"
+        case .alphabetical: "textformat"
+        }
+    }
+}
+
 struct HomeFullCatalogSection: View {
     @EnvironmentObject var pinsStore: PinsStore
     let entries: [AppEntry]
 
+    // Persisted so the catalog opens the way it was left.
+    @AppStorage("catalogSortMode") private var sortModeRaw = CatalogSort.updated.rawValue
+
+    private var sortMode: CatalogSort {
+        CatalogSort(rawValue: sortModeRaw) ?? .updated
+    }
+
+    private var sortBinding: Binding<CatalogSort> {
+        Binding(get: { sortMode }, set: { sortModeRaw = $0.rawValue })
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Full catalog")
-                .font(.title2.bold())
-                .foregroundStyle(.primary)
+            HStack {
+                Text("Full catalog")
+                    .font(.title2.bold())
+                    .foregroundStyle(.primary)
+                Spacer()
+                Menu {
+                    Picker("Sort", selection: sortBinding) {
+                        ForEach(CatalogSort.allCases) { mode in
+                            Label(mode.rawValue, systemImage: mode.icon).tag(mode)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "arrow.up.arrow.down")
+                            .font(.caption.weight(.semibold))
+                        Text(sortMode.rawValue)
+                            .font(.subheadline.weight(.medium))
+                    }
+                    .foregroundStyle(.secondary)
+                }
+            }
 
             VStack(spacing: 0) {
-                ForEach(entries) { entry in
-                    NavigationLink(value: entry) {
-                        HStack(spacing: 12) {
-                            Image(systemName: entry.icon)
-                                .foregroundStyle(.primary)
-                                .frame(width: 28)
-                            Text(entry.name)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            if pinsStore.isPinned(entry) {
-                                Image(systemName: "bookmark.fill")
-                                    .font(.caption2)
-                                    .foregroundStyle(.blue)
-                            }
-                            Image(systemName: "chevron.right")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(.tertiary)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .contentShape(Rectangle())
+                if sortMode == .section {
+                    ForEach(sectionGroups, id: \.name) { group in
+                        sectionHeader(group.name)
+                        rowsBlock(group.items, isLastGroup: group.name == sectionGroups.last?.name)
                     }
-                    .buttonStyle(.plain)
-                    .contextMenu {
-                        Button {
-                            pinsStore.toggle(entry)
-                        } label: {
-                            Label(pinsStore.isPinned(entry) ? "Remove Bookmark" : "Bookmark",
-                                  systemImage: pinsStore.isPinned(entry) ? "bookmark.slash" : "bookmark")
-                        }
-                    }
-
-                    if entry.id != entries.last?.id {
-                        Divider()
-                            .padding(.leading, 56)
-                    }
+                } else {
+                    rowsBlock(sortedEntries, isLastGroup: true)
                 }
             }
             .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
+        .animation(.snappy(duration: 0.25), value: sortModeRaw)
+    }
+
+    // MARK: - Sorting
+
+    private var sortedEntries: [AppEntry] {
+        switch sortMode {
+        case .updated:
+            // Newest first; entries sharing a date keep their catalog order.
+            return entries.enumerated().sorted { a, b in
+                if a.element.updated != b.element.updated {
+                    return a.element.updated > b.element.updated
+                }
+                return a.offset < b.offset
+            }.map(\.element)
+        case .alphabetical:
+            return entries.sorted { $0.nameLower < $1.nameLower }
+        case .section:
+            return entries
+        }
+    }
+
+    /// Sections in catalog order, entries in catalog order within each.
+    private var sectionGroups: [(name: String, items: [AppEntry])] {
+        var order: [String] = []
+        var buckets: [String: [AppEntry]] = [:]
+        for entry in entries {
+            if buckets[entry.section] == nil { order.append(entry.section) }
+            buckets[entry.section, default: []].append(entry)
+        }
+        return order.map { (name: $0, items: buckets[$0] ?? []) }
+    }
+
+    // MARK: - Rows
+
+    @ViewBuilder
+    private func rowsBlock(_ items: [AppEntry], isLastGroup: Bool) -> some View {
+        ForEach(items) { entry in
+            row(entry)
+            if entry.id != items.last?.id || !isLastGroup {
+                Divider()
+                    .padding(.leading, 56)
+            }
+        }
+    }
+
+    private func sectionHeader(_ name: String) -> some View {
+        Text(name)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 6)
+    }
+
+    private func row(_ entry: AppEntry) -> some View {
+        NavigationLink(value: entry) {
+            HStack(spacing: 12) {
+                Image(systemName: entry.icon)
+                    .foregroundStyle(.primary)
+                    .frame(width: 28)
+                Text(entry.name)
+                    .foregroundStyle(.primary)
+                Spacer()
+                if sortMode == .updated, entry.updated > AppEntry.baselineDate {
+                    Text(shortDate(entry.updated))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                if pinsStore.isPinned(entry) {
+                    Image(systemName: "bookmark.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+                }
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button {
+                pinsStore.toggle(entry)
+            } label: {
+                Label(pinsStore.isPinned(entry) ? "Remove Bookmark" : "Bookmark",
+                      systemImage: pinsStore.isPinned(entry) ? "bookmark.slash" : "bookmark")
+            }
+        }
+    }
+
+    /// "2026-07-26" → "Jul 26" without touching DateFormatter.
+    private func shortDate(_ iso: String) -> String {
+        let parts = iso.split(separator: "-")
+        guard parts.count == 3,
+              let month = Int(parts[1]),
+              let day = Int(parts[2]),
+              (1...12).contains(month) else { return iso }
+        let names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        return "\(names[month - 1]) \(day)"
     }
 }
 
