@@ -3,7 +3,9 @@ package com.designerbuddy.feature.elements
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CallToAction
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.RunCircle
@@ -77,7 +79,7 @@ val elementsEntries: List<AppEntry> = listOf(
         name = "Chips & Badges",
         section = "Indicators",
         group = CatalogGroup.ELEMENTS,
-        icon = Icons.Filled.Label,
+        icon = Icons.AutoMirrored.Filled.Label,
         keywords = listOf("tag", "filter", "assist", "count"),
         content = { ChipsScreen() },
     ),
@@ -125,5 +127,23 @@ val elementsEntries: List<AppEntry> = listOf(
         icon = Icons.Filled.ViewWeek,
         keywords = listOf("segmented control", "single choice", "multi choice"),
         content = { SegmentedButtonsScreen() },
+    ),
+    AppEntry(
+        id = "elements/lists",
+        name = "Lists & Swipeable Rows",
+        section = "Layout",
+        group = CatalogGroup.ELEMENTS,
+        icon = Icons.AutoMirrored.Filled.List,
+        keywords = listOf("rows", "swipe", "dismiss", "dividers"),
+        content = { ListsScreen() },
+    ),
+    AppEntry(
+        id = "elements/date-time-pickers",
+        name = "Date & Time Pickers",
+        section = "Inputs & Forms",
+        group = CatalogGroup.ELEMENTS,
+        icon = Icons.Filled.DateRange,
+        keywords = listOf("calendar", "clock", "dialog"),
+        content = { DateTimePickersScreen() },
     ),
 )
