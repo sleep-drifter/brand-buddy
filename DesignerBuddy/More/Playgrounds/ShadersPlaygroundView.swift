@@ -53,6 +53,9 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
     case starNest        = "Star Nest"
     case proteanClouds   = "Protean Clouds"
     case plasmaGlobe     = "Plasma Globe"
+    // Domain warping — f(p + warp·fbm(p + warp·fbm(p)))
+    case warpField       = "Warp Field"
+    case domainWarp      = "Domain Warp"
 
     var id: String { rawValue }
     var isTapBased:     Bool {
@@ -64,7 +67,8 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
             || self == .holographic || self == .metaballs || self == .water
             || self == .shimmer || self == .circleWave || self == .sinebow
             || self == .lightGrid || self == .seascape || self == .starNest
-            || self == .proteanClouds || self == .plasmaGlobe
+            || self == .proteanClouds || self == .plasmaGlobe || self == .warpField
+            || self == .domainWarp
     }
 
     // Generative effects paint from scratch (ignoring the image), so they read as a
@@ -72,7 +76,7 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
     var isGenerative: Bool {
         self == .metaballs || self == .sinebow || self == .lightGrid
             || self == .seascape || self == .starNest || self == .proteanClouds
-            || self == .plasmaGlobe
+            || self == .plasmaGlobe || self == .warpField
     }
 
     var icon: String {
@@ -113,6 +117,8 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
         case .starNest:        return "moon.stars.fill"
         case .proteanClouds:   return "cloud.fog.fill"
         case .plasmaGlobe:     return "bolt.circle.fill"
+        case .warpField:       return "tornado"
+        case .domainWarp:      return "wind"
         }
     }
 
@@ -155,6 +161,8 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
         case .starNest:        return [0.18, 0.33, 0.4,  0.22, 0.8 ]
         case .proteanClouds:   return [0.45, 0.5,  0.56, 0.5,  0.5 ]
         case .plasmaGlobe:     return [0.41, 0.56, 0.5,  0.5,  0.5 ]
+        case .warpField:       return [0.29, 0.5,  0.5,  0.23, 0.6 ]
+        case .domainWarp:      return [0.5,  0.29, 1.0,  0.27, 0.5 ]
         }
     }
 }
@@ -882,6 +890,32 @@ struct ShadersPlaygroundView: View {
                     .float2(tapOrigin)
                 )
             ))
+
+        case .warpField:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderWarpField(
+                    .float2(CGSize(width: previewPt, height: previewPt)),
+                    .float(time),
+                    .float(1 + av(0) * 7),
+                    .float(av(1) * 8),
+                    .float(av(2) * 8),
+                    .float(av(3) * 1.5),
+                    .float(av(4))
+                )
+            ))
+
+        case .domainWarp:
+            return AnyView(view.distortionEffect(
+                ShaderLibrary.shaderDomainWarp(
+                    .float2(CGSize(width: previewPt, height: previewPt)),
+                    .float(time),
+                    .float(av(0) * 120),
+                    .float(1 + av(1) * 7),
+                    .float(av(2) < 0.5 ? 1 : 2),
+                    .float(av(3) * 1.5)
+                ),
+                maxSampleOffset: CGSize(width: 120, height: 120)
+            ))
         }
     }
 
@@ -1419,6 +1453,21 @@ struct ShadersPlaygroundView: View {
             return [
                 ("Speed", b(0), String(format: "%.1f×", 0.3 + p[0] * 1.7)),
                 ("Rays",  b(1), "\(4 + Int(p[1] * 16))")
+            ]
+        case .warpField:
+            return [
+                ("Scale",   b(0), String(format: "%.1f", 1 + p[0] * 7)),
+                ("Warp I",  b(1), String(format: "%.1f", p[1] * 8)),
+                ("Warp II", b(2), String(format: "%.1f", p[2] * 8)),
+                ("Speed",   b(3), String(format: "%.2f", p[3] * 1.5)),
+                ("Hue",     b(4), String(format: "%.0f°", p[4] * 360))
+            ]
+        case .domainWarp:
+            return [
+                ("Strength", b(0), "\(Int(p[0] * 120))pt"),
+                ("Scale",    b(1), String(format: "%.1f", 1 + p[1] * 7)),
+                ("Depth",    b(2), p[2] < 0.5 ? "1" : "2"),
+                ("Speed",    b(3), String(format: "%.2f", p[3] * 1.5))
             ]
         }
     }

@@ -936,3 +936,74 @@ static half3 inf_hslToRGB(half3 hsl) {
 
     return half4(newColor * pulse.x * pulse.y * half(brightness), 1.0h) * color.a;
 }
+
+// MARK: - Domain warping
+//
+// The classic construction after Inigo Quilez's "Domain Warping" article
+// (iquilezles.org/articles/warp): instead of changing the pattern function,
+// distort its input — f(p + warp2·fbm(p + warp1·fbm(p))). One warp level
+// bends fbm into waves; two folds it into marble and smoke. Original
+// implementations, built on this file's simplex noise.
+
+// Four-octave fbm over animated simplex noise, remapped to roughly 0…1.
+static float wf_fbm(float2 p, float t) {
+    float v = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 4; i++) {
+        v += a * cg_snoise(float3(p.x, p.y, t));
+        p = p * 2.03 + float2(13.7, 9.2);
+        a *= 0.5;
+    }
+    return v * 0.533 + 0.5;
+}
+
+// Warp Field (generative): the full double-warp, colored from the
+// intermediate fields — |q| darkens compressed regions and r.y draws pale
+// veins — which is what gives warped fbm its mineral quality.
+[[ stitchable ]] half4 shaderWarpField(float2 position, half4 color, float2 size,
+                                       float time, float scale, float warp1, float warp2,
+                                       float speed, float hue) {
+    float2 p = (position / size) * scale;
+    float t = time * speed;
+
+    float2 q = float2(wf_fbm(p, t * 0.5),
+                      wf_fbm(p + float2(5.2, 1.3), t * 0.5));
+
+    float2 r = float2(wf_fbm(p + warp1 * q + float2(1.7, 9.2), t * 0.35),
+                      wf_fbm(p + warp1 * q + float2(8.3, 2.8), t * 0.25));
+
+    float f = wf_fbm(p + warp2 * r, t * 0.15);
+
+    float3 deep = hueToRGB(fract(hue)) * 0.35;
+    float3 mid  = hueToRGB(fract(hue + 0.45));
+    float3 vein = float3(0.92, 0.90, 0.85);
+
+    float3 col = mix(deep, mid, clamp(f * 1.4 - 0.1, 0.0, 1.0));
+    col = mix(col, deep * 0.4, clamp(length(q) * 0.6, 0.0, 1.0) * 0.5);
+    col = mix(col, vein, clamp(r.y * r.y, 0.0, 1.0) * 0.5);
+    col *= 0.35 + 0.85 * (f * f + 0.4 * f);
+
+    return half4(half3(clamp(col, 0.0, 1.0)), 1.0h) * color.a;
+}
+
+// Domain Warp (distortion): displaces the layer beneath by noise-of-noise —
+// the wallpaper-smearing effect. Depth 1 uses a single fbm lookup for the
+// offset; depth 2 feeds that lookup through a second one first, which is
+// where the liquid ribbons come from.
+[[ stitchable ]] float2 shaderDomainWarp(float2 position, float2 size, float time,
+                                         float strength, float scale, float depth,
+                                         float speed) {
+    float2 p = (position / size) * scale;
+    float t = time * speed;
+
+    float2 q = float2(wf_fbm(p, t * 0.6),
+                      wf_fbm(p + float2(5.2, 1.3), t * 0.6));
+
+    float2 w = q;
+    if (depth > 1.5) {
+        w = float2(wf_fbm(p + 2.5 * q + float2(1.7, 9.2), t * 0.4),
+                   wf_fbm(p + 2.5 * q + float2(8.3, 2.8), t * 0.4));
+    }
+
+    return position + (w - 0.5) * strength;
+}
