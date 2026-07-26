@@ -1,5 +1,5 @@
 plugins {
-    id("designerbuddy.android.library")
+    id("designerbuddy.android.library.compose")
 }
 
 android {

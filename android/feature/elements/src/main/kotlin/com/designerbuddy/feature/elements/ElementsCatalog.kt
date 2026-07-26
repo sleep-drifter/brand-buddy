@@ -1,6 +1,10 @@
 package com.designerbuddy.feature.elements
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.RunCircle
 import androidx.compose.material.icons.filled.SmartButton
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.material.icons.filled.TextFields
@@ -55,5 +59,41 @@ val elementsEntries: List<AppEntry> = listOf(
         icon = Icons.Filled.Style,
         keywords = listOf("container", "elevated", "outlined"),
         content = { CardsScreen() },
+    ),
+    AppEntry(
+        id = "elements/progress",
+        name = "Progress Indicators",
+        section = "Indicators",
+        group = CatalogGroup.ELEMENTS,
+        icon = Icons.Filled.RunCircle,
+        keywords = listOf("loading", "spinner", "determinate"),
+        content = { ProgressScreen() },
+    ),
+    AppEntry(
+        id = "elements/chips",
+        name = "Chips & Badges",
+        section = "Indicators",
+        group = CatalogGroup.ELEMENTS,
+        icon = Icons.Filled.Label,
+        keywords = listOf("tag", "filter", "assist", "count"),
+        content = { ChipsScreen() },
+    ),
+    AppEntry(
+        id = "elements/dialogs",
+        name = "Alerts & Dialogs",
+        section = "Overlays",
+        group = CatalogGroup.ELEMENTS,
+        icon = Icons.Filled.CheckCircle,
+        keywords = listOf("alert", "confirm", "modal"),
+        content = { DialogsScreen() },
+    ),
+    AppEntry(
+        id = "elements/menus",
+        name = "Menus",
+        section = "Overlays",
+        group = CatalogGroup.ELEMENTS,
+        icon = Icons.Filled.MoreVert,
+        keywords = listOf("dropdown", "context", "overflow"),
+        content = { MenusScreen() },
     ),
 )

@@ -31,6 +31,13 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 buildFeatures {
                     compose = true
                 }
+
+                testOptions {
+                    unitTests {
+                        // Robolectric-based tests (screenshots) need resources.
+                        isIncludeAndroidResources = true
+                    }
+                }
             }
         }
     }

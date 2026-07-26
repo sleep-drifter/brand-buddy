@@ -1,5 +1,6 @@
 plugins {
     id("designerbuddy.android.application")
+    alias(libs.plugins.roborazzi)
 }
 
 android {
@@ -43,4 +44,11 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    testImplementation(libs.junit4)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.compose.ui.test.manifest)
 }

@@ -5,16 +5,15 @@ import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 
 /**
- * Base configuration for library modules. Every module in this project is a
- * Compose module, so Compose is enabled here. Kotlin compilation comes from
- * AGP 9's built-in Kotlin support; the Compose compiler plugin is still
- * required (AGP fails configuration without it when compose is enabled).
+ * Base configuration for library modules WITHOUT Compose (e.g. :core:data).
+ * Compose modules use designerbuddy.android.library.compose instead — the
+ * Compose compiler refuses to run on modules with no Compose runtime on the
+ * classpath, so Compose must not be forced onto every library.
  */
 class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             pluginManager.apply("com.android.library")
-            pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
 
             extensions.configure<LibraryExtension> {
                 compileSdk = AndroidConfig.COMPILE_SDK
@@ -28,8 +27,11 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
                     targetCompatibility = JavaVersion.VERSION_17
                 }
 
-                buildFeatures {
-                    compose = true
+                testOptions {
+                    unitTests {
+                        // Robolectric-based tests (screenshots) need resources.
+                        isIncludeAndroidResources = true
+                    }
                 }
             }
         }

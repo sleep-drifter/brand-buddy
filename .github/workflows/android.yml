@@ -43,10 +43,21 @@ jobs:
       - name: Build, lint, and test
         run: ./gradlew build --stacktrace
 
+      - name: Record catalog screenshots
+        run: ./gradlew recordRoborazziDebug --stacktrace
+
       - name: Upload debug APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: designer-buddy-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+
+      - name: Upload catalog screenshots
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-screenshots
+          path: android/app/screenshots/
           retention-days: 14
