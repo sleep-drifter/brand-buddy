@@ -60,6 +60,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Lists & Tables",        section: "Layout",          tab: "Elements", icon: "list.bullet"),
         .init(name: "Swipeable Rows",        section: "Layout",          tab: "Elements", icon: "arrow.left.arrow.right"),
         .init(name: "Scroll Views",          section: "Layout",          tab: "Elements", icon: "scroll"),
+        .init(name: "Lazy Stacks",           section: "Layout",          tab: "Elements", icon: "rectangle.stack",  keywords: ["lazy", "lazyvstack", "lazyhstack", "performance", "on demand", "materialize", "viewport", "pinned", "section headers", "pagination", "onappear", "feed", "infinite scroll"]),
         .init(name: "Carousels",             section: "Layout",          tab: "Elements", icon: "rectangle.portrait.on.rectangle.portrait.angled", keywords: ["carousel", "cover flow", "coverflow", "snap", "paging", "horizontal scroll", "peeking", "page control", "swipe", "gallery", "3d", "rotation", "auto advance", "infinite", "loop", "wallet", "stacked deck", "stories", "reels", "banner"]),
         .init(name: "Grids",                 section: "Layout",          tab: "Elements", icon: "grid"),
         .init(name: "Cards",                 section: "Layout",          tab: "Elements", icon: "rectangle.on.rectangle"),
