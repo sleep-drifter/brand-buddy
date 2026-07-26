@@ -85,13 +85,6 @@ struct AppEntry: Identifiable, Hashable {
     // MARK: - Patterns & System
 
     static let patternsAndSystem: [AppEntry] = [
-        // iOS 27 (WWDC26)
-        .init(name: "Reorder Containers",    section: "iOS 27", tab: "Patterns & System", icon: "rectangle.2.swap",           keywords: ["reorder", "reorderable", "drag", "rearrange", "grid", "stack", "reordercontainer", "reorderdifference", "wwdc26", "ios 27"]),
-        .init(name: "Swipe Anywhere",        section: "iOS 27", tab: "Patterns & System", icon: "hand.draw",                  keywords: ["swipe", "actions", "scrollview", "lazyvstack", "swipeactionscontainer", "onpresentationchanged", "delete", "wwdc26", "ios 27"]),
-        .init(name: "Toolbar Minimize",      section: "iOS 27", tab: "Patterns & System", icon: "menubar.arrow.up.rectangle", keywords: ["toolbar", "minimize", "collapse", "scroll", "overflow", "visibilitypriority", "pinned", "resizable", "wwdc26", "ios 27"]),
-        .init(name: "Item Dialogs",          section: "iOS 27", tab: "Patterns & System", icon: "exclamationmark.bubble",     keywords: ["alert", "confirmation dialog", "item", "binding", "optional", "presentation", "wwdc26", "ios 27"]),
-        .init(name: "Drag Collections",      section: "iOS 27", tab: "Patterns & System", icon: "square.stack.3d.down.right", keywords: ["drag", "drop", "multi-select", "dragcontainer", "draggable", "transferable", "previews formation", "wwdc26", "ios 27"]),
-        .init(name: "@State Macro Lab",      section: "iOS 27", tab: "Patterns & System", icon: "at.circle.fill",             keywords: ["state", "macro", "lazy", "initialization", "lifetime", "identity", "property wrapper", "wwdc26", "ios 27"]),
         // Navigation & Flows
         .init(name: "Navigation Patterns",   section: "Navigation & Flows", tab: "Patterns & System", icon: "arrow.triangle.turn.up.right.diamond"),
         .init(name: "Tab Bar Patterns",      section: "Navigation & Flows", tab: "Patterns & System", icon: "rectangle.bottomthird.inset.filled"),
@@ -160,7 +153,7 @@ struct AppEntry: Identifiable, Hashable {
     // MARK: - Playgrounds
 
     static let playgrounds: [AppEntry] = [
-        .init(name: "Shaders",               section: "Playgrounds", tab: "Playgrounds", icon: "sparkles.rectangle.stack", keywords: ["metal", "shader", "filter", "effect", "ripple", "pixelate", "distortion", "gpu", "grain", "vignette", "chromatic", "emboss", "swirl", "wave", "holographic", "foil", "duotone", "halftone", "solarize", "frosted", "glass", "lens", "refract", "color grade", "lut", "cinematic", "topographic", "contour", "stack", "layers", "preset", "photo", "metaball", "liquid", "blobs", "water", "shimmer", "skeleton", "infrared", "thermal", "circle wave", "sinebow", "light grid", "inferno", "shadertoy", "seascape", "ocean", "star nest", "starfield", "galaxy", "protean", "clouds", "volumetric", "raymarching", "plasma", "tesla"]),
+        .init(name: "Shaders",               section: "Playgrounds", tab: "Playgrounds", icon: "sparkles.rectangle.stack", keywords: ["metal", "shader", "filter", "effect", "ripple", "pixelate", "distortion", "gpu", "grain", "vignette", "chromatic", "emboss", "swirl", "wave", "holographic", "foil", "duotone", "halftone", "solarize", "frosted", "glass", "lens", "refract", "color grade", "lut", "cinematic", "topographic", "contour", "stack", "layers", "preset", "photo", "metaball", "liquid", "blobs", "water", "shimmer", "skeleton", "infrared", "thermal", "circle wave", "sinebow", "light grid", "inferno", "shadertoy", "seascape", "ocean", "star nest", "starfield", "galaxy", "protean", "clouds", "volumetric", "raymarching", "plasma", "tesla", "domain warp", "warp field", "fbm", "marble", "smoke", "iq", "wallpaper"]),
         .init(name: "Spring Physics",        section: "Playgrounds", tab: "Playgrounds", icon: "waveform.path.ecg",       keywords: ["animation", "bounce", "easing", "motion", "damping", "stiffness"]),
         .init(name: "Corner Radius",         section: "Playgrounds", tab: "Playgrounds", icon: "square.on.square",        keywords: ["rounded", "border radius", "roundrectangle"]),
         .init(name: "Concentric Radius",     section: "Playgrounds", tab: "Playgrounds", icon: "square.inset.filled"),

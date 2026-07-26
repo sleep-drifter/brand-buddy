@@ -90,7 +90,7 @@ struct HomeView: View {
                     CategoryListView(
                         title: "Patterns & System",
                         entries: AppEntry.patternsAndSystem,
-                        sectionOrder: ["iOS 27", "Navigation & Flows", "Content States", "Settings & Onboarding",
+                        sectionOrder: ["Navigation & Flows", "Content States", "Settings & Onboarding",
                                        "Gestures", "Animations", "Accessibility",
                                        "System", "Permissions", "Media", "Maps",
                                        "AI & Generation", "Device & Sensors"]
