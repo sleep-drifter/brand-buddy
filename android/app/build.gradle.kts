@@ -44,11 +44,13 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
+    // debugImplementation so the test activity merges into the debug
+    // manifest — Robolectric can't resolve it from testImplementation.
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     testImplementation(libs.junit4)
     testImplementation(libs.robolectric)
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
     testImplementation(libs.androidx.compose.ui.test.junit4)
-    testImplementation(libs.androidx.compose.ui.test.manifest)
 }

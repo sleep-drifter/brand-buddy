@@ -13,9 +13,12 @@ cd android
 ./gradlew build                # assemble + lint + unit tests (what CI runs)
 ```
 
-Requires JDK 17+ and the Android SDK (platform 36). No `local.properties`
-is checked in; set `ANDROID_HOME` or run `scripts/setup-android-sdk.sh`.
-CI builds every PR and uploads the debug APK as a workflow artifact.
+Requires JDK 17+ and the Android SDK. No `local.properties` is checked in;
+set `ANDROID_HOME` or run `scripts/setup-android-sdk.sh`. CI builds every
+PR and uploads two artifacts: `designer-buddy-debug-apk` (installable) and
+`catalog-screenshots` — every catalog page rendered via Roborazzi
+(`./gradlew recordRoborazziDebug` locally), so UI changes are reviewable
+without a device.
 
 ## Architecture
 
