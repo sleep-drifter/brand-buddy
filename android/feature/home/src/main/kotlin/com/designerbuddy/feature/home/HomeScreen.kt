@@ -101,6 +101,22 @@ fun HomeScreen(
             }
 
             if (query.isEmpty()) {
+                val saved = registry.all.filter { it.id in pinnedIds }
+                if (saved.isNotEmpty()) {
+                    item(key = "header:saved") {
+                        SectionHeader("Saved")
+                    }
+                    items(saved.size, key = { "saved:${saved[it].id}" }) { index ->
+                        val entry = saved[index]
+                        CatalogRow(
+                            entry = entry,
+                            isPinned = true,
+                            onClick = { onOpen(entry) },
+                            onLongClick = { onTogglePin(entry) },
+                        )
+                    }
+                }
+
                 for (group in CatalogGroup.entries) {
                     val entries = registry.group(group)
                     if (entries.isEmpty()) continue

@@ -1,10 +1,13 @@
 package com.designerbuddy.feature.elements
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CallToAction
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.RunCircle
+import androidx.compose.material.icons.filled.ViewWeek
 import androidx.compose.material.icons.filled.SmartButton
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.material.icons.filled.TextFields
@@ -95,5 +98,32 @@ val elementsEntries: List<AppEntry> = listOf(
         icon = Icons.Filled.MoreVert,
         keywords = listOf("dropdown", "context", "overflow"),
         content = { MenusScreen() },
+    ),
+    AppEntry(
+        id = "elements/sheets",
+        name = "Bottom Sheets",
+        section = "Overlays",
+        group = CatalogGroup.ELEMENTS,
+        icon = Icons.Filled.CallToAction,
+        keywords = listOf("modal", "detent", "drawer"),
+        content = { SheetsScreen() },
+    ),
+    AppEntry(
+        id = "elements/snackbars",
+        name = "Snackbars",
+        section = "Indicators",
+        group = CatalogGroup.ELEMENTS,
+        icon = Icons.Filled.Notifications,
+        keywords = listOf("toast", "banner", "undo"),
+        content = { SnackbarsScreen() },
+    ),
+    AppEntry(
+        id = "elements/segmented-buttons",
+        name = "Segmented Buttons",
+        section = "Selection",
+        group = CatalogGroup.ELEMENTS,
+        icon = Icons.Filled.ViewWeek,
+        keywords = listOf("segmented control", "single choice", "multi choice"),
+        content = { SegmentedButtonsScreen() },
     ),
 )
