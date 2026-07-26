@@ -56,6 +56,11 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
     // Domain warping — f(p + warp·fbm(p + warp·fbm(p)))
     case warpField       = "Warp Field"
     case domainWarp      = "Domain Warp"
+    // Painterly & print
+    case oilPaint        = "Oil Paint"
+    case dither          = "Dither"
+    case sketch          = "Sketch"
+    case rain            = "Rain"
 
     var id: String { rawValue }
     var isTapBased:     Bool {
@@ -68,7 +73,7 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
             || self == .shimmer || self == .circleWave || self == .sinebow
             || self == .lightGrid || self == .seascape || self == .starNest
             || self == .proteanClouds || self == .plasmaGlobe || self == .warpField
-            || self == .domainWarp
+            || self == .domainWarp || self == .rain
     }
 
     // Generative effects paint from scratch (ignoring the image), so they read as a
@@ -119,6 +124,10 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
         case .plasmaGlobe:     return "bolt.circle.fill"
         case .warpField:       return "tornado"
         case .domainWarp:      return "wind"
+        case .oilPaint:        return "paintbrush.pointed.fill"
+        case .dither:          return "squareshape.split.3x3"
+        case .sketch:          return "pencil.and.outline"
+        case .rain:            return "cloud.rain.fill"
         }
     }
 
@@ -163,6 +172,10 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
         case .plasmaGlobe:     return [0.41, 0.56, 0.5,  0.5,  0.5 ]
         case .warpField:       return [0.29, 0.5,  0.5,  0.23, 0.6 ]
         case .domainWarp:      return [0.5,  0.29, 1.0,  0.27, 0.5 ]
+        case .oilPaint:        return [0.4,  0.5,  0.5,  0.5,  0.5 ]
+        case .dither:          return [0.2,  0.0,  1.0,  0.5,  0.5 ]
+        case .sketch:          return [0.3,  0.2,  0.85, 0.5,  0.5 ]
+        case .rain:            return [0.7,  0.29, 0.3,  0.5,  0.5 ]
         }
     }
 }
@@ -916,6 +929,42 @@ struct ShadersPlaygroundView: View {
                 ),
                 maxSampleOffset: CGSize(width: 120, height: 120)
             ))
+
+        case .oilPaint:
+            return AnyView(view.layerEffect(
+                ShaderLibrary.shaderOilPaint(.float(1 + av(0) * 5)),
+                maxSampleOffset: CGSize(width: 6, height: 6)
+            ))
+
+        case .dither:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderDither(
+                    .float(1 + av(0) * 5),
+                    .float(2 + av(1) * 4),
+                    .float(av(2))
+                )
+            ))
+
+        case .sketch:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderSketch(
+                    .float(4 + av(0) * 10),
+                    .float(0.8 + av(1) * 3.2),
+                    .float(av(2))
+                )
+            ))
+
+        case .rain:
+            return AnyView(view.layerEffect(
+                ShaderLibrary.shaderRain(
+                    .float2(CGSize(width: previewPt, height: previewPt)),
+                    .float(time),
+                    .float(av(0)),
+                    .float(18 + av(1) * 42),
+                    .float(av(2) * 2)
+                ),
+                maxSampleOffset: CGSize(width: 36, height: 36)
+            ))
         }
     }
 
@@ -1468,6 +1517,26 @@ struct ShadersPlaygroundView: View {
                 ("Scale",    b(1), String(format: "%.1f", 1 + p[1] * 7)),
                 ("Depth",    b(2), p[2] < 0.5 ? "1" : "2"),
                 ("Speed",    b(3), String(format: "%.2f", p[3] * 1.5))
+            ]
+        case .oilPaint:
+            return [("Radius", b(0), "\(Int(1 + p[0] * 5))px")]
+        case .dither:
+            return [
+                ("Dot Size", b(0), "\(Int(1 + p[0] * 5))px"),
+                ("Levels",   b(1), "\(Int(2 + p[1] * 4))"),
+                ("Mono",     b(2), p[2] < 0.5 ? "Off" : "On")
+            ]
+        case .sketch:
+            return [
+                ("Spacing",   b(0), String(format: "%.0fpx", 4 + p[0] * 10)),
+                ("Thickness", b(1), String(format: "%.1fpx", 0.8 + p[1] * 3.2)),
+                ("Ink",       b(2), String(format: "%.0f%%", p[2] * 100))
+            ]
+        case .rain:
+            return [
+                ("Amount",    b(0), String(format: "%.0f%%", p[0] * 100)),
+                ("Drop Size", b(1), "\(Int(18 + p[1] * 42))px"),
+                ("Speed",     b(2), String(format: "%.1f×", p[2] * 2))
             ]
         }
     }
