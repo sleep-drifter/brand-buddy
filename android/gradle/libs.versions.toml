@@ -1,5 +1,9 @@
 [versions]
 agp = "9.2.0"
+# Also governs AGP's built-in Kotlin: AGP bundles a KGP runtime and
+# auto-upgrades to the highest KGP on the classpath, so the Compose compiler
+# plugin below pulls built-in Kotlin up to this version.
+kotlin = "2.4.10"
 composeBom = "2026.06.00"
 androidxActivity = "1.13.0"
 
@@ -14,3 +18,4 @@ androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

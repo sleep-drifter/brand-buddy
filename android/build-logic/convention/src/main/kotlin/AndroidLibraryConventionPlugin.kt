@@ -6,13 +6,15 @@ import org.gradle.kotlin.dsl.configure
 
 /**
  * Base configuration for library modules. Every module in this project is a
- * Compose module, so Compose is enabled here; Kotlin and the Compose compiler
- * come from AGP 9's built-in Kotlin support.
+ * Compose module, so Compose is enabled here. Kotlin compilation comes from
+ * AGP 9's built-in Kotlin support; the Compose compiler plugin is still
+ * required (AGP fails configuration without it when compose is enabled).
  */
 class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             pluginManager.apply("com.android.library")
+            pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
 
             extensions.configure<LibraryExtension> {
                 compileSdk = AndroidConfig.COMPILE_SDK
