@@ -18,4 +18,8 @@ dependencyResolutionManagement {
 rootProject.name = "designer-buddy"
 
 include(":app")
+include(":core:catalog")
+include(":core:data")
 include(":core:designsystem")
+include(":feature:elements")
+include(":feature:home")

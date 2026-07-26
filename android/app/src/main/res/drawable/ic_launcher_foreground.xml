@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder mark: a bookmark ribbon in the safe zone of the 108dp
+     adaptive-icon grid. Swap for real brand art before release. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M40,34
+            L68,34
+            A4,4 0 0 1 72,38
+            L72,74
+            L54,62
+            L36,74
+            L36,38
+            A4,4 0 0 1 40,34 Z" />
+</vector>

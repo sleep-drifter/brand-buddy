@@ -1,7 +1,9 @@
 package com.designerbuddy.core.designsystem
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -10,10 +12,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 /**
- * App theme. Dynamic (wallpaper-derived) color by default — minSdk 33
- * guarantees availability. The expressive theme, brand color scheme, and
- * Roboto Flex typography land with the design-system slice (Phase 0, PR 2).
+ * App theme: Material 3 Expressive with the expressive motion scheme and
+ * dynamic (wallpaper-derived) color by default — minSdk 33 guarantees
+ * availability. Dynamic color is user-visible catalog content, so the toggle
+ * stays a parameter.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DesignerBuddyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -29,8 +33,10 @@ fun DesignerBuddyTheme(
         else -> lightColorScheme()
     }
 
-    MaterialTheme(
+    MaterialExpressiveTheme(
         colorScheme = colorScheme,
+        motionScheme = MotionScheme.expressive(),
+        typography = AppTypography,
         content = content,
     )
 }
