@@ -40,17 +40,40 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
     case colorGrade      = "Color Grade"
     case topographic     = "Topographic"
     case metaballs       = "Metaballs"
+    // Ported from Inferno by Paul Hudson (MIT) — see ShadersPlayground.metal.
+    case water           = "Water"
+    case shimmer         = "Shimmer"
+    case infrared        = "Infrared"
+    case circleWave      = "Circle Wave"
+    case sinebow         = "Sinebow"
+    case lightGrid       = "Light Grid"
+    // Shadertoy classics — see ShadertoyClassics.metal for licenses
+    // (Star Nest is MIT; the other three are CC BY-NC-SA 3.0).
+    case seascape        = "Seascape"
+    case starNest        = "Star Nest"
+    case proteanClouds   = "Protean Clouds"
+    case plasmaGlobe     = "Plasma Globe"
 
     var id: String { rawValue }
-    var isTapBased:     Bool { self == .ripple || self == .zoomBlur || self == .refractLens }
+    var isTapBased:     Bool {
+        self == .ripple || self == .zoomBlur || self == .refractLens || self == .circleWave
+            || self == .starNest || self == .plasmaGlobe
+    }
     var alwaysAnimates: Bool {
         self == .wave || self == .grain || self == .glitch || self == .hueRotate
-            || self == .holographic || self == .metaballs
+            || self == .holographic || self == .metaballs || self == .water
+            || self == .shimmer || self == .circleWave || self == .sinebow
+            || self == .lightGrid || self == .seascape || self == .starNest
+            || self == .proteanClouds || self == .plasmaGlobe
     }
 
     // Generative effects paint from scratch (ignoring the image), so they read as a
     // source rather than a filter — most useful as the first layer in a stack.
-    var isGenerative: Bool { self == .metaballs }
+    var isGenerative: Bool {
+        self == .metaballs || self == .sinebow || self == .lightGrid
+            || self == .seascape || self == .starNest || self == .proteanClouds
+            || self == .plasmaGlobe
+    }
 
     var icon: String {
         switch self {
@@ -80,6 +103,16 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
         case .colorGrade:      return "camera.aperture"
         case .topographic:     return "mountain.2"
         case .metaballs:       return "circle.hexagongrid.fill"
+        case .water:           return "water.waves"
+        case .shimmer:         return "sparkles"
+        case .infrared:        return "thermometer.sun.fill"
+        case .circleWave:      return "wave.3.forward.circle"
+        case .sinebow:         return "alternatingcurrent"
+        case .lightGrid:       return "lightbulb.led.fill"
+        case .seascape:        return "sailboat"
+        case .starNest:        return "moon.stars.fill"
+        case .proteanClouds:   return "cloud.fog.fill"
+        case .plasmaGlobe:     return "bolt.circle.fill"
         }
     }
 
@@ -112,6 +145,16 @@ enum ShaderEffect: String, CaseIterable, Identifiable {
         case .colorGrade:      return [1.0,  0.5,  0.5,  0.5,  0.5 ]
         case .topographic:     return [0.4,  0.2,  0.6,  0.5,  0.5 ]
         case .metaballs:       return [0.33, 0.5,  0.4,  0.35, 0.6 ]
+        case .water:           return [0.26, 0.5,  0.25, 0.5,  0.5 ]
+        case .shimmer:         return [0.29, 0.22, 0.63, 0.5,  0.5 ]
+        case .infrared:        return [1.0,  0.5,  0.5,  0.5,  0.5 ]
+        case .circleWave:      return [0.25, 0.75, 0.66, 0.17, 0.55]
+        case .sinebow:         return [1.0,  0.31, 0.5,  0.5,  0.5 ]
+        case .lightGrid:       return [0.14, 0.11, 0.0,  0.29, 0.5 ]
+        case .seascape:        return [0.33, 0.4,  0.43, 0.4,  0.5 ]
+        case .starNest:        return [0.18, 0.33, 0.4,  0.22, 0.8 ]
+        case .proteanClouds:   return [0.45, 0.5,  0.56, 0.5,  0.5 ]
+        case .plasmaGlobe:     return [0.41, 0.56, 0.5,  0.5,  0.5 ]
         }
     }
 }
@@ -377,6 +420,13 @@ struct ShadersPlaygroundView: View {
                     presetsSection
                         .padding(.top, 24)
                         .padding(.horizontal, 16)
+
+                    Text("Water, Shimmer, Infrared, Circle Wave, Sinebow, and Light Grid are ported from Inferno by Paul Hudson (MIT license). Seascape © Alexander Alekseev (TDM), Protean Clouds and Plasma Globe © nimitz — all CC BY-NC-SA 3.0 via Shadertoy; Star Nest © Pablo Román Andrioli (Kali), MIT.")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 16)
+                        .padding(.horizontal, 20)
 
                     Spacer().frame(height: 40)
                 }
@@ -718,6 +768,118 @@ struct ShadersPlaygroundView: View {
                     .float(0.1 + av(2) * 1.4),
                     .float(0.05 + av(3) * 0.5),
                     .float(av(4))
+                )
+            ))
+
+        case .water:
+            return AnyView(view.distortionEffect(
+                ShaderLibrary.shaderWater(
+                    .float2(CGSize(width: previewPt, height: previewPt)),
+                    .float(time),
+                    .float(0.5 + av(0) * 9.5),
+                    .float(1 + av(1) * 4),
+                    .float(5 + av(2) * 20)
+                ),
+                maxSampleOffset: CGSize(width: 12, height: 12)
+            ))
+
+        case .shimmer:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderShimmer(
+                    .float2(CGSize(width: previewPt, height: previewPt)),
+                    .float(time),
+                    .float(0.5 + av(0) * 3.5),
+                    .float(0.1 + av(1) * 0.9),
+                    .float(av(2) * 0.8)
+                )
+            ))
+
+        case .infrared:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderInfrared(.float(av(0)))
+            ))
+
+        case .circleWave:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderCircleWave(
+                    .float2(CGSize(width: previewPt, height: previewPt)),
+                    .float(time),
+                    .float(av(0) * 2),
+                    .float(-2 + av(1) * 4),
+                    .float(0.02 + av(2) * 2.98),
+                    .float(20 + av(3) * 480),
+                    .float2(tapOrigin),
+                    .float(av(4))
+                )
+            ))
+
+        case .sinebow:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderSinebow(
+                    .float2(CGSize(width: previewPt, height: previewPt)),
+                    .float(time),
+                    .float(Float(2 + Int(av(0) * 8))),
+                    .float(0.1 + av(1) * 2.9)
+                )
+            ))
+
+        case .lightGrid:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderLightGrid(
+                    .float2(CGSize(width: previewPt, height: previewPt)),
+                    .float(time),
+                    .float(1 + av(0) * 49),
+                    .float(1 + av(1) * 19),
+                    .float(1 + av(2) * 7),
+                    .float(0.2 + av(3) * 9.8)
+                )
+            ))
+
+        case .seascape:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderSeascape(
+                    .float2(CGSize(width: previewPt, height: previewPt)),
+                    .float(time),
+                    .float(av(0) * 3),
+                    .float(0.2 + av(1) * 1.0),
+                    .float(1 + av(2) * 7),
+                    .float(0.1 + av(3) * 0.5)
+                )
+            ))
+
+        case .starNest:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderStarNest(
+                    .float2(CGSize(width: previewPt, height: previewPt)),
+                    .float(time),
+                    .float(0.001 + av(0) * 0.049),
+                    .float(0.4 + av(1) * 1.2),
+                    .float(0.45 + av(2) * 0.2),
+                    .float(0.0005 + av(3) * 0.0045),
+                    .float(av(4)),
+                    .float2(tapOrigin)
+                )
+            ))
+
+        case .proteanClouds:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderProteanClouds(
+                    .float2(CGSize(width: previewPt, height: previewPt)),
+                    .float(time),
+                    .float(0.5 + av(0) * 5.5),
+                    .float(-0.3 + av(1) * 0.6),
+                    .float(Float(40 + Int(av(2) * 90)))
+                )
+            ))
+
+        case .plasmaGlobe:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderPlasmaGlobe(
+                    .float2(CGSize(width: previewPt, height: previewPt)),
+                    .float(time),
+                    .float(0.3 + av(0) * 1.7),
+                    .float(Float(4 + Int(av(1) * 16))),
+                    .float2(tapOrigin)
                 )
             ))
         }
@@ -1197,6 +1359,66 @@ struct ShadersPlaygroundView: View {
                 ("Speed",     b(2), String(format: "%.1f×", 0.1 + p[2] * 1.4)),
                 ("Merge",     b(3), String(format: "%.0f%%", p[3] * 100)),
                 ("Hue",       b(4), String(format: "%.0f°", p[4] * 360))
+            ]
+        case .water:
+            return [
+                ("Speed",     b(0), String(format: "%.1f", 0.5 + p[0] * 9.5)),
+                ("Strength",  b(1), String(format: "%.1f", 1 + p[1] * 4)),
+                ("Frequency", b(2), String(format: "%.0f", 5 + p[2] * 20))
+            ]
+        case .shimmer:
+            return [
+                ("Duration",  b(0), String(format: "%.1fs", 0.5 + p[0] * 3.5)),
+                ("Width",     b(1), String(format: "%.2f", 0.1 + p[1] * 0.9)),
+                ("Lightness", b(2), String(format: "%.0f%%", p[2] * 80))
+            ]
+        case .infrared:
+            return [("Amount", b(0), String(format: "%.0f%%", p[0] * 100))]
+        case .circleWave:
+            return [
+                ("Brightness", b(0), String(format: "%.2f", p[0] * 2)),
+                ("Speed",      b(1), String(format: "%.1f", -2 + p[1] * 4)),
+                ("Strength",   b(2), String(format: "%.2f", 0.02 + p[2] * 2.98)),
+                ("Density",    b(3), "\(Int(20 + p[3] * 480))"),
+                ("Hue",        b(4), String(format: "%.0f°", p[4] * 360))
+            ]
+        case .sinebow:
+            return [
+                ("Lines", b(0), "\(2 + Int(p[0] * 8))"),
+                ("Speed", b(1), String(format: "%.1f×", 0.1 + p[1] * 2.9))
+            ]
+        case .lightGrid:
+            return [
+                ("Density",    b(0), "\(Int(1 + p[0] * 49))"),
+                ("Speed",      b(1), String(format: "%.1f", 1 + p[1] * 19)),
+                ("Group Size", b(2), "\(Int(1 + p[2] * 7))"),
+                ("Brightness", b(3), String(format: "%.1f", 0.2 + p[3] * 9.8))
+            ]
+        case .seascape:
+            return [
+                ("Speed",       b(0), String(format: "%.1f×", p[0] * 3)),
+                ("Wave Height", b(1), String(format: "%.2f", 0.2 + p[1] * 1.0)),
+                ("Choppiness",  b(2), String(format: "%.1f", 1 + p[2] * 7)),
+                ("Pitch",       b(3), String(format: "%.2f", 0.1 + p[3] * 0.5))
+            ]
+        case .starNest:
+            return [
+                ("Speed",      b(0), String(format: "%.3f", 0.001 + p[0] * 0.049)),
+                ("Zoom",       b(1), String(format: "%.2f", 0.4 + p[1] * 1.2)),
+                ("Formula",    b(2), String(format: "%.3f", 0.45 + p[2] * 0.2)),
+                ("Brightness", b(3), String(format: "%.4f", 0.0005 + p[3] * 0.0045)),
+                ("Saturation", b(4), String(format: "%.0f%%", p[4] * 100))
+            ]
+        case .proteanClouds:
+            return [
+                ("Speed",   b(0), String(format: "%.1f×", 0.5 + p[0] * 5.5)),
+                ("Density", b(1), String(format: "%+.2f", -0.3 + p[1] * 0.6)),
+                ("Steps",   b(2), "\(40 + Int(p[2] * 90))")
+            ]
+        case .plasmaGlobe:
+            return [
+                ("Speed", b(0), String(format: "%.1f×", 0.3 + p[0] * 1.7)),
+                ("Rays",  b(1), "\(4 + Int(p[1] * 16))")
             ]
         }
     }

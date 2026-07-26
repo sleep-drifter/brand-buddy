@@ -721,3 +721,218 @@ static inline float3 mb_hsv2rgb(float3 c) {
     float3 col = mix(float3(color.rgb), ballColor, edge);
     return half4(half3(col), color.a);
 }
+
+// MARK: - Inferno ports
+//
+// The six effects below are ported from Inferno by Paul Hudson
+// (https://github.com/twostraws/Inferno), MIT License,
+// Copyright (c) 2023 Paul Hudson and other authors.
+//
+// Signatures and parameter ranges are adapted to this playground's stitchable
+// conventions, and a few effects composite over the incoming image instead of
+// replacing it; the Inferno repo has the beautifully annotated originals.
+
+// Water (Inferno): sine/cosine UV displacement — wobbly underwater refraction.
+// The phase is wrapped so trig arguments stay small over long run times.
+[[ stitchable ]] float2 shaderWater(float2 position, float2 size, float time,
+                                    float speed, float strength, float frequency) {
+    float2 uv = position / size;
+    float adjustedSpeed = time * speed * 0.05;
+    float adjustedStrength = strength / 100.0;
+    const float TWO_PI = 6.28318530718;
+    float phase = fmod(adjustedSpeed * frequency, TWO_PI);
+    uv.x += sin(frequency * uv.x + phase) * adjustedStrength;
+    uv.y += cos(frequency * uv.y + phase) * adjustedStrength;
+    return uv * size;
+}
+
+// RGB→HSL and HSL→RGB helpers for the shimmer effect (Inferno).
+static half3 inf_rgbToHSL(half3 rgb) {
+    half lo = min3(rgb.r, rgb.g, rgb.b);
+    half hi = max3(rgb.r, rgb.g, rgb.b);
+    half delta = hi - lo;
+
+    half3 hsl = half3(0.0h, 0.0h, 0.5h * (hi + lo));
+
+    if (delta > 0.0h) {
+        if (hi == rgb.r) {
+            hsl[0] = fmod((rgb.g - rgb.b) / delta, 6.0h);
+        } else if (hi == rgb.g) {
+            hsl[0] = (rgb.b - rgb.r) / delta + 2.0h;
+        } else {
+            hsl[0] = (rgb.r - rgb.g) / delta + 4.0h;
+        }
+        hsl[0] /= 6.0h;
+        if (hsl[2] > 0.0h && hsl[2] < 1.0h) {
+            hsl[1] = delta / (1.0h - abs(2.0h * hsl[2] - 1.0h));
+        }
+    }
+
+    return hsl;
+}
+
+static half3 inf_hslToRGB(half3 hsl) {
+    half c = (1.0h - abs(2.0h * hsl[2] - 1.0h)) * hsl[1];
+    half h = hsl[0] * 6.0h;
+    half x = c * (1.0h - abs(fmod(h, 2.0h) - 1.0h));
+
+    half3 rgb = half3(0.0h);
+
+    if (h < 1.0h)      { rgb = half3(c, x, 0.0h); }
+    else if (h < 2.0h) { rgb = half3(x, c, 0.0h); }
+    else if (h < 3.0h) { rgb = half3(0.0h, c, x); }
+    else if (h < 4.0h) { rgb = half3(0.0h, x, c); }
+    else if (h < 5.0h) { rgb = half3(x, 0.0h, c); }
+    else               { rgb = half3(c, 0.0h, x); }
+
+    half m = hsl[2] - 0.5h * c;
+    return rgb + m;
+}
+
+// Shimmer (Inferno): a diagonal lightness gleam sweeping across the view on a
+// loop — the classic skeleton-loading shine. Boosts lightness in HSL space so
+// hue and saturation survive the sweep.
+[[ stitchable ]] half4 shaderShimmer(float2 position, half4 color, float2 size,
+                                     float time, float duration, float gradientWidth,
+                                     float maxLightness) {
+    if (color.a == 0.0h) { return color; }
+
+    half progress = half(fmod(time, duration) / duration);
+    half2 uv = half2(position / size);
+    half gw = half(gradientWidth);
+
+    half minU = 0.0h - gw;
+    half maxU = 1.0h + gw;
+    half start = minU + maxU * progress + gw * uv.y;
+    half end = start + gw;
+
+    if (uv.x > start && uv.x < end) {
+        half gradient = smoothstep(start, end, uv.x);
+        half intensity = sin(gradient * M_PI_H);
+        half3 hsl = inf_rgbToHSL(color.rgb);
+        hsl[2] += half(maxLightness) * (1.0h - hsl[2]) * intensity;
+        color.rgb = inf_hslToRGB(hsl);
+    }
+
+    return color;
+}
+
+// Infrared (Inferno): thermal-camera false color — luminance remapped onto a
+// blue → yellow → red heat ramp. Amount blends against the source image.
+[[ stitchable ]] half4 shaderInfrared(float2 position, half4 color, float amount) {
+    if (color.a <= 0.0h) { return color; }
+
+    half3 cold   = half3(0.0h, 0.0h, 1.0h);
+    half3 medium = half3(1.0h, 1.0h, 0.0h);
+    half3 hot    = half3(1.0h, 0.0h, 0.0h);
+
+    half luma = dot(color.rgb, half3(0.2125h, 0.7154h, 0.0721h));
+
+    half3 thermal;
+    if (luma < 0.5h) {
+        thermal = mix(cold, medium, luma / 0.5h);
+    } else {
+        thermal = mix(medium, hot, (luma - 0.5h) / 0.5h);
+    }
+
+    return half4(mix(color.rgb, thermal, half(amount)), 1.0h) * color.a;
+}
+
+// Circle Wave (Inferno): concentric rings pulsing out of (or into) a center
+// point. Adapted to composite additively over the incoming image, take the
+// center in user space (the tap point), and pick the ring color by hue.
+[[ stitchable ]] half4 shaderCircleWave(float2 position, half4 color, float2 size,
+                                        float time, float brightness, float speed,
+                                        float strength, float density, float2 center,
+                                        float hue) {
+    if (color.a <= 0.0h) { return color; }
+
+    float2 uv = position / size;
+    float2 delta = uv - center / size;
+    delta.x *= size.x / size.y;
+    float pixelDistance = length(delta);
+
+    float waveSpeed = -(time * speed * 10.0);
+    float3 waveColor = hueToRGB(hue) * brightness;
+
+    // Cubic falloff from the center, clamped so far corners can't go negative.
+    float falloff = max(0.0, 1.0 - pixelDistance);
+    float colorStrength = falloff * falloff * falloff * strength;
+
+    float waveDensity = density * pixelDistance;
+    float cosineAdjustment = 0.5 * cos(waveSpeed + waveDensity) + 0.5;
+
+    float luma = colorStrength * (strength + cosineAdjustment);
+    luma *= 1.0 - (pixelDistance * 2.0);
+    luma = max(0.0, luma);
+
+    half3 overlaid = color.rgb + half3(waveColor) * half(luma);
+    return half4(min(overlaid, half3(1.0h)), color.a);
+}
+
+// Sinebow (Inferno, generative): stacked sine ribbons cycling through colors —
+// waves inside waves. Line count and speed are exposed as parameters.
+[[ stitchable ]] half4 shaderSinebow(float2 position, half4 color, float2 size,
+                                     float time, float lineCount, float speed) {
+    float t = time * speed;
+
+    half aspectRatio = size.x / size.y;
+    half2 uv = half2(position / size.x) * 2.0h - 1.0h;
+    uv.x /= aspectRatio;
+
+    half wave = sin(uv.x + t);
+    wave *= wave * 50.0h;
+
+    half3 waveColor = half3(0.0h);
+
+    for (half i = 0.0h; i < half(lineCount); i++) {
+        half luma = abs(1.0h / (100.0h * uv.y + wave));
+        half y = sin(uv.x * sin(t) + i * 0.2h + t);
+        uv.y += 0.05h * y;
+
+        half3 rainbow = half3(
+            sin(i * 0.3h + t) * 0.5h + 0.5h,
+            sin(i * 0.3h + 2.0h + sin(t * 0.3h) * 2.0h) * 0.5h + 0.5h,
+            sin(i * 0.3h + 4.0h) * 0.5h + 0.5h
+        );
+
+        waveColor += rainbow * luma;
+    }
+
+    return half4(waveColor, 1.0h) * color.a;
+}
+
+// Light Grid (Inferno, generative): a grid of multicolored pulsing lights.
+// Each cell gets a hashed color variance, modulated by sin() over time, with
+// dark gutters between cells from a second sine pulse.
+[[ stitchable ]] half4 shaderLightGrid(float2 position, half4 color, float2 size,
+                                       float time, float density, float speed,
+                                       float groupSize, float brightness) {
+    if (color.a <= 0.0h) { return color; }
+
+    half aspectRatio = size.x / size.y;
+    half2 uv = half2(position / size);
+    uv.x *= aspectRatio;
+
+    half2 point = uv * half(density);
+
+    // Hash the cell number into a big, non-repeating phase offset.
+    half2 nonRepeating = half2(12.9898h, 78.233h);
+    half2 groupNumber = floor(point);
+    half sine = sin(dot(groupNumber, nonRepeating));
+    float hugeNumber = float(sine) * 43758.5453;
+
+    half variance = 0.5h * sin(time + hugeNumber) + 0.5h;
+    half acceleratedVariance = half(speed) * variance;
+
+    // Keep the time-dependent color math in float so precision holds up
+    // over long run times, then narrow at the end.
+    float3 variedColor = float3(3.0, 1.5, 0.0) + float(acceleratedVariance) + time;
+    half3 newColor = half3(0.5 * sin(variedColor) + 0.5);
+
+    half2 adjustedGroupSize = M_PI_H * 2.0h * half(groupSize) * (point - (0.25h / half(groupSize)));
+    half2 groupSine = 0.5h * sin(adjustedGroupSize) + 0.5h;
+    half2 pulse = smoothstep(0.0h, 1.0h, groupSine);
+
+    return half4(newColor * pulse.x * pulse.y * half(brightness), 1.0h) * color.a;
+}

@@ -11,6 +11,7 @@ final class PinsStore: ObservableObject {
     @AppStorage("didSeedQAPins_2026_07_07_wave3") private var didSeedQAPinsWave3 = false
     @AppStorage("didSeedQAPins_2026_07_25") private var didSeedQAPinsWave4 = false
     @AppStorage("didSeedQAPins_2026_07_25_wave2") private var didSeedQAPinsWave5 = false
+    @AppStorage("didSeedQAPins_2026_07_26") private var didSeedQAPinsWave6 = false
 
     /// Pages added or modified today — pinned once for QA. All live in the
     /// "Playgrounds" tab, so keys are "Playgrounds:<name>".
@@ -38,6 +39,17 @@ final class PinsStore: ObservableObject {
         "Sheet Detent Morph",
         "Tab Mini Player",
         "Toolbar Condense",
+    ]
+
+    /// Wave 6 pages live in the "Patterns & System" tab, so their pin keys use
+    /// that prefix rather than "Playgrounds".
+    private static let qaPinNamesWave6 = [
+        "Reorder Containers",
+        "Swipe Anywhere",
+        "Toolbar Minimize",
+        "Item Dialogs",
+        "Drag Collections",
+        "@State Macro Lab",
     ]
 
     init() {
@@ -84,6 +96,12 @@ final class PinsStore: ObservableObject {
             keys.formUnion(Self.qaPinNamesWave5.map { "Playgrounds:\($0)" })
             pinnedKeys = keys
             didSeedQAPinsWave5 = true
+        }
+        if !didSeedQAPinsWave6 {
+            var keys = pinnedKeys
+            keys.formUnion(Self.qaPinNamesWave6.map { "Patterns & System:\($0)" })
+            pinnedKeys = keys
+            didSeedQAPinsWave6 = true
         }
     }
 
