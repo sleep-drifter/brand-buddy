@@ -85,6 +85,13 @@ struct AppEntry: Identifiable, Hashable {
     // MARK: - Patterns & System
 
     static let patternsAndSystem: [AppEntry] = [
+        // iOS 27 (WWDC26)
+        .init(name: "Reorder Containers",    section: "iOS 27", tab: "Patterns & System", icon: "rectangle.2.swap",           keywords: ["reorder", "reorderable", "drag", "rearrange", "grid", "stack", "reordercontainer", "reorderdifference", "wwdc26", "ios 27"]),
+        .init(name: "Swipe Anywhere",        section: "iOS 27", tab: "Patterns & System", icon: "hand.draw",                  keywords: ["swipe", "actions", "scrollview", "lazyvstack", "swipeactionscontainer", "onpresentationchanged", "delete", "wwdc26", "ios 27"]),
+        .init(name: "Toolbar Minimize",      section: "iOS 27", tab: "Patterns & System", icon: "menubar.arrow.up.rectangle", keywords: ["toolbar", "minimize", "collapse", "scroll", "overflow", "visibilitypriority", "pinned", "resizable", "wwdc26", "ios 27"]),
+        .init(name: "Item Dialogs",          section: "iOS 27", tab: "Patterns & System", icon: "exclamationmark.bubble",     keywords: ["alert", "confirmation dialog", "item", "binding", "optional", "presentation", "wwdc26", "ios 27"]),
+        .init(name: "Drag Collections",      section: "iOS 27", tab: "Patterns & System", icon: "square.stack.3d.down.right", keywords: ["drag", "drop", "multi-select", "dragcontainer", "draggable", "transferable", "previews formation", "wwdc26", "ios 27"]),
+        .init(name: "@State Macro Lab",      section: "iOS 27", tab: "Patterns & System", icon: "at.circle.fill",             keywords: ["state", "macro", "lazy", "initialization", "lifetime", "identity", "property wrapper", "wwdc26", "ios 27"]),
         // Navigation & Flows
         .init(name: "Navigation Patterns",   section: "Navigation & Flows", tab: "Patterns & System", icon: "arrow.triangle.turn.up.right.diamond"),
         .init(name: "Tab Bar Patterns",      section: "Navigation & Flows", tab: "Patterns & System", icon: "rectangle.bottomthird.inset.filled"),
