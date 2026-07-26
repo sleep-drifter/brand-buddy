@@ -12,6 +12,7 @@ final class PinsStore: ObservableObject {
     @AppStorage("didSeedQAPins_2026_07_25") private var didSeedQAPinsWave4 = false
     @AppStorage("didSeedQAPins_2026_07_25_wave2") private var didSeedQAPinsWave5 = false
     @AppStorage("didSeedQAPins_2026_07_26_lazy") private var didSeedQAPinsWave7 = false
+    @AppStorage("didSeedQAPins_2026_07_26_anatomy") private var didSeedQAPinsWave8 = false
 
     /// Pages added or modified today — pinned once for QA. All live in the
     /// "Playgrounds" tab, so keys are "Playgrounds:<name>".
@@ -92,6 +93,12 @@ final class PinsStore: ObservableObject {
             keys.insert("Elements:Lazy Stacks")
             pinnedKeys = keys
             didSeedQAPinsWave7 = true
+        }
+        if !didSeedQAPinsWave8 {
+            var keys = pinnedKeys
+            keys.insert("Patterns & System:Live Activity Anatomy")
+            pinnedKeys = keys
+            didSeedQAPinsWave8 = true
         }
     }
 

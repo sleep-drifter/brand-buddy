@@ -125,6 +125,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Reduce Motion",         section: "Accessibility",      tab: "Patterns & System", icon: "hand.raised"),
         .init(name: "High Contrast",         section: "Accessibility",      tab: "Patterns & System", icon: "circle.lefthalf.filled"),
         // System
+        .init(name: "Live Activity Anatomy", section: "System",             tab: "Patterns & System", icon: "platter.filled.top.iphone", keywords: ["live activity", "dynamic island", "activitykit", "lock screen", "standby", "smart stack", "compact", "minimal", "expanded", "regions", "widget", "anatomy", "wwdc26"], updated: "2026-07-26"),
         .init(name: "Share Sheet",           section: "System",             tab: "Patterns & System", icon: "square.and.arrow.up",   keywords: ["share", "ShareLink", "UIActivityViewController", "send", "export"]),
         .init(name: "Face ID / Touch ID",    section: "System",             tab: "Patterns & System", icon: "faceid",               keywords: ["face id", "touch id", "biometrics", "LocalAuthentication", "auth"]),
         .init(name: "Clipboard",             section: "System",             tab: "Patterns & System", icon: "doc.on.clipboard",     keywords: ["clipboard", "pasteboard", "UIPasteboard", "copy", "paste"]),
