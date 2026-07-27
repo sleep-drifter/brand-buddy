@@ -93,7 +93,7 @@ struct HomeView: View {
                         sectionOrder: ["Navigation & Flows", "Content States", "Settings & Onboarding",
                                        "Gestures", "Animations", "Accessibility",
                                        "System", "Permissions", "Media", "Maps",
-                                       "AI & Generation", "Device & Sensors"]
+                                       "AI & Generation", "Text & Editing", "Device & Sensors"]
                     )
                 case .playgrounds:
                     CategoryListView(
