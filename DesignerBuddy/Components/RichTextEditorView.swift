@@ -86,7 +86,7 @@ struct RichTextEditorView: View {
 
             Divider().frame(height: 20)
 
-            ForEach(Self.palette, id: \.name) { entry in
+            ForEach(Self.palette) { entry in
                 Button {
                     let color = entry.color
                     transformSelection { container in
@@ -128,8 +128,15 @@ struct RichTextEditorView: View {
         .accessibilityLabel(icon)
     }
 
-    private static let palette: [(name: String, color: Color)] = [
-        ("blue", .blue), ("pink", .pink), ("orange", .orange), ("mint", .mint),
+    private struct PaletteEntry: Identifiable {
+        let name: String
+        let color: Color
+        var id: String { name }
+    }
+
+    private static let palette: [PaletteEntry] = [
+        .init(name: "blue", color: .blue), .init(name: "pink", color: .pink),
+        .init(name: "orange", color: .orange), .init(name: "mint", color: .mint),
     ]
 
     private func transformSelection(_ transform: (inout AttributeContainer) -> Void) {

@@ -62,7 +62,7 @@ struct TextWrapExclusionView: View {
             .frame(height: 340)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
-            .coordinateSpace(name: "wrapCanvas")
+            .coordinateSpace(.named("wrapCanvas"))
             .onGeometryChange(for: CGSize.self) { proxy in
                 proxy.size
             } action: { newSize in
@@ -84,7 +84,7 @@ struct TextWrapExclusionView: View {
         let rect = shapeRect.insetBy(dx: -margin, dy: -margin)
         switch shape {
         case .circle:  return UIBezierPath(ovalIn: rect)
-        case .square:  return UIBezierPath(roundedRect: rect, cornerRadius: 26)
+        case .square:  return UIBezierPath(roundedRect: rect, cornerRadius: 22)
         case .capsule: return UIBezierPath(roundedRect: rect, cornerRadius: rect.height / 2)
         }
     }
