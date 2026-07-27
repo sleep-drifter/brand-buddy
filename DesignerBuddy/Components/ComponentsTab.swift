@@ -42,6 +42,8 @@ struct AppEntry: Identifiable, Hashable {
         // Visual
         .init(name: "Color",                 section: "Visual",          tab: "Elements", icon: "paintpalette",                   keywords: ["colour", "palette", "dark mode", "light mode", "semantic", "tint"]),
         .init(name: "Typography",            section: "Visual",          tab: "Elements", icon: "textformat",                     keywords: ["dynamic type", "font size", "accessibility", "text scale", "a11y", "fonts", "type styles", "font weight"]),
+        .init(name: "Text Layout Anatomy",   section: "Visual",          tab: "Elements", icon: "text.line.first.and.arrowtriangle.forward", keywords: ["textkit", "textkit 2", "baseline", "line height", "ascender", "descender", "cap height", "x-height", "line fragment", "layout fragment", "nstextlayoutmanager", "font metrics", "glyph"], updated: "2026-07-27"),
+        .init(name: "Paragraph & Line Control", section: "Visual",       tab: "Elements", icon: "text.justify.leading", keywords: ["tracking", "kerning", "letterspacing", "line spacing", "hyphenation", "justified", "justification", "line height multiple", "indent", "paragraph style", "nsparagraphstyle", "truncation", "line limit"], updated: "2026-07-27"),
         .init(name: "Spacing & Layout",      section: "Visual",          tab: "Elements", icon: "ruler",                          keywords: ["margin", "padding", "grid", "layout", "inset", "frame", "alignment"]),
         .init(name: "Images & Icons",        section: "Visual",          tab: "Elements", icon: "photo"),
         // Actions
@@ -49,6 +51,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Menus & Context Menus", section: "Actions",         tab: "Elements", icon: "list.bullet.rectangle", keywords: ["context menu", "pull-down", "long press", "preview", "imessage", "spotify"]),
         // Inputs & Forms
         .init(name: "Text Fields",           section: "Inputs & Forms",  tab: "Elements", icon: "character.cursor.ibeam"),
+        .init(name: "Rich Text Editor",      section: "Inputs & Forms",  tab: "Elements", icon: "richtext.page", keywords: ["rich text", "attributedstring", "texteditor", "bold", "italic", "underline", "strikethrough", "formatting", "selection", "attribute runs", "ios 26", "wwdc25"], updated: "2026-07-27"),
         .init(name: "Toggles & Switches",    section: "Inputs & Forms",  tab: "Elements", icon: "switch.2"),
         .init(name: "Sliders",               section: "Inputs & Forms",  tab: "Elements", icon: "slider.horizontal.3"),
         .init(name: "Steppers",              section: "Inputs & Forms",  tab: "Elements", icon: "plus.forwardslash.minus"),
@@ -151,6 +154,9 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Writing Tools Integration",  section: "AI & Generation", tab: "Patterns & System", icon: "pencil.and.sparkles",  keywords: ["writing tools", "iOS 18", "writingToolsBehavior", "text editor", "AI"]),
         .init(name: "Image Generation",           section: "AI & Generation", tab: "Patterns & System", icon: "photo.badge.plus",     keywords: ["image generation", "skeleton", "shimmer", "loading", "AI", "placeholder"]),
         .init(name: "Prompt Input Patterns",      section: "AI & Generation", tab: "Patterns & System", icon: "text.bubble",          keywords: ["prompt", "input", "chat", "multi-line", "grow", "attachment", "send button"]),
+        // Text & Editing
+        .init(name: "Live Token Highlighting",    section: "Text & Editing", tab: "Patterns & System", icon: "highlighter",           keywords: ["hashtag", "mention", "syntax highlighting", "textkit", "nstextstorage", "uitextview", "regex", "tokens", "editor", "compose", "links"], updated: "2026-07-27"),
+        .init(name: "Inline Text Attachments",    section: "Text & Editing", tab: "Patterns & System", icon: "puzzlepiece.extension", keywords: ["nstextattachment", "attachment", "chip", "pill", "badge", "inline view", "textkit 2", "view provider", "token field", "tag", "live view"], updated: "2026-07-27"),
         // Device & Sensors
         .init(name: "Custom Haptics",            section: "Device & Sensors", tab: "Patterns & System", icon: "waveform.path.ecg.rectangle", keywords: ["haptics", "CHHapticEngine", "taptic", "vibration", "pattern", "transient", "continuous", "impact", "notification", "selection", "UIFeedbackGenerator", "feedback"]),
         .init(name: "Haptic Studio",             section: "Device & Sensors", tab: "Patterns & System", icon: "slider.horizontal.below.rectangle", keywords: ["haptic", "ahap", "editor", "timeline", "pattern", "waveform", "CoreHaptics", "keyframe"]),
@@ -188,6 +194,8 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Sheet Detent Morph",    section: "Playgrounds", tab: "Playgrounds", icon: "inset.filled.bottomhalf.rectangle", keywords: ["glass", "liquid glass", "sheet", "detent", "bottom sheet", "grabber", "modal", "morph", "button", "present", "dismiss", "drag", "glasseffectid", "ios 26"], updated: "2026-07-25"),
         .init(name: "Tab Mini Player",       section: "Playgrounds", tab: "Playgrounds", icon: "play.square.stack",       keywords: ["glass", "liquid glass", "tab bar", "mini player", "now playing", "music", "pill", "card", "tear", "drag", "scrub", "morph", "glasseffectcontainer", "ios 26"], updated: "2026-07-25"),
         .init(name: "Toolbar Condense",      section: "Playgrounds", tab: "Playgrounds", icon: "menubar.rectangle",       keywords: ["glass", "liquid glass", "toolbar", "nav bar", "condense", "collapse", "scroll", "pill", "merge", "onscrollgeometrychange", "momentum", "morph", "ios 26"], updated: "2026-07-25"),
+        .init(name: "Text Wrap & Exclusion", section: "Playgrounds", tab: "Playgrounds", icon: "text.below.photo",        keywords: ["exclusion path", "text wrap", "wrap around", "shape outside", "textkit", "nstextcontainer", "magazine", "reflow", "drag", "uitextview"], updated: "2026-07-27"),
+        .init(name: "Text Effects",          section: "Playgrounds", tab: "Playgrounds", icon: "wand.and.sparkles",       keywords: ["textrenderer", "text animation", "per glyph", "blur in", "shimmer", "wave", "reveal", "apple intelligence", "run slice", "ios 18", "typewriter", "stagger"], updated: "2026-07-27"),
     ]
 
     // MARK: - Shaders
