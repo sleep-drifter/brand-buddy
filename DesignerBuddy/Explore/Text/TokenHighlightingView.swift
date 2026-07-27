@@ -251,6 +251,8 @@ private struct TokenTextView: UIViewRepresentable {
         }
 
         func applyHighlighting(to textView: UITextView) {
+            // Restyling mid-composition would break CJK/dictation input.
+            guard textView.markedTextRange == nil else { return }
             let storage = textView.textStorage
             let fullRange = NSRange(location: 0, length: storage.length)
             let savedSelection = textView.selectedRange

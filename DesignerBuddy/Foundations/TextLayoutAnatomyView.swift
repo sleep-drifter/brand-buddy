@@ -20,8 +20,17 @@ struct TextLayoutAnatomyView: View {
     @State private var showFontMetrics = false
 
     @State private var canvasWidth: CGFloat = 320
+    @Environment(\.colorScheme) private var colorScheme
 
     private var font: UIFont { fontChoice.uiFont(size: fontSize) }
+
+    /// UIKit dynamic colors don't reliably resolve against the SwiftUI
+    /// trait environment inside a Canvas, so resolve .label explicitly.
+    private var resolvedTextColor: UIColor {
+        UIColor.label.resolvedColor(with: UITraitCollection(
+            userInterfaceStyle: colorScheme == .dark ? .dark : .light
+        ))
+    }
 
     var body: some View {
         ScrollView {
@@ -41,7 +50,8 @@ struct TextLayoutAnatomyView: View {
     // MARK: Canvas Card
 
     private var canvasCard: some View {
-        let engine = AnatomyEngine(text: sample.text, font: font, lineSpacing: lineSpacing, width: canvasWidth)
+        let engine = AnatomyEngine(text: sample.text, font: font, lineSpacing: lineSpacing,
+                                   width: canvasWidth, textColor: resolvedTextColor)
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Label("Layout", systemImage: "text.line.first.and.arrowtriangle.forward").font(.headline)
@@ -313,12 +323,12 @@ private struct AnatomyEngine {
     let layoutManager: NSTextLayoutManager
     let snapshot: AnatomySnapshot
 
-    init(text: String, font: UIFont, lineSpacing: CGFloat, width: CGFloat) {
+    init(text: String, font: UIFont, lineSpacing: CGFloat, width: CGFloat, textColor: UIColor) {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineSpacing = lineSpacing
         let attributed = NSAttributedString(string: text, attributes: [
             .font: font,
-            .foregroundColor: UIColor.label,
+            .foregroundColor: textColor,
             .paragraphStyle: paragraph,
         ])
 
