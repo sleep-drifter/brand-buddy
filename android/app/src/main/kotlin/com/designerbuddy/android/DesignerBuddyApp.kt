@@ -12,6 +12,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -22,8 +23,10 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.designerbuddy.core.catalog.AppEntry
 import com.designerbuddy.core.catalog.CatalogRegistry
+import com.designerbuddy.core.catalog.LocalDemoBack
 import com.designerbuddy.core.data.PinsRepository
 import com.designerbuddy.feature.elements.elementsEntries
+import com.designerbuddy.feature.elements.expressiveEntries
 import com.designerbuddy.feature.home.HomeScreen
 import kotlinx.coroutines.launch
 
@@ -31,6 +34,7 @@ import kotlinx.coroutines.launch
 val catalogRegistry: CatalogRegistry by lazy {
     CatalogRegistry(
         buildList {
+            addAll(expressiveEntries)
             addAll(elementsEntries)
         },
     )
@@ -73,29 +77,37 @@ fun DesignerBuddyApp(pinsRepository: PinsRepository) {
     )
 }
 
-/** Chrome around a catalog page: title bar + back, content owns the rest. */
+/** Chrome around a catalog page: title bar + back, content owns the rest.
+ * Pages with [AppEntry.ownsChrome] render their own full screen and get
+ * back-navigation via [LocalDemoBack]. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DemoHost(entry: AppEntry, onBack: () -> Unit) {
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = { Text(entry.name) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-            )
-        },
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-        ) {
+    CompositionLocalProvider(LocalDemoBack provides onBack) {
+        if (entry.ownsChrome) {
             entry.content()
+            return@CompositionLocalProvider
+        }
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                TopAppBar(
+                    title = { Text(entry.name) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                )
+            },
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+            ) {
+                entry.content()
+            }
         }
     }
 }
