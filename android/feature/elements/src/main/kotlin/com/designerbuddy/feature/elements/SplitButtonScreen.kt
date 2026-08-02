@@ -71,13 +71,20 @@ fun SplitButtonScreen() {
             }
         }
 
-        demoSection(title = "Tonal & outlined") {
+        demoSection(
+            title = "Tonal & outlined",
+            description = "These trailing halves are toggles — checked state rotates you into 'menu open'.",
+        ) {
+            var tonalOpen by remember { mutableStateOf(false) }
             SplitButtonLayout(
                 leadingButton = {
                     SplitButtonDefaults.TonalLeadingButton(onClick = {}) { Text("Tonal") }
                 },
                 trailingButton = {
-                    SplitButtonDefaults.TonalTrailingButton(onClick = {}) {
+                    SplitButtonDefaults.TonalTrailingButton(
+                        checked = tonalOpen,
+                        onCheckedChange = { tonalOpen = it },
+                    ) {
                         Icon(
                             Icons.Filled.KeyboardArrowDown,
                             contentDescription = null,
@@ -86,12 +93,16 @@ fun SplitButtonScreen() {
                     }
                 },
             )
+            var outlinedOpen by remember { mutableStateOf(false) }
             SplitButtonLayout(
                 leadingButton = {
                     SplitButtonDefaults.OutlinedLeadingButton(onClick = {}) { Text("Outlined") }
                 },
                 trailingButton = {
-                    SplitButtonDefaults.OutlinedTrailingButton(onClick = {}) {
+                    SplitButtonDefaults.OutlinedTrailingButton(
+                        checked = outlinedOpen,
+                        onCheckedChange = { outlinedOpen = it },
+                    ) {
                         Icon(
                             Icons.Filled.KeyboardArrowDown,
                             contentDescription = null,
