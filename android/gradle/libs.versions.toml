@@ -8,7 +8,7 @@ composeBom = "2026.06.00"
 # Overrides the BOM: the M3 Expressive components/theme live in the 1.5 alphas
 # behind ExperimentalMaterial3ExpressiveApi — being on them is deliberate; the
 # expressive catalog pages are the product (see ANDROID_PLAN.md §11).
-material3 = "1.5.0-alpha24"
+material3 = "1.5.0-alpha25"
 androidxActivity = "1.13.0"
 androidxCoreSplashscreen = "1.2.0"
 androidxNavigation3 = "1.1.4"

@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ViewColumn
 import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material.icons.filled.WebAsset
 import com.designerbuddy.core.catalog.AppEntry
@@ -53,6 +54,15 @@ val expressiveEntries: List<AppEntry> = listOf(
         icon = Icons.Filled.RadioButtonChecked,
         keywords = listOf("shape morph", "checked", "expressive"),
         content = { ToggleButtonsScreen() },
+    ),
+    AppEntry(
+        id = "expressive/button-groups",
+        name = "Button Groups",
+        section = "Actions",
+        group = CatalogGroup.EXPRESSIVE,
+        icon = Icons.Filled.ViewColumn,
+        keywords = listOf("squeeze", "connected", "segmented", "expressive"),
+        content = { ButtonGroupsScreen() },
     ),
     AppEntry(
         id = "expressive/split-button",
