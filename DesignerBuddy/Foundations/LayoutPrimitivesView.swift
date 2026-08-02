@@ -33,8 +33,10 @@ struct SFSymbolsView: View {
         "chart.bar", "chart.pie", "waveform", "bubble.left",
     ]
 
+    // Same matcher as the symbol picker, so "forward arrow" and "settings" work here
+    // too. An empty query returns the curated list in its original order.
     var filtered: [String] {
-        search.isEmpty ? commonSymbols : commonSymbols.filter { $0.contains(search.lowercased()) }
+        SFSymbolSearch.search(search, in: commonSymbols).symbols
     }
 
     var body: some View {

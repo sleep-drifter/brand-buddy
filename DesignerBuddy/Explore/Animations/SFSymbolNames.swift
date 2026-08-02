@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - SF Symbol Category
 
-enum SFSymbolCategory: String, CaseIterable, Identifiable {
+nonisolated enum SFSymbolCategory: String, CaseIterable, Identifiable {
     case communication   = "Communication"
     case weather         = "Weather"
     case objectsTools    = "Objects & Tools"
@@ -360,7 +360,6 @@ enum SFSymbolCategory: String, CaseIterable, Identifiable {
                 "bird", "bird.fill", "bird.circle", "bird.circle.fill",
                 "lizard", "lizard.fill",
                 "fossil.shell", "fossil.shell.fill",
-                "tree.circle", "tree.circle.fill",
                 "allergens", "allergens.fill",
                 "aqi.low", "aqi.medium", "aqi.high",
                 "seal", "seal.fill",
@@ -487,7 +486,7 @@ enum SFSymbolCategory: String, CaseIterable, Identifiable {
 
 // MARK: - Full Symbol List + Featured
 
-enum SFSymbolLibrary {
+nonisolated enum SFSymbolLibrary {
     static let featured: [String] = [
         "star.fill", "heart.fill", "checkmark.circle.fill", "xmark.circle.fill",
         "bell.fill", "gear", "house.fill", "person.crop.circle.fill",
@@ -510,11 +509,36 @@ enum SFSymbolLibrary {
             let url = Bundle.main.url(forResource: "SFSymbols", withExtension: "txt"),
             let content = try? String(contentsOf: url, encoding: .utf8)
         else {
-            return SFSymbolCategory.allCases.flatMap { $0.symbolNames }
+            // Categories overlap (paintpalette is in both Editing and Multicolor),
+            // so the fallback has to be deduped or the grid renders duplicate ids.
+            return SFSymbolLibrary.dedupe(SFSymbolCategory.allCases.flatMap { $0.symbolNames })
         }
-        return content
+        return SFSymbolLibrary.dedupe(content
             .components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
+            .filter { !$0.isEmpty })
     }()
+
+    /// Membership test for the "use exactly what I typed" shortcut — a Set keeps that
+    /// off the O(n) path it would otherwise take on every keystroke.
+    static let allSet: Set<String> = Set(SFSymbolLibrary.all)
+
+    static func dedupe(_ names: [String]) -> [String] {
+        var seen = Set<String>()
+        return names.filter { seen.insert($0).inserted }
+    }
+}
+
+// MARK: - Category Pools
+
+nonisolated extension SFSymbolCategory {
+    /// The category's symbols, deduped and computed once.
+    ///
+    /// The curated lists are hand-maintained and can repeat a name; `ForEach(id: \.self)`
+    /// over duplicate ids drops cells, so every consumer goes through this.
+    var searchPool: [String] { Self.pools[self] ?? [] }
+
+    private static let pools: [SFSymbolCategory: [String]] = Dictionary(
+        uniqueKeysWithValues: SFSymbolCategory.allCases.map { ($0, SFSymbolLibrary.dedupe($0.symbolNames)) }
+    )
 }

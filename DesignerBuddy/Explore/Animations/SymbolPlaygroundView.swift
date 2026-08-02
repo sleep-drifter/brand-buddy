@@ -1,5 +1,4 @@
 import SwiftUI
-import Combine
 
 // MARK: - Effect Model
 
@@ -692,15 +691,27 @@ struct SymbolPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var query = ""
-    @State private var debouncedQuery = ""
     @State private var selectedCategory: SFSymbolCategory? = nil
-    @State private var displayedSymbols: [String] = SFSymbolLibrary.featured
-    @State private var isCapped = false
+    @State private var results = SFSymbolSearch.PickerResults.featured
+    @State private var displayLimit = Self.pageSize
     @State private var isSearchPresented = false
 
+    /// Results are ranked, so the first page is the useful one. The rest stay one
+    /// tap away rather than being discarded.
+    private static let pageSize = 300
+    private static let debounce = Duration.milliseconds(150)
+
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 5)
-    private let searchSubject = PassthroughSubject<String, Never>()
-    @State private var cancellable: AnyCancellable?
+
+    private var visibleSymbols: ArraySlice<String> {
+        results.symbols.prefix(displayLimit)
+    }
+
+    /// Identity for the debounced search task: changing either input restarts it.
+    /// The separator can't occur in a category name or a normalized query.
+    private var searchKey: String {
+        "\(selectedCategory?.rawValue ?? "")\u{1}\(query)"
+    }
 
     var body: some View {
         NavigationStack {
@@ -711,7 +722,7 @@ struct SymbolPickerSheet: View {
                 Divider()
 
                 // Custom-name shortcut when query is a plausible direct name
-                if query.count >= 1, !SFSymbolLibrary.all.contains(query),
+                if query.count >= 1, !SFSymbolLibrary.allSet.contains(query),
                    UIImage(systemName: query) != nil {
                     Button {
                         selectedSymbol = query
@@ -735,38 +746,19 @@ struct SymbolPickerSheet: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        // Landing caption when nothing searched / filtered
-                        if query.count < 3 && selectedCategory == nil {
-                            Text("Search to explore 6,000+ symbols")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.top, 12)
-                                .padding(.bottom, 4)
-                        }
+                        resultsHeader
 
-                        if displayedSymbols.isEmpty {
-                            ContentUnavailableView(
-                                "No matches",
-                                systemImage: "magnifyingglass",
-                                description: Text("Try a different search term.")
-                            )
-                            .padding(.top, 40)
+                        if results.symbols.isEmpty {
+                            emptyState
                         } else {
                             LazyVGrid(columns: columns, spacing: 8) {
-                                ForEach(displayedSymbols, id: \.self) { name in
+                                ForEach(visibleSymbols, id: \.self) { name in
                                     symbolCell(name)
                                 }
                             }
                             .padding(12)
 
-                            if isCapped {
-                                Text("Showing top 100 results — refine your search")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                                    .padding(.bottom, 12)
-                            }
+                            showMoreFooter
                         }
                     }
                 }
@@ -784,24 +776,83 @@ struct SymbolPickerSheet: View {
                 placement: .automatic,
                 prompt: "Search or type any SF Symbol name..."
             )
-            .onChange(of: query) { _, newValue in
-                searchSubject.send(newValue)
-            }
-            .onChange(of: selectedCategory) { _, _ in
-                applyFilter(query: debouncedQuery)
+            // .task(id:) restarts on every keystroke or category change and cancels the
+            // previous run, which debounces typing and drops stale results in one step.
+            .task(id: searchKey) {
+                await runSearch(query: query, category: selectedCategory)
             }
             .onAppear {
-                cancellable = searchSubject
-                    .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
-                    .sink { q in
-                        debouncedQuery = q
-                        applyFilter(query: q)
-                    }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     isSearchPresented = true
                 }
             }
-            .onDisappear { cancellable?.cancel() }
+        }
+    }
+
+    // MARK: - Result Chrome
+
+    @ViewBuilder
+    private var resultsHeader: some View {
+        if results.isFeatured {
+            Text("Search to explore \(SFSymbolLibrary.all.count.formatted()) symbols")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 12)
+                .padding(.bottom, 4)
+        } else if results.isApproximate, !results.symbols.isEmpty {
+            Label("No exact match — showing the closest symbols", systemImage: "sparkle.magnifyingglass")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 12)
+                .padding(.bottom, 4)
+        }
+    }
+
+    private var emptyStateDescription: String {
+        guard let category = results.category else { return "Try a different search term." }
+        return "Nothing in \(category.rawValue) matches this search."
+    }
+
+    @ViewBuilder
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            ContentUnavailableView(
+                "No matches",
+                systemImage: "magnifyingglass",
+                description: Text(emptyStateDescription)
+            )
+
+            // Never dead-end inside a category when the full library has answers.
+            if results.category != nil, results.libraryMatchCount > 0 {
+                Button {
+                    withAnimation(.spring(duration: 0.2)) { selectedCategory = nil }
+                } label: {
+                    Text("Search all symbols (\(results.libraryMatchCount.formatted()) matches)")
+                        .font(.subheadline.weight(.medium))
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(.top, 40)
+    }
+
+    @ViewBuilder
+    private var showMoreFooter: some View {
+        if results.symbols.count > displayLimit {
+            VStack(spacing: 8) {
+                Text("Showing \(displayLimit.formatted()) of \(results.symbols.count.formatted()) matches")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Button("Show all \(results.symbols.count.formatted())") {
+                    displayLimit = .max
+                }
+                .font(.caption.weight(.medium))
+                .buttonStyle(.bordered)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.bottom, 16)
         }
     }
 
@@ -835,41 +886,25 @@ struct SymbolPickerSheet: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Filter Logic (background thread)
+    // MARK: - Search
 
-    private func applyFilter(query: String) {
-        let cat = selectedCategory
-        let q = query
+    @MainActor
+    private func runSearch(query: String, category: SFSymbolCategory?) async {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        DispatchQueue.global(qos: .userInitiated).async {
-            let pool: [String]
-            if let cat {
-                pool = cat.symbolNames
-            } else {
-                pool = SFSymbolLibrary.all
-            }
-
-            let results: [String]
-            let capped: Bool
-            if q.count < 3 && cat == nil {
-                results = SFSymbolLibrary.featured
-                capped = false
-            } else if q.count < 3 {
-                let r = Array(pool.prefix(100))
-                results = r
-                capped = pool.count > 100
-            } else {
-                let filtered = pool.filter { $0.localizedCaseInsensitiveContains(q) }
-                let r = Array(filtered.prefix(100))
-                results = r
-                capped = filtered.count > 100
-            }
-
-            DispatchQueue.main.async {
-                displayedSymbols = results
-                isCapped = capped
-            }
+        // Only typing needs settling time; a category tap should feel instant.
+        if !trimmed.isEmpty {
+            try? await Task.sleep(for: Self.debounce)
+            guard !Task.isCancelled else { return }
         }
+
+        let outcome = await Task.detached(priority: .userInitiated) {
+            SFSymbolSearch.pickerResults(query: trimmed, category: category)
+        }.value
+
+        guard !Task.isCancelled else { return }
+        results = outcome
+        displayLimit = Self.pageSize
     }
 
     // MARK: - Symbol Cell
