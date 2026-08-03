@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Effect Model
 
@@ -937,6 +938,15 @@ struct SymbolPickerSheet: View {
             )
         }
         .buttonStyle(.plain)
+        // Cells are small enough that long names get truncated, so long-press offers
+        // the full name rather than making people read it off the grid.
+        .contextMenu {
+            Button {
+                UIPasteboard.general.string = name
+            } label: {
+                Label("Copy Name", systemImage: "doc.on.doc")
+            }
+        }
     }
 }
 
