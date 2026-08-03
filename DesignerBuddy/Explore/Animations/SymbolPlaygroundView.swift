@@ -182,6 +182,18 @@ struct SymbolPlaygroundView: View {
                 .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
+            .contextMenu { copyNameButton(symbolName) }
+        }
+    }
+
+    /// Long-press affordance for the symbol name labels: tap still opens the picker,
+    /// long-press puts the exact name on the clipboard.
+    @ViewBuilder
+    private func copyNameButton(_ name: String) -> some View {
+        Button {
+            UIPasteboard.general.string = name
+        } label: {
+            Label("Copy Name", systemImage: "doc.on.doc")
         }
     }
 
@@ -421,6 +433,7 @@ struct SymbolPlaygroundView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .contextMenu { copyNameButton(replaceSymbol) }
             } label: {
                 Text("With").font(.subheadline.weight(.medium))
             }
