@@ -72,6 +72,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Flow Layout":            FlowLayoutView()
     case "Flow Distortion":        FlowDistortionView()
     case "Physics Tag":            PhysicsTagView()
+    case "Soft Body":              SoftBodyView()
     case "Stable Fluid":           StableFluidView()
     case "Liquid Wallet":          LiquidWalletView()
     case "Liquid Carousel":        LiquidCarouselView()
