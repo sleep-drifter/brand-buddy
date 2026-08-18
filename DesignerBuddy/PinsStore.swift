@@ -14,6 +14,7 @@ final class PinsStore: ObservableObject {
     @AppStorage("didSeedQAPins_2026_07_26_lazy") private var didSeedQAPinsWave7 = false
     @AppStorage("didSeedQAPins_2026_07_26_anatomy") private var didSeedQAPinsWave8 = false
     @AppStorage("didSeedQAPins_2026_07_27_softbody") private var didSeedQAPinsWave9 = false
+    @AppStorage("didSeedQAPins_2026_07_27_menustudio") private var didSeedQAPinsWave10 = false
 
     /// Pages added or modified today — pinned once for QA. All live in the
     /// "Playgrounds" tab, so keys are "Playgrounds:<name>".
@@ -106,6 +107,12 @@ final class PinsStore: ObservableObject {
             keys.insert("Playgrounds:Soft Body")
             pinnedKeys = keys
             didSeedQAPinsWave9 = true
+        }
+        if !didSeedQAPinsWave10 {
+            var keys = pinnedKeys
+            keys.insert("Elements:Menu Studio")
+            pinnedKeys = keys
+            didSeedQAPinsWave10 = true
         }
     }
 

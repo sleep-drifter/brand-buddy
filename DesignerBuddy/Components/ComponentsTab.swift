@@ -49,6 +49,7 @@ struct AppEntry: Identifiable, Hashable {
         // Actions
         .init(name: "Buttons",               section: "Actions",         tab: "Elements", icon: "hand.tap"),
         .init(name: "Menus & Context Menus", section: "Actions",         tab: "Elements", icon: "list.bullet.rectangle", keywords: ["context menu", "pull-down", "long press", "preview", "imessage", "spotify"]),
+        .init(name: "Menu Studio",           section: "Actions",         tab: "Elements", icon: "list.bullet.rectangle.portrait", keywords: ["menu", "composer", "studio", "builder", "context menu", "toggle", "picker", "palette", "control group", "section", "subtitle", "primary action", "menuorder", "dismiss behavior", "indicator", "share link", "code", "generate"], updated: "2026-07-27"),
         // Inputs & Forms
         .init(name: "Text Fields",           section: "Inputs & Forms",  tab: "Elements", icon: "character.cursor.ibeam"),
         .init(name: "Rich Text Editor",      section: "Inputs & Forms",  tab: "Elements", icon: "richtext.page", keywords: ["rich text", "attributedstring", "texteditor", "bold", "italic", "underline", "strikethrough", "formatting", "selection", "attribute runs", "ios 26", "wwdc25"], updated: "2026-07-27"),

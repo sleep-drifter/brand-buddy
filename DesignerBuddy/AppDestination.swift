@@ -10,6 +10,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Spacing & Layout":       SpacingView()
     case "Buttons":                ButtonsView()
     case "Menus & Context Menus":  MenusView()
+    case "Menu Studio":            MenuStudioView()
     case "Text Fields":            TextFieldsView()
     case "Rich Text Editor":       RichTextEditorView()
     case "Toggles & Switches":     TogglesView()
