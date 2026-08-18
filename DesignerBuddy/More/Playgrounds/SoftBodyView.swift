@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreMotion
+import simd
 
 // Soft-body playground: the matter.js Composites.softBody idea implemented
 // the fast way — a hand-rolled particle/constraint solver (SoftBodyEngine)
