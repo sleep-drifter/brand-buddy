@@ -291,7 +291,6 @@ static float2 pc_map(float3 p, float time, float prm1, float densityOff) {
 
 static float4 pc_render(float3 ro, float3 rd, float time, float prm1, float densityOff, int steps) {
     float4 rez = float4(0.0);
-    const float ldst = 8.0;
     float t = 1.5;
     float fogT = 0.0;
     for (int i = 0; i < steps; i++) {
