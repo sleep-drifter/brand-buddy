@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark parent so the window background doesn't flash light before
+         Compose draws in dark mode. -->
+    <style name="Theme.DesignerBuddy" parent="android:Theme.Material.NoActionBar" />
+</resources>
