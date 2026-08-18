@@ -397,6 +397,9 @@ struct MenuStudioView: View {
             }
 
         case .controlGroup:
+            // Automatic style in a menu renders labeled items as captioned
+            // tiles (UIKit's medium element size); icon-only items collapse
+            // to the compact icon row. Palette overrides both.
             let opts = item.options
             if item.palette {
                 ControlGroup {
@@ -407,7 +410,6 @@ struct MenuStudioView: View {
                 ControlGroup {
                     controlGroupButtons(opts)
                 }
-                .controlGroupStyle(.compactMenu)
             }
 
         case .share:
@@ -423,12 +425,21 @@ struct MenuStudioView: View {
         }
     }
 
-    private func controlGroupButtons(_ symbols: [String]) -> some View {
-        ForEach(symbols.indices, id: \.self) { k in
+    /// Entries are either bare SF Symbols ("scissors") for icon-only items,
+    /// or "Title:symbol" pairs ("Cut:scissors") for captioned tiles.
+    private func controlGroupButtons(_ entries: [String]) -> some View {
+        ForEach(entries.indices, id: \.self) { k in
+            let parts = entries[k]
+                .split(separator: ":", maxSplits: 1)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
             Button {
-                lastEvent = "“\(symbols[k])” tapped"
+                lastEvent = "“\(parts.first ?? "?")” tapped"
             } label: {
-                Image(systemName: symbols[k])
+                if parts.count == 2 {
+                    Label(parts[0], systemImage: parts[1])
+                } else {
+                    Image(systemName: parts.first ?? "questionmark")
+                }
             }
         }
     }
@@ -576,7 +587,14 @@ struct MenuStudioView: View {
             }
             if kind == .picker || kind == .controlGroup {
                 divider
-                fieldRow(kind == .picker ? "Options" : "Symbols", text: $items[idx].optionsText, mono: true)
+                fieldRow(kind == .picker ? "Options" : "Items", text: $items[idx].optionsText, mono: true)
+                if kind == .controlGroup {
+                    row {
+                        Text("Title:symbol pairs (Copy:doc.on.doc) render captioned tiles — the medium element size. Bare symbols give the compact icon row.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 divider
                 row { Toggle("Palette Style", isOn: $items[idx].palette) }
             }
@@ -655,7 +673,7 @@ struct MenuStudioView: View {
     }
 
     private var caption: some View {
-        Text("Every item type iOS menus support, minus nested submenus: buttons with roles and two-line subtitles, toggles, inline and palette pickers, compact and palette control groups, share links, dividers, and titled sections. Menu-level dials cover `menuIndicator`, `menuOrder(.fixed/.priority)`, `menuActionDismissBehavior(.disabled)` (toggles keep the menu open), and the `primaryAction` split button. The clipboard button in the nav bar copies the composed menu as paste-ready SwiftUI.")
+        Text("Every item type iOS menus support, minus nested submenus: buttons with roles and two-line subtitles, toggles, inline and palette pickers, control groups (captioned tiles with Title:symbol items, icon rows with bare symbols, or palette), share links, dividers, and titled sections. Menu-level dials cover `menuIndicator`, `menuOrder(.fixed/.priority)`, `menuActionDismissBehavior(.disabled)` (toggles keep the menu open), and the `primaryAction` split button. The clipboard button in the nav bar copies the composed menu as paste-ready SwiftUI.")
             .font(.footnote).foregroundStyle(.secondary)
             .padding(.horizontal, 4).fixedSize(horizontal: false, vertical: true)
     }
@@ -668,7 +686,7 @@ struct MenuStudioView: View {
         case .action: item.title = "Action"; item.symbol = "star"
         case .toggle: item.title = "Enabled"; item.symbol = "checkmark.circle"
         case .picker: item.title = "Size"; item.optionsText = "Small, Medium, Large"
-        case .controlGroup: item.title = "Clipboard"; item.optionsText = "doc.on.doc, scissors, doc.on.clipboard"
+        case .controlGroup: item.title = "Clipboard"; item.optionsText = "Copy:doc.on.doc, Cut:scissors, Paste:doc.on.clipboard"
         case .share: item.title = "Share"; item.symbol = "square.and.arrow.up"
         case .divider: item.title = ""
         case .section: item.title = "Section"
@@ -693,7 +711,7 @@ struct MenuStudioView: View {
     static var editingStarter: [MenuItemSpec] {
         [
             MenuItemSpec(kind: .controlGroup, title: "Clipboard",
-                         optionsText: "doc.on.doc, scissors, doc.on.clipboard"),
+                         optionsText: "Copy:doc.on.doc, Cut:scissors, Paste:doc.on.clipboard"),
             MenuItemSpec(kind: .action, title: "Rename", subtitle: "Change the file name", symbol: "pencil"),
             MenuItemSpec(kind: .action, title: "Duplicate", symbol: "plus.square.on.square"),
             MenuItemSpec(kind: .share, title: "Share", symbol: "square.and.arrow.up"),
@@ -749,9 +767,15 @@ struct MenuStudioView: View {
             case .controlGroup:
                 lines.append("\(indent)ControlGroup {")
                 for opt in spec.options {
-                    lines.append("\(indent)    Button { } label: { Image(systemName: \"\(opt)\") }")
+                    let parts = opt.split(separator: ":", maxSplits: 1)
+                        .map { $0.trimmingCharacters(in: .whitespaces) }
+                    if parts.count == 2 {
+                        lines.append("\(indent)    Button { } label: { Label(\"\(parts[0])\", systemImage: \"\(parts[1])\") }")
+                    } else {
+                        lines.append("\(indent)    Button { } label: { Image(systemName: \"\(opt)\") }")
+                    }
                 }
-                lines.append("\(indent)}.controlGroupStyle(.\(spec.palette ? "palette" : "compactMenu"))")
+                lines.append("\(indent)}\(spec.palette ? ".controlGroupStyle(.palette)" : "")")
             case .share:
                 lines.append("\(indent)ShareLink(item: url) {")
                 lines.append("\(indent)    Label(\"\(spec.title)\", systemImage: \"\(spec.symbol)\")")
