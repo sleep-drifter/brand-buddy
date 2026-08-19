@@ -36,7 +36,7 @@ struct PhotoLibraryPatternsView: View {
                     } onDecrement: {
                         guard !thumbnails.isEmpty else { return }
                         withAnimation(.spring(duration: 0.3)) {
-                            thumbnails.removeLast()
+                            thumbnails.removeLast(1)
                         }
                     }
                 case .fullBleed:
