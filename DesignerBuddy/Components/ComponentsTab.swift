@@ -56,6 +56,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Toggles & Switches",    section: "Inputs & Forms",  tab: "Elements", icon: "switch.2"),
         .init(name: "Sliders",               section: "Inputs & Forms",  tab: "Elements", icon: "slider.horizontal.3"),
         .init(name: "Steppers",              section: "Inputs & Forms",  tab: "Elements", icon: "plus.forwardslash.minus"),
+        .init(name: "Keyboard Patterns",     section: "Inputs & Forms",  tab: "Elements", icon: "keyboard", keywords: ["keyboard", "focus", "focusstate", "submit label", "return key", "next", "done", "accessory", "toolbar", "input", "avoidance", "dismiss", "keyboard type", "number pad", "otp", "one time code", "autofill", "textcontenttype"], updated: "2026-10-06"),
         .init(name: "Grouped Forms",         section: "Inputs & Forms",  tab: "Elements", icon: "rectangle.grid.1x2"),
         .init(name: "Form Patterns",         section: "Inputs & Forms",  tab: "Elements", icon: "list.clipboard"),
         // Selection
@@ -88,6 +89,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Cards",                 section: "Layout",          tab: "Elements", icon: "rectangle.on.rectangle"),
         .init(name: "Reorderable List",      section: "Layout",          tab: "Elements", icon: "list.number", keywords: ["reorder", "move", "drag", "onMove", "EditMode", "sort", "rearrange"]),
         .init(name: "Safe Areas",            section: "Layout",          tab: "Elements", icon: "iphone", keywords: ["insets", "home indicator", "notch", "status bar", "safe area"]),
+        .init(name: "Adaptive Layout",       section: "Layout",          tab: "Elements", icon: "ipad.landscape", keywords: ["adaptive", "size class", "compact", "regular", "ipad", "split view", "multitasking", "navigationsplitview", "sidebar", "anylayout", "viewthatfits", "adaptive grid", "responsive", "rotation", "landscape"], updated: "2026-10-06"),
         // Navigation
         .init(name: "Navigation Bars & Toolbars", section: "Navigation", tab: "Elements", icon: "menubar.rectangle", keywords: ["navigation bar", "nav bar", "toolbar", "title", "large title", "inline", "bottom bar", "placement", "button group", "glass"]),
         .init(name: "Tab Bars",              section: "Navigation",      tab: "Elements", icon: "rectangle.bottomthird.inset.filled"),
@@ -121,11 +123,13 @@ struct AppEntry: Identifiable, Hashable {
         // Settings & Onboarding
         .init(name: "Settings Patterns",     section: "Settings & Onboarding", tab: "Patterns & System", icon: "gear"),
         .init(name: "Onboarding Flows",      section: "Settings & Onboarding", tab: "Patterns & System", icon: "hand.wave"),
+        .init(name: "Paywall Patterns",      section: "Settings & Onboarding", tab: "Patterns & System", icon: "creditcard", keywords: ["paywall", "subscription", "storekit", "purchase", "iap", "in-app purchase", "subscriptionstoreview", "productview", "trial", "pricing", "plans", "restore", "monetization", "upsell"], updated: "2026-10-06"),
         // Gestures
         .init(name: "Tap & Long Press",      section: "Gestures",           tab: "Patterns & System", icon: "hand.tap"),
         .init(name: "Swipe & Drag",          section: "Gestures",           tab: "Patterns & System", icon: "hand.draw"),
         .init(name: "Pinch & Zoom",          section: "Gestures",           tab: "Patterns & System", icon: "arrow.up.left.and.arrow.down.right"),
         .init(name: "Rotation",              section: "Gestures",           tab: "Patterns & System", icon: "arrow.clockwise"),
+        .init(name: "Drag & Drop",           section: "Gestures",           tab: "Patterns & System", icon: "square.on.square.dashed", keywords: ["drag", "drop", "draggable", "dropdestination", "transferable", "payload", "istargeted", "drop zone", "reorder", "transfer", "board", "kanban", "move items"], updated: "2026-10-06"),
         // Animations
         .init(name: "Transitions",           section: "Animations",         tab: "Patterns & System", icon: "arrow.left.arrow.right.square"),
         .init(name: "Keyframe Animations",   section: "Animations",         tab: "Patterns & System", icon: "timeline.selection"),
@@ -140,8 +144,10 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Dynamic Type",          section: "Accessibility",      tab: "Patterns & System", icon: "textformat.size"),
         .init(name: "Reduce Motion",         section: "Accessibility",      tab: "Patterns & System", icon: "hand.raised"),
         .init(name: "High Contrast",         section: "Accessibility",      tab: "Patterns & System", icon: "circle.lefthalf.filled"),
+        .init(name: "RTL & Localization",    section: "Accessibility",      tab: "Patterns & System", icon: "globe", keywords: ["rtl", "right to left", "localization", "l10n", "i18n", "mirror", "mirroring", "leading", "trailing", "arabic", "hebrew", "german", "text length", "truncation", "pseudolocalization", "locale", "formatter", "layoutdirection"], updated: "2026-10-06"),
         // System
         .init(name: "Live Activity Anatomy", section: "System",             tab: "Patterns & System", icon: "platter.filled.top.iphone", keywords: ["live activity", "dynamic island", "activitykit", "lock screen", "standby", "smart stack", "compact", "minimal", "expanded", "regions", "widget", "anatomy", "wwdc26", "event", "check in", "career fair", "ticket", "boarding pass", "concert", "countdown", "timer", "push-to-start", "alert", "qr"], updated: "2026-07-26"),
+        .init(name: "Notification Anatomy",  section: "System",             tab: "Patterns & System", icon: "bell.and.waves.left.and.right", keywords: ["notification", "banner", "anatomy", "attachment", "thumbnail", "grouping", "thread", "summary", "interruption level", "time sensitive", "critical", "passive", "lock screen", "unusernotificationcenter", "local notification", "push"], updated: "2026-10-06"),
         .init(name: "Share Sheet",           section: "System",             tab: "Patterns & System", icon: "square.and.arrow.up",   keywords: ["share", "ShareLink", "UIActivityViewController", "send", "export"]),
         .init(name: "Face ID / Touch ID",    section: "System",             tab: "Patterns & System", icon: "faceid",               keywords: ["face id", "touch id", "biometrics", "LocalAuthentication", "auth"]),
         .init(name: "Clipboard",             section: "System",             tab: "Patterns & System", icon: "doc.on.clipboard",     keywords: ["clipboard", "pasteboard", "UIPasteboard", "copy", "paste"]),
@@ -167,6 +173,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Writing Tools Integration",  section: "AI & Generation", tab: "Patterns & System", icon: "pencil.and.sparkles",  keywords: ["writing tools", "iOS 18", "writingToolsBehavior", "text editor", "AI"]),
         .init(name: "Image Generation",           section: "AI & Generation", tab: "Patterns & System", icon: "photo.badge.plus",     keywords: ["image generation", "skeleton", "shimmer", "loading", "AI", "placeholder"]),
         .init(name: "Prompt Input Patterns",      section: "AI & Generation", tab: "Patterns & System", icon: "text.bubble",          keywords: ["prompt", "input", "chat", "multi-line", "grow", "attachment", "send button"]),
+        .init(name: "Foundation Models",          section: "AI & Generation", tab: "Patterns & System", icon: "apple.intelligence",   keywords: ["foundation models", "apple intelligence", "on-device", "llm", "language model", "generate", "streaming", "tool call", "generable", "guided generation", "availability", "ios 26", "wwdc25", "ai"], updated: "2026-10-06"),
         // Text & Editing
         .init(name: "Live Token Highlighting",    section: "Text & Editing", tab: "Patterns & System", icon: "highlighter",           keywords: ["hashtag", "mention", "syntax highlighting", "textkit", "nstextstorage", "uitextview", "regex", "tokens", "editor", "compose", "links"], updated: "2026-07-27"),
         .init(name: "Inline Text Attachments",    section: "Text & Editing", tab: "Patterns & System", icon: "puzzlepiece.extension", keywords: ["nstextattachment", "attachment", "chip", "pill", "badge", "inline view", "textkit 2", "view provider", "token field", "tag", "live view"], updated: "2026-07-27"),
