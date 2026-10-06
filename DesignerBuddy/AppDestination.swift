@@ -127,6 +127,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Dynamic Type":           DynamicTypeExploreView()
     case "Reduce Motion":          ReduceMotionView()
     case "High Contrast":          HighContrastView()
+    case "RTL & Localization":     RTLLocalizationView()
     case "Live Activity Anatomy":  LiveActivityAnatomyView()
     case "Notification Anatomy":   NotificationAnatomyView()
     case "Share Sheet":            ShareSheetView()
