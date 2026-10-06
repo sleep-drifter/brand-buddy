@@ -223,7 +223,8 @@ struct RTLLocalizationView: View {
                     in: RoundedRectangle(cornerRadius: 12))
     }
 
-    private func labeledDemo(_ label: String, @ViewBuilder content: () -> some View) -> some View {
+    private func labeledDemo<Content: View>(_ label: String,
+                                            @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(.caption2.weight(.semibold))
