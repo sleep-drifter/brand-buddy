@@ -112,6 +112,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Swipe & Drag":           SwipeDragView()
     case "Pinch & Zoom":           PinchZoomView()
     case "Rotation":               GestureRotationView()
+    case "Drag & Drop":            DragAndDropView()
     case "Transitions":            TransitionsView()
     case "Keyframe Animations":    KeyframeAnimationsView()
     case "Keyframe Studio":        KeyframeStudioView()

@@ -126,6 +126,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Swipe & Drag",          section: "Gestures",           tab: "Patterns & System", icon: "hand.draw"),
         .init(name: "Pinch & Zoom",          section: "Gestures",           tab: "Patterns & System", icon: "arrow.up.left.and.arrow.down.right"),
         .init(name: "Rotation",              section: "Gestures",           tab: "Patterns & System", icon: "arrow.clockwise"),
+        .init(name: "Drag & Drop",           section: "Gestures",           tab: "Patterns & System", icon: "square.on.square.dashed", keywords: ["drag", "drop", "draggable", "dropdestination", "transferable", "payload", "istargeted", "drop zone", "reorder", "transfer", "board", "kanban", "move items"], updated: "2026-10-06"),
         // Animations
         .init(name: "Transitions",           section: "Animations",         tab: "Patterns & System", icon: "arrow.left.arrow.right.square"),
         .init(name: "Keyframe Animations",   section: "Animations",         tab: "Patterns & System", icon: "timeline.selection"),
