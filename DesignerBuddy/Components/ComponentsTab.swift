@@ -123,6 +123,7 @@ struct AppEntry: Identifiable, Hashable {
         // Settings & Onboarding
         .init(name: "Settings Patterns",     section: "Settings & Onboarding", tab: "Patterns & System", icon: "gear"),
         .init(name: "Onboarding Flows",      section: "Settings & Onboarding", tab: "Patterns & System", icon: "hand.wave"),
+        .init(name: "Paywall Patterns",      section: "Settings & Onboarding", tab: "Patterns & System", icon: "creditcard", keywords: ["paywall", "subscription", "storekit", "purchase", "iap", "in-app purchase", "subscriptionstoreview", "productview", "trial", "pricing", "plans", "restore", "monetization", "upsell"], updated: "2026-10-06"),
         // Gestures
         .init(name: "Tap & Long Press",      section: "Gestures",           tab: "Patterns & System", icon: "hand.tap"),
         .init(name: "Swipe & Drag",          section: "Gestures",           tab: "Patterns & System", icon: "hand.draw"),

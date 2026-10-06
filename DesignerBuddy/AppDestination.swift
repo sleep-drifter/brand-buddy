@@ -64,6 +64,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Error States":           ErrorStatesView()
     case "Settings Patterns":      SettingsPatternView()
     case "Onboarding Flows":       OnboardingView()
+    case "Paywall Patterns":       PaywallPatternsView()
     case "iOS 26 Glass":           GlassEffectPlayground()
     case "Material (blur)":        GlassPlayground()
     case "Surfaces":               SurfacesPlayground()
