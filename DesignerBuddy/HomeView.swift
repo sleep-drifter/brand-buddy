@@ -84,7 +84,8 @@ struct HomeView: View {
                         title: "Elements",
                         entries: AppEntry.elements,
                         sectionOrder: ["Visual", "Actions", "Inputs & Forms", "Selection",
-                                       "Indicators", "Layout", "Navigation", "Overlays", "Materials"]
+                                       "Indicators", "Charts & Data", "Layout", "Navigation",
+                                       "Overlays", "Materials"]
                     )
                 case .patternsAndSystem:
                     CategoryListView(
