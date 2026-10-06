@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // Keyboard Patterns — the plumbing every form-heavy screen needs:
 // @FocusState flows with submit labels, a keyboard accessory toolbar,
