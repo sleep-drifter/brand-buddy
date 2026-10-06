@@ -282,6 +282,23 @@ struct NotificationAnatomyView: View {
 
     // MARK: - Row helpers
 
+    private func levelRow(icon: String, tint: Color, name: String,
+                          detail: LocalizedStringKey) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .frame(width: 24)
+                .foregroundStyle(tint)
+                .padding(.top, 2)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name)
+                    .font(.subheadline.weight(.semibold))
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
     private func legendRow(color: Color, text: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 10) {
             RoundedRectangle(cornerRadius: 2)
