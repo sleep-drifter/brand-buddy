@@ -140,6 +140,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Writing Tools Integration":  WritingToolsView()
     case "Image Generation":           ImageGenerationView()
     case "Prompt Input Patterns":      PromptInputView()
+    case "Foundation Models":          FoundationModelsView()
     case "Live Token Highlighting":    TokenHighlightingView()
     case "Inline Text Attachments":    InlineAttachmentsView()
     case "Text Wrap & Exclusion":      TextWrapExclusionView()
