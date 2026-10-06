@@ -125,6 +125,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Reduce Motion":          ReduceMotionView()
     case "High Contrast":          HighContrastView()
     case "Live Activity Anatomy":  LiveActivityAnatomyView()
+    case "Notification Anatomy":   NotificationAnatomyView()
     case "Share Sheet":            ShareSheetView()
     case "Face ID / Touch ID":     FaceIDView()
     case "Clipboard":              ClipboardView()
