@@ -13,6 +13,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Menu Studio":            MenuStudioView()
     case "Text Fields":            TextFieldsView()
     case "Rich Text Editor":       RichTextEditorView()
+    case "Keyboard Patterns":      KeyboardPatternsView()
     case "Toggles & Switches":     TogglesView()
     case "Sliders":                SlidersView()
     case "Steppers":               SteppersView()

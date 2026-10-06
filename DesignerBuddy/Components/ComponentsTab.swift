@@ -56,6 +56,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Toggles & Switches",    section: "Inputs & Forms",  tab: "Elements", icon: "switch.2"),
         .init(name: "Sliders",               section: "Inputs & Forms",  tab: "Elements", icon: "slider.horizontal.3"),
         .init(name: "Steppers",              section: "Inputs & Forms",  tab: "Elements", icon: "plus.forwardslash.minus"),
+        .init(name: "Keyboard Patterns",     section: "Inputs & Forms",  tab: "Elements", icon: "keyboard", keywords: ["keyboard", "focus", "focusstate", "submit label", "return key", "next", "done", "accessory", "toolbar", "input", "avoidance", "dismiss", "keyboard type", "number pad", "otp", "one time code", "autofill", "textcontenttype"], updated: "2026-10-06"),
         .init(name: "Grouped Forms",         section: "Inputs & Forms",  tab: "Elements", icon: "rectangle.grid.1x2"),
         .init(name: "Form Patterns",         section: "Inputs & Forms",  tab: "Elements", icon: "list.clipboard"),
         // Selection
