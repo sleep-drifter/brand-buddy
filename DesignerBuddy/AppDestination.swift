@@ -97,6 +97,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Toolbar Playground":    ToolbarPlaygroundView()
     case "Reader Chrome":         ReaderChromeView()
     case "Safe Areas":             SafeAreasView()
+    case "Adaptive Layout":        AdaptiveLayoutView()
     case "Permission Requests":        PermissionRequestView()
     case "Permission Denied Recovery": PermissionDeniedRecoveryView()
     case "Push Notifications":         PushPermissionView()

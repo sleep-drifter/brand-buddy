@@ -89,6 +89,7 @@ struct AppEntry: Identifiable, Hashable {
         .init(name: "Cards",                 section: "Layout",          tab: "Elements", icon: "rectangle.on.rectangle"),
         .init(name: "Reorderable List",      section: "Layout",          tab: "Elements", icon: "list.number", keywords: ["reorder", "move", "drag", "onMove", "EditMode", "sort", "rearrange"]),
         .init(name: "Safe Areas",            section: "Layout",          tab: "Elements", icon: "iphone", keywords: ["insets", "home indicator", "notch", "status bar", "safe area"]),
+        .init(name: "Adaptive Layout",       section: "Layout",          tab: "Elements", icon: "ipad.landscape", keywords: ["adaptive", "size class", "compact", "regular", "ipad", "split view", "multitasking", "navigationsplitview", "sidebar", "anylayout", "viewthatfits", "adaptive grid", "responsive", "rotation", "landscape"], updated: "2026-10-06"),
         // Navigation
         .init(name: "Navigation Bars & Toolbars", section: "Navigation", tab: "Elements", icon: "menubar.rectangle", keywords: ["navigation bar", "nav bar", "toolbar", "title", "large title", "inline", "bottom bar", "placement", "button group", "glass"]),
         .init(name: "Tab Bars",              section: "Navigation",      tab: "Elements", icon: "rectangle.bottomthird.inset.filled"),
