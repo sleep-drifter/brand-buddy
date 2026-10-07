@@ -113,11 +113,27 @@ motorized faders that glide on patch load. MIDI-learn UX: tap on-screen
 control, wiggle knob, bound. Latency budget ~15–30ms BLE interval = feels
 attached. Spring-return fader or ribbon (SoftPot) as the "mod wheel."
 
+## v0: Oscilla Lab (decided — building inside DesignerBuddy)
+
+Prototype ships as a DesignerBuddy playground ("Oscilla Lab") to reuse the
+working CI + TestFlight loop; extract to a dedicated repo/app once the
+engine sings. v0 scope:
+
+- Patch model per the JSON sketch (fences, curves, renamed controls,
+  macros, palette, poses, mods, gates) — data only, Codable.
+- Engine runtime: parameter registry, LFO + attack/release envelopes,
+  mod matrix evaluated per frame, pose capture + timed morph.
+- Play-mode UI: full-bleed render, 3–5 named knobs with the orbital
+  modulation indicator, gate pads, pose row. No numbers, no menus.
+- Factory patches whose engines are already in-repo: Drift (clouds),
+  Tidepool (seascape), Night Garden (star nest + domain warp).
+- Deferred past v0: 15s video capture, Bench (patch editor) UI, Nova
+  (needs Shine port), hardware input, patch sharing.
+
 ## Open questions
 
 - Which project holds Shine/spirals/epicycles/Lissajous? (Needed for the port.)
-- Build v1 inside DesignerBuddy as a hidden "Oscilla Lab" playground
-  (reuses working TestFlight loop) vs. fresh repo + new app from day one.
 - Trademark/legal check on "Oscilla"; reserve App Store name + domain.
 - Thermal/battery budget: render-scale and 30fps ambient mode targets.
 - Monetization shape (unsaid so far: likely paid app or patch packs — TBD).
+- 15s capture implementation (ReplayKit vs AVAssetWriter from the render).
