@@ -17,7 +17,14 @@ non-musicians — handpan people, not DAW people.
 **Name: Oscilla.** From *oscillum* — the small Roman votive masks hung from
 trees to sway in the wind and catch the light; the origin of the word
 "oscillate." A hanging object that moves on its own and plays with light.
-(App Store search came back clean Oct 2026; trademark search still TODO.)
+(Name status, researched Oct 2026: YELLOW, not clean — "Oscilla – Local AI"
+(id6759628356) is live on the App Store with the exact name, and the
+open-source Oscilla graphic-score system (oscilla.cc, NIME 2026) owns the
+niche's mindshare; no live US mark found on bare "Oscilla" in
+software/music classes (advisory, not legal advice). Plan a qualified
+listing name ("Oscilla — Visual Synth"); reserve domains/handles; counsel
+before paid launch. **"Sway" is RED**: Audima Labs ships a motion MIDI
+controller named Sway and NI has a Sway synth — internal codename only.)
 Hardware controller, when it exists: **Sway**.
 
 ## Glossary (the synth parallels)
@@ -29,7 +36,7 @@ Hardware controller, when it exists: **Sway**.
 | Patch | A *designed instrument*: fenced param ranges, curves, renamed controls, macros, palette, poses. **Not a preset.** Pure data (JSON), never code. |
 | Note | A **pose** — knob-space snapshot on a pad; playing = traveling between poses; the morph is the interval. (On a stateful patch like Inkwell, poses pose the WATER, never the painting.) |
 | Key / scale | The patch's **palette**; color harmony = consonance; palette shift = key change |
-| Gate / note-on | Pad press fires an envelope (bloom, flare, pulse); release decays. Velocity via pressure |
+| Gate / note-on | Pad press fires an envelope (bloom, flare, pulse); release decays. Velocity = strike height on the pad (per-gate velocityFloor; Nova teaches it) |
 | Mod matrix | `{source → destination, depth, curve}` slots; sources = knobs AND internal LFOs/envelopes. The core data structure |
 | Macro | One named knob driving several raw params with individual depths |
 | Mod wheel | A springy/momentary control (spring fader, pressure pad, ribbon) — ephemeral expression vs. latched patch state |
@@ -78,7 +85,7 @@ Hardware controller, when it exists: **Sway**.
 | 1 | Drift | **Chroma field** + grain *(subst.)* | Knobs are safe | First-launch patch; knobs: Weather, Warmth, Tide |
 | 2 | Tidepool | Chroma field + water + circle wave *(subst.)* | Gates = note-ons | Pad tap ("Drop") = droplet envelope |
 | 3 | Night Garden | Star Nest + Domain Warp + vignette | Poses & morphs | v0 ships 4 poses; Depth is expo zoom (octave easter egg) |
-| 4 | Nova | **Shine shader** (B&W burst) | Velocity/expression | Soft strike = shiver of light, hard = supernova + decay. Replaced "Coals" |
+| 4 | Nova | **Shine shader** (B&W burst) — SHIPPED v0.3 | Velocity/expression | Soft strike = shiver, hard = supernova flare + 1.4s decay; Drift knob hand-sweeps the tan singularity |
 | 5 | Inkwell | Stable fluid (Navier-Stokes), sumi-e mono — SHIPPED v0.2 | Gesture; restraint | NOT mistake-proof; Fade 0 = permanent ink; Rinse is the only eraser |
 | 6 | Analog Sunday | Photo in → Kuwahara + grade + halftone + grain — SHIPPED v0.2 | Filter patches, personal content | Macro knob: *Decade*; gate *Flash* |
 | 7 | Swarm | Metaball/flocking | The machine plays itself; you conduct | Knobs: Cohesion, Scatter; pad = startle |
@@ -105,9 +112,11 @@ later as a chaotic internal mod source).
   warp, plasma, metaballs/SDF, stable fluid, Kuwahara, halftone, dither,
   thermal, grain, mesh/fluid gradients, and the layer-stack compositor +
   preset system itself.
-- **Port from Matt's other playground** (NOT in brand-buddy — source project
-  TBD): Shine shader (Nova's engine), Archimedes/phyllotaxis spiral, prime
-  spiral, Heliocentric epicycles, Lissajous.
+- **my-toybox (CONFIRMED Oct 2026)**: the "other playground" is
+  github.com/Koshimizu-Takehito/my-toybox (MIT © 2025 takehito). Shine
+  (Nova's engine — PORTED v0.3), Archimedes + prime spiral screens live
+  there too. Heliocentric/epicycles were NOT found in the clone — that
+  source is still unconfirmed.
 
 ## Hardware (later phase, sketched)
 
@@ -243,9 +252,50 @@ The factory grows to seven with the two architecture-extending patches:
 - Licensing resolved: delete "my-toybox license unknown" from any future
   planning — it is MIT (© 2025 takehito).
 
+## v0.3 — SHIPPED (Oct 2026, PR #55)
+
+- **Nova** — the velocity patch, on the Shine shader found in my-toybox.
+  Ported VERBATIM behind four hooks; tempo is BASE DATA ONLY (the unwrapped
+  phase term crosses full-field 1/tan singularities — a tempo knob would
+  let pose morphs strobe at session-age-scaled rates, the critique panel's
+  photosensitivity catch). **Drift** hand-sweeps exactly one tan period;
+  **Strike** is a pure velocity-scaled gain flare.
+- **Pad velocity** — pads report strike height (low = hard);
+  `OscillaGate.velocityFloor` scales the envelope peak per gate, clamped
+  to the carried level (no retrigger pop). The seven older patches take
+  floor 1.0: bitwise-identical feel. Haptics ride the same curve.
+- Shine provenance: my-toybox MIT, original by Yohei Nishitsuji —
+  attribution shipped; explicit permission flagged before commercial ship.
+
+## Migration — GO (decided Oct 2026)
+
+The patch wave is complete (eight instruments) and multiplayer — the next
+feature — is migration trigger #1, so the call delegated to the session is
+GO. Two tracks:
+
+- **Session**: scaffold `sleep-drifter/oscilla` (private) — nine sources
+  copy verbatim; surgery = OscillaShaders.metal (Star Nest lifted ALONE
+  from the Shadertoy file; Seascape/Protean Clouds/Plasma Globe are
+  CC BY-NC-SA and stay behind) + trimmed OscillaFluidKernels.metal (all 15
+  kernels the fluid view force-unwraps — a miss crashes, not fails
+  compile) + OscillaHaptics/ActivityViewController/glassMorphHaptic shims +
+  adapted pbxproj (bundle `com.wujdesign.oscilla`) + the same macos-26 CI.
+  First on-device Inkwell run is the mandatory smoke test.
+- **Matt**: create the GitHub repo + grant the Claude app; the tuning
+  evening (Bench → Copy JSON → bake back); the ~30-min Apple pass (ASC app
+  record "Oscilla", Xcode Cloud workflow, TestFlight group); reserve
+  domains/handles; counsel for trademark.
+
+brand-buddy keeps its Oscilla Lab copy until the new app's first TestFlight
+build is verified on device; deletion is a later, separate PR.
+
 ## Open questions
 
-- Which project holds Shine/spirals/epicycles/Lissajous? (Needed for the port.)
-- Trademark/legal check on "Oscilla"; reserve App Store name + domain.
+- Heliocentric/epicycles source (not in my-toybox) — needed for Orrery later.
+- Trademark counsel for "Oscilla" (research says yellow — see the name-status
+  note up top); reserve oscilla.app / getoscilla.com + handles; new hardware
+  codename to replace "Sway" (RED — taken in-category).
+- Verify Yohei Nishitsuji's permission for the Shine adaptation before any
+  commercial ship (Nova-specific ship-blocker, not a migration blocker).
 - Thermal/battery budget: render-scale and 30fps ambient mode targets.
 - Monetization shape (unsaid so far: likely paid app or patch packs — TBD).
