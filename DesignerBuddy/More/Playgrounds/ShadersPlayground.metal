@@ -661,7 +661,8 @@ static half3 cg_scene(float2 uv, float time, float grainAmt, float softness, flo
 // on Lissajous paths. Each contributes an inverse-square field; where the summed
 // field crosses `threshold` we fill a solid colour, so neighbouring balls fuse with
 // smooth liquid bridges. `smoothing` softens the edge (and how eagerly balls merge).
-// Applied via .colorEffect on an opaque fill — the incoming `color` is ignored;
+// Applied via .colorEffect — the balls are composited OVER the incoming `color`
+// (lower layers show through outside the balls), so it stacks rather than wipes;
 // `size` normalizes `position`. Inspired by iShader's RandomMetaball.
 static inline float mb_hash(float n) {
     return fract(sin(n * 12.9898) * 43758.5453);

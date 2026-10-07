@@ -18,6 +18,7 @@ enum OscillaEngine: String, Codable, CaseIterable {
     case domainWarp       // shaderDomainWarp (distortion)
     case water            // shaderWater (distortion)
     case circleWave       // shaderCircleWave (generative/additive)
+    case metaballs        // randomMetaball2D (generative, composites over layers below)
     case grain            // shaderGrain (filter)
     case vignette         // shaderVignette (filter)
 
@@ -30,6 +31,7 @@ enum OscillaEngine: String, Codable, CaseIterable {
         case .domainWarp: 4
         case .water: 3
         case .circleWave: 5
+        case .metaballs: 5
         case .grain: 2
         case .vignette: 2
         }
@@ -50,6 +52,10 @@ struct OscillaLayer: Codable {
 ///    swing at depth 1, centered on the param's current post-knob value.
 ///  - GATE targets: only .to is read — the envelope lerps the param from its
 ///    CURRENT value toward .to (.from is unused for gates).
+///
+/// Data rule: no two knobs in one patch may target the same (layer, param) —
+/// knob targets SET in knob order, so a shared destination is order-dependent
+/// (last knob wins). LFOs and gates may share targets freely.
 struct ParamTarget: Codable {
     var layer: Int
     var param: Int
@@ -58,6 +64,7 @@ struct ParamTarget: Codable {
 }
 
 enum KnobCurve: String, Codable { case linear, expo }   // expo: t*t, applied to the knob value before the from→to lerp (nowhere else)
+extension KnobCurve: CaseIterable {}
 
 struct OscillaKnobSpec: Codable {
     var label: String          // "Weather", "Depth" — the patch's language
@@ -67,6 +74,7 @@ struct OscillaKnobSpec: Codable {
 }
 
 enum LFOShape: String, Codable { case sine, triangle }
+extension LFOShape: CaseIterable {}
 
 struct OscillaLFO: Codable {
     var shape: LFOShape

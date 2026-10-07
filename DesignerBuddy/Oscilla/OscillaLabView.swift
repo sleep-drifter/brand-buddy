@@ -20,6 +20,7 @@ struct OscillaLabView: View {
     @State private var perf = OscillaPerformance(patch: OscillaFactory.drift)
     private let startDate = Date()        // Float-precision rule
     @State private var tapPoint: CGPoint?
+    @State private var showBench = false
     @StateObject private var haptics = HapticStudioEngine()
 
     // MARK: - Body
@@ -34,6 +35,17 @@ struct OscillaLabView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Oscilla Lab")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showBench = true } label: { Image(systemName: "slider.horizontal.3") }
+            }
+        }
+        .sheet(isPresented: $showBench) {
+            OscillaBenchView(patch: $patch)
+                .presentationDetents([.fraction(0.45), .large])
+                .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.45)))
+                .presentationDragIndicator(.visible)
+        }
         .onAppear { haptics.start() }
         .onDisappear { haptics.stop() }
     }
@@ -90,10 +102,13 @@ struct OscillaLabView: View {
     // MARK: - Patch chips
 
     private var patchChips: some View {
-        HStack(spacing: 8) {
-            ForEach(OscillaFactory.all) { candidate in
-                patchChip(candidate)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(OscillaFactory.all) { candidate in
+                    patchChip(candidate)
+                }
             }
+            .padding(.horizontal, 2)
         }
     }
 
@@ -116,7 +131,6 @@ struct OscillaLabView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(.secondarySystemGroupedBackground), in: shape)
             .overlay {
                 shape.strokeBorder(isSelected ? tint.opacity(0.7) : Color.white.opacity(0.08))

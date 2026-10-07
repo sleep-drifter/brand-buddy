@@ -1,6 +1,6 @@
 // OscillaFactoryPatches.swift — Oscilla Lab v0
 //
-// The three factory patches: the instruments that ship with the synth.
+// The five factory patches: the instruments that ship with the synth.
 // Each patch authors a layer stack (engines with normalized 0–1 base params),
 // three macro knobs in the patch's own language, one LFO, one gate, and four
 // poses (stored in knob space, so morphs always stay inside the fences).
@@ -18,6 +18,7 @@
 //   domainWarp:  0 strength, 1 scale, 2 depth (octaves), 3 speed
 //   water:       0 speed, 1 strength, 2 frequency
 //   circleWave:  0 brightness, 1 speed, 2 strength, 3 density, 4 hue
+//   metaballs:   0 count, 1 size, 2 speed, 3 fusion, 4 hue
 //   grain:       0 intensity, 1 size
 //   vignette:    0 radius, 1 softness
 
@@ -274,7 +275,198 @@ enum OscillaFactory {
         renderScale: 1.0
     )
 
+    // MARK: - Supercell (chromaField + domainWarp + circleWave + grain + vignette)
+    //
+    // Steel-blue storm cell — the performer's patch, fences wide ON PURPOSE.
+    // A hard-edged desaturated chroma bed (softness LOW, warp HIGH: the
+    // anti-Drift) bent by a full-range domainWarp. Pressure (expo) drives
+    // warp strength through its full 0→120px travel and pushes the bed's warp
+    // with it; Shear slides warp scale and depth together — depth crosses the
+    // shipped 1↔2 octave cliff at knob 0.5, the deliberate "ugly in-between"
+    // that makes morph routing the mastery; Updraft quickens the bed and the
+    // warp. The 17s LFO breathes warp strength (shared with Pressure, so its
+    // knob grows a moon). "Strike" is silent lightning: the tap-aimed
+    // circleWave flares to full brightness and falls away in under a second.
+    static let supercell = OscillaPatch(
+        id: "supercell",
+        name: "Supercell",
+        subtitle: "the sky before it breaks",
+        tint: ColorSpec(r: 0.55, g: 0.62, b: 0.72),
+        layers: [
+            // chromaField: hard-edged desaturated storm bed — softness LOW,
+            // warp HIGH (the anti-Drift). speed + warp are knob-owned.
+            OscillaLayer(engine: .chromaField, base: [0.3, 0.15, 0.55, 0.3, 0.25, 0.7]),
+            // domainWarp: every entry is knob-owned — the dead data still
+            // documents the resting sound at knob defaults.
+            OscillaLayer(engine: .domainWarp, base: [0.64, 0.35, 0.35, 0.42]),
+            // circleWave: silent lightning — brightness 0 until "Strike" fires,
+            // tap-aimed.
+            OscillaLayer(engine: .circleWave, base: [0.0, 0.6, 0.3, 0.1, 0.58]),
+            // grain: coarser film than Drift's.
+            OscillaLayer(engine: .grain, base: [0.25, 0.4]),
+            // vignette: tight storm framing.
+            OscillaLayer(engine: .vignette, base: [0.35, 0.5]),
+        ],
+        knobs: [
+            OscillaKnobSpec(
+                label: "Pressure",
+                curve: .expo,
+                targets: [
+                    ParamTarget(layer: 1, param: 0, from: 0.0, to: 1.0),    // warp strength, full 0→120px
+                    ParamTarget(layer: 0, param: 5, from: 0.2, to: 1.0),    // bed warp follows
+                ],
+                defaultValue: 0.8
+            ),
+            OscillaKnobSpec(
+                label: "Shear",
+                curve: .linear,
+                targets: [
+                    ParamTarget(layer: 1, param: 1, from: 0.0, to: 1.0),    // warp scale
+                    ParamTarget(layer: 1, param: 2, from: 0.0, to: 1.0),    // warp depth — crosses the 1↔2 octave cliff at knob 0.5
+                ],
+                defaultValue: 0.35
+            ),
+            OscillaKnobSpec(
+                label: "Updraft",
+                curve: .linear,
+                targets: [
+                    ParamTarget(layer: 0, param: 0, from: 0.05, to: 0.9),   // bed speed
+                    ParamTarget(layer: 1, param: 3, from: 0.1, to: 0.9),    // warp speed
+                ],
+                defaultValue: 0.4
+            ),
+        ],
+        lfos: [
+            // Shares domainWarp strength (1, 0) with Pressure → orbital moon.
+            OscillaLFO(
+                shape: .sine,
+                period: 17,
+                depth: 0.5,
+                targets: [
+                    ParamTarget(layer: 1, param: 0, from: 0.0, to: 1.0),
+                ]
+            ),
+        ],
+        gates: [
+            // Gates read only .to; .from documents the resting base value.
+            OscillaGate(
+                label: "Strike",
+                attack: 0.01,
+                release: 0.9,
+                targets: [
+                    ParamTarget(layer: 2, param: 0, from: 0.0, to: 1.0),    // circleWave brightness
+                    ParamTarget(layer: 2, param: 2, from: 0.3, to: 0.8),    // circleWave strength
+                ],
+                hapticIntensity: 1.0
+            ),
+        ],
+        poses: [
+            // Knob space: [Pressure, Shear, Updraft]. Wall and Anvil straddle
+            // Shear = 0.5 with Pressure ≥ 0.75 on BOTH sides, so the morph
+            // visibly pops the octave cliff at any LFO phase (expo knob² ≥
+            // 0.56 keeps the worst-case trough ≥ ~37px of warp).
+            OscillaPose(name: "Wall", knobValues: [0.85, 0.3, 0.55]),      // towering, pre-cliff
+            OscillaPose(name: "Anvil", knobValues: [0.8, 0.75, 0.3]),      // spread flat, post-cliff
+            OscillaPose(name: "Downdraft", knobValues: [0.45, 0.2, 0.1]),  // collapsing, near-still
+            OscillaPose(name: "Green Sky", knobValues: [0.6, 0.55, 0.8]),  // eerie, racing updraft
+        ],
+        renderScale: 1.0
+    )
+
+    // MARK: - Swarm (chromaField + metaballs + grain + vignette)
+    //
+    // Firefly green: ten metaballs drifting over a near-black dim bed — the
+    // machine plays itself; you conduct. Ball count is FIXED in base data
+    // (the shader int-casts it; a modulated count pops). Cohesion fuses the
+    // swarm (fusion only); Scatter trades speed against size (faster =
+    // smaller); Glow warms the hue inside the green key and lifts the bed's
+    // saturation. The 13s LFO breathes fusion (shared with Cohesion, so its
+    // knob grows a moon). "Startle" un-fuses and shrinks the balls into small
+    // individuals, then lets the swarm slowly re-gather over the 1.8s
+    // release. Speed (p2) is NEVER gated or LFO'd — t = time*speed is
+    // unwrapped, so a speed step teleports every ball by elapsed·Δspeed, and
+    // the jump grows with session age. Knob-paced moves only.
+    static let swarm = OscillaPatch(
+        id: "swarm",
+        name: "Swarm",
+        subtitle: "a thousand small decisions",
+        tint: ColorSpec(r: 0.55, g: 0.9, b: 0.45),
+        layers: [
+            // chromaField: near-black dim bed. saturation is knob-owned.
+            OscillaLayer(engine: .chromaField, base: [0.05, 0.1, 0.4, 0.33, 0.7, 0.2]),
+            // metaballs: count FIXED ≈10 balls (p0 0.6 → 1 + 0.6·15 = 10).
+            // size/speed/fusion/hue are knob-owned — resting knob-default
+            // values, so the dead data still documents the resting sound.
+            OscillaLayer(engine: .metaballs, base: [0.6, 0.48, 0.4, 0.55, 0.35]),
+            // grain: faint film.
+            OscillaLayer(engine: .grain, base: [0.12, 0.3]),
+            // vignette: soft dark frame.
+            OscillaLayer(engine: .vignette, base: [0.4, 0.5]),
+        ],
+        knobs: [
+            OscillaKnobSpec(
+                label: "Cohesion",
+                curve: .linear,
+                targets: [
+                    ParamTarget(layer: 1, param: 3, from: 0.15, to: 0.95),  // fusion only
+                ],
+                defaultValue: 0.5
+            ),
+            OscillaKnobSpec(
+                label: "Scatter",
+                curve: .linear,
+                targets: [
+                    ParamTarget(layer: 1, param: 2, from: 0.1, to: 0.85),   // speed — KNOB-paced only (see MARK note)
+                    ParamTarget(layer: 1, param: 1, from: 0.6, to: 0.3),    // size inverse: faster = smaller
+                ],
+                defaultValue: 0.4
+            ),
+            OscillaKnobSpec(
+                label: "Glow",
+                curve: .linear,
+                targets: [
+                    ParamTarget(layer: 1, param: 4, from: 0.22, to: 0.48),  // hue within the green key
+                    ParamTarget(layer: 0, param: 3, from: 0.15, to: 0.5),   // bed saturation
+                ],
+                defaultValue: 0.5
+            ),
+        ],
+        lfos: [
+            // Shares metaballs fusion (1, 3) with Cohesion → orbital moon.
+            OscillaLFO(
+                shape: .sine,
+                period: 13,
+                depth: 0.3,
+                targets: [
+                    ParamTarget(layer: 1, param: 3, from: 0.15, to: 0.95),
+                ]
+            ),
+        ],
+        gates: [
+            // Gates read only .to; .from documents the resting base value.
+            // NEVER gate p2 (speed): the phase jump scales with session age.
+            OscillaGate(
+                label: "Startle",
+                attack: 0.02,
+                release: 1.8,
+                targets: [
+                    ParamTarget(layer: 1, param: 3, from: 0.55, to: 0.1),   // un-fuse
+                    ParamTarget(layer: 1, param: 1, from: 0.48, to: 0.2),   // shrink apart
+                ],
+                hapticIntensity: 1.0
+            ),
+        ],
+        poses: [
+            // Knob space: [Cohesion, Scatter, Glow].
+            OscillaPose(name: "Murmur", knobValues: [0.7, 0.45, 0.35]),    // one coordinated body
+            OscillaPose(name: "Lanterns", knobValues: [0.3, 0.1, 0.9]),    // slow, large, radiant
+            OscillaPose(name: "Mist", knobValues: [0.95, 0.25, 0.15]),     // fused into a dim haze
+            OscillaPose(name: "Frenzy", knobValues: [0.1, 0.9, 0.55]),     // shattered, quick, small
+        ],
+        renderScale: 1.0
+    )
+
     // MARK: - Catalog
 
-    static let all: [OscillaPatch] = [drift, tidepool, nightGarden]
+    static let all: [OscillaPatch] = [drift, tidepool, nightGarden, supercell, swarm]
 }
