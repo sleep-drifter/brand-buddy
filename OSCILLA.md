@@ -62,6 +62,11 @@ Hardware controller, when it exists: **Sway**.
 - **Logomark is a Lissajous curve** — oscilloscope art is the original
   visual synthesis, and it's literally "oscilla." Boot screen draws one.
   Integer frequency ratios = visible consonance (future patch: *Scope*).
+  Prototype lives in DesignerBuddy: the **Oscilla Logomark** playground
+  (`OscillaLogomarkView.swift`) — scope-beam draw-on, ratio steppers with
+  interval names, phase drift, glow, solid/beam trace, lockup preview.
+  Working candidate: **3:2 ("perfect fifth"), δ=π/2** — stable, legible at
+  icon sizes, and the consonance story in one figure.
 - **Modulation UI language is orbital**: an LFO on a knob renders as a tiny
   orbiting moon (radius = depth, speed = rate). Stolen from the
   Heliocentric/epicycles playground — an orrery, not a waveform icon.

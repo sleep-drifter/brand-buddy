@@ -34,6 +34,7 @@ func appDestination(for entry: AppEntry) -> some View {
     case "Chart 3D":               Chart3DView()
     case "Chart Accessibility":    ChartAccessibilityView()
     case "Chart Studio":           ChartStudioView()
+    case "Oscilla Logomark":       OscillaLogomarkView()
     case "Badges":                 BadgesView()
     case "Tags":                   TagsView()
     case "Lists & Tables":         ListsView()
