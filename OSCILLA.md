@@ -27,7 +27,7 @@ Hardware controller, when it exists: **Sway**.
 | Oscillator | Generative shader layer (paints its own content) |
 | Filter | Image-filter shader layer (transforms what's below) |
 | Patch | A *designed instrument*: fenced param ranges, curves, renamed controls, macros, palette, poses. **Not a preset.** Pure data (JSON), never code. |
-| Note | A **pose** — full-state snapshot on a pad; playing = traveling between poses; the morph is the interval |
+| Note | A **pose** — knob-space snapshot on a pad; playing = traveling between poses; the morph is the interval. (On a stateful patch like Inkwell, poses pose the WATER, never the painting.) |
 | Key / scale | The patch's **palette**; color harmony = consonance; palette shift = key change |
 | Gate / note-on | Pad press fires an envelope (bloom, flare, pulse); release decays. Velocity via pressure |
 | Mod matrix | `{source → destination, depth, curve}` slots; sources = knobs AND internal LFOs/envelopes. The core data structure |
@@ -79,8 +79,8 @@ Hardware controller, when it exists: **Sway**.
 | 2 | Tidepool | Chroma field + water + circle wave *(subst.)* | Gates = note-ons | Pad tap ("Drop") = droplet envelope |
 | 3 | Night Garden | Star Nest + Domain Warp + vignette | Poses & morphs | v0 ships 4 poses; Depth is expo zoom (octave easter egg) |
 | 4 | Nova | **Shine shader** (B&W burst) | Velocity/expression | Soft strike = shiver of light, hard = supernova + decay. Replaced "Coals" |
-| 5 | Inkwell | Stable fluid (Navier-Stokes), sumi-e mono | Gesture; restraint | Deliberately NOT mistake-proof — the practice instrument |
-| 6 | Analog Sunday | Photo in → Kuwahara + halftone + grain | Filter patches, personal content | Macro knob: *Decade* |
+| 5 | Inkwell | Stable fluid (Navier-Stokes), sumi-e mono — SHIPPED v0.2 | Gesture; restraint | NOT mistake-proof; Fade 0 = permanent ink; Rinse is the only eraser |
+| 6 | Analog Sunday | Photo in → Kuwahara + grade + halftone + grain — SHIPPED v0.2 | Filter patches, personal content | Macro knob: *Decade*; gate *Flash* |
 | 7 | Swarm | Metaball/flocking | The machine plays itself; you conduct | Knobs: Cohesion, Scatter; pad = startle |
 | 8 | Supercell | Domain warp + storm | Mastery; A/B morph crossfade | Fences wide on purpose; the performer's patch |
 
@@ -214,6 +214,34 @@ extract to a dedicated repo/app once the engine sings. What landed:
 - Deferred still: player Bench, Nova (needs Shine port), hardware input,
   patch sharing, patch JSON import (export-only today), render-scale
   thermal tuning, chrome-free capture.
+
+## v0.2 — SHIPPED (Oct 2026, PR #53)
+
+The factory grows to seven with the two architecture-extending patches:
+
+- **Inkwell** — the practice instrument. The stable-fluid solver rehosted
+  as Oscilla's first STATEFUL layer (`OscillaFluidView`, an MTKView clone
+  of the playground; three Metal kernels appended — fluidDrop, fluidClear,
+  fluidSumiFS — none of the shipped ones touched). Drag paints (paint
+  beats scroll); Drop splashes at the aimed point; Rinse — the only
+  eraser, a decision not a knob — clears the sim; Fade defaults to 0, so
+  what you put down stays. Poses pose the WATER, never the painting; the
+  15s capture is the only way to keep a painting. Modulation on a
+  stateful engine INTEGRATES (it does not revert with the LFO) — depths
+  fenced low.
+- **Analog Sunday** — the personal-content patch. Layers fold over a
+  chosen photo (PhotosPicker, thumbnail-downsampled) through Kuwahara →
+  Warm Vintage grade → halftone → grain → vignette. Decade is the macro;
+  Flash snaps the print *almost* to the present (the halftone shader has
+  no bypass — the screen tightens to its 3px floor and decays back).
+  renderScale is now LIVE for fold patches (Analog Sunday ships at 0.7;
+  tune per device from the Bench).
+- **THIRD_PARTY_LICENSES.md** at the repo root: the fluid chain is MIT
+  end-to-end (Jos Stam algorithm → TypeGPU © Software Mansion → my-toybox
+  © takehito), verified upstream; notices now ship in-repo as MIT
+  requires, covering all the my-toybox ports plus Inferno and Star Nest.
+- Licensing resolved: delete "my-toybox license unknown" from any future
+  planning — it is MIT (© 2025 takehito).
 
 ## Open questions
 
