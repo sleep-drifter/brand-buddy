@@ -12,6 +12,7 @@
 // arm() is only ever called from an explicit user tap — never onAppear.
 
 import SwiftUI
+import Combine     // ObservableObject / @Published
 import ReplayKit
 
 // RPScreenRecorderDelegate extends NSObjectProtocol → MUST subclass NSObject,
