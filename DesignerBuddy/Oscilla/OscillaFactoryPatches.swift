@@ -1,6 +1,6 @@
 // OscillaFactoryPatches.swift — Oscilla Lab v0
 //
-// The seven factory patches: the instruments that ship with the synth.
+// The eight factory patches: the instruments that ship with the synth.
 // Each patch authors a layer stack (engines with normalized 0–1 base params),
 // three macro knobs in the patch's own language, one LFO, one or two gates,
 // and four poses (stored in knob space, so morphs always stay inside the
@@ -19,6 +19,7 @@
 //   water:       0 speed, 1 strength, 2 frequency
 //   circleWave:  0 brightness, 1 speed, 2 strength, 3 density, 4 hue
 //   metaballs:   0 count, 1 size, 2 speed, 3 fusion, 4 hue
+//   shine:       0 tempo, 1 zoom, 2 gain, 3 phase
 //   inkFluid:    0 flow, 1 brush, 2 fade, 3 swirl
 //   kuwahara:    0 radius
 //   colorGrade:  0 look, 1 amount
@@ -688,9 +689,119 @@ enum OscillaFactory {
         needsPhoto: true
     )
 
+    // MARK: - Nova (shine + vignette)
+    //
+    // Silver-white supernova chamber — the VELOCITY teaching patch: Strike is
+    // the only gate in the factory that scales with strike height
+    // (velocityFloor 0.35 — a soft strike peaks at 0.35, a shiver of light; a
+    // hard strike peaks at 1.0, the full supernova flare, decaying home over
+    // 1.4s). Strike is a pure, DETERMINISTIC gain flare — L0 gain only,
+    // resting 0.241 → up to 1.0 (~2.3× exposure at full velocity); no phase
+    // target, because a fixed phase jump catches a singularity only
+    // probabilistically (rejected by the critique panel). Drift is the
+    // BOUNDED phase knob: full travel sweeps exactly one tan period (the
+    // renderer maps p3 → 0…2π seconds), so it crosses at most ONE pole at any
+    // session age — turning Drift drags the field through its supernova by
+    // hand, and a pose morph sweeping it crosses at most one (a feature: the
+    // interval made visible). Depth zooms into the burst; Glow (expo) lifts
+    // exposure while the vignette closes in. The 37s LFO breathes Depth at
+    // 0.1 (shared → moon) — a very slow breath; the patch is mostly stillness
+    // between strikes.
+    //
+    // NEVER knob/LFO/gate/pose-vary L0.p0 (tempo): it scrubs UNWRAPPED tan
+    // phase across the 1/tan singularities, so a tempo step jumps the field
+    // by elapsed·Δtempo and the resulting full-field singularity flashes
+    // scale with session age — the strobe (photosensitivity) hazard the
+    // critique panel caught. BASE DATA ONLY; p3 (phase) is the bounded,
+    // knob/gate/pose-safe hook. renderScale 0.7 — 360 shader-loop
+    // iterations/px (60 outer × 6 inner); matches the kuwahara/Analog Sunday
+    // precedent, Bench-tunable. Shine is ported from Koshimizu-Takehito's
+    // my-toybox (MIT © 2025 takehito), itself adapted from a shader by Yohei
+    // Nishitsuji — see THIRD_PARTY_LICENSES.md.
+    static let nova = OscillaPatch(
+        id: "nova",
+        name: "Nova",
+        subtitle: "strike the dark, watch it answer",
+        tint: ColorSpec(r: 0.92, g: 0.93, b: 0.97),
+        layers: [
+            // shine: tempo, zoom, gain, phase. tempo (p0) is BASE-ONLY — rate
+            // 0.3 → a natural full-field supernova ~every 21s. The rest are
+            // knob-owned, resolved at knob defaults: p1 Depth linear
+            // 0.1 + 0.8·0.5 = 0.5; p2 Glow EXPO 0.1 + 0.8·0.42² = 0.241;
+            // p3 = Drift default 0.15.
+            OscillaLayer(engine: .shine, base: [0.4, 0.5, 0.241, 0.15]),
+            // vignette: radius knob-owned (Glow, inverse — resolved
+            // 0.6 − 0.25·0.42² = 0.556); softness rests at base.
+            OscillaLayer(engine: .vignette, base: [0.556, 0.55]),
+        ],
+        knobs: [
+            OscillaKnobSpec(
+                label: "Drift",
+                curve: .linear,
+                targets: [
+                    ParamTarget(layer: 0, param: 3, from: 0.0, to: 1.0),    // phase — full travel = one tan period, at most ONE pole crossing
+                ],
+                defaultValue: 0.15
+            ),
+            OscillaKnobSpec(
+                label: "Depth",
+                curve: .linear,
+                targets: [
+                    ParamTarget(layer: 0, param: 1, from: 0.1, to: 0.9),    // zoom
+                ],
+                defaultValue: 0.5
+            ),
+            OscillaKnobSpec(
+                label: "Glow",
+                curve: .expo,
+                targets: [
+                    ParamTarget(layer: 0, param: 2, from: 0.1, to: 0.9),    // gain (exposure)
+                    ParamTarget(layer: 1, param: 0, from: 0.6, to: 0.35),   // vignette closes as glow rises
+                ],
+                defaultValue: 0.42
+            ),
+        ],
+        lfos: [
+            // Shares shine zoom (0, 1) with Depth → orbital moon. A very slow
+            // breath — the patch is mostly stillness between strikes.
+            OscillaLFO(
+                shape: .sine,
+                period: 37,
+                depth: 0.1,
+                targets: [
+                    ParamTarget(layer: 0, param: 1, from: 0.1, to: 0.9),
+                ]
+            ),
+        ],
+        gates: [
+            // Gates read only .to; .from documents the resting base value.
+            // Strike targets GAIN ONLY — never p3 (phase; a fixed jump is a
+            // lottery) and NEVER p0 (tempo; the strobe hazard).
+            OscillaGate(
+                label: "Strike",
+                attack: 0.01,
+                release: 1.4,
+                targets: [
+                    ParamTarget(layer: 0, param: 2, from: 0.241, to: 1.0),  // pure gain flare — ~2.3× exposure at full velocity
+                ],
+                hapticIntensity: 1.0,
+                velocityFloor: 0.35
+            ),
+        ],
+        poses: [
+            // Knob space: [Drift, Depth, Glow].
+            OscillaPose(name: "Ember", knobValues: [0.1, 0.3, 0.25]),      // early phase, shallow, dim
+            OscillaPose(name: "Lantern", knobValues: [0.35, 0.5, 0.42]),   // the resting sound, nudged along
+            OscillaPose(name: "Halo", knobValues: [0.8, 0.35, 0.6]),       // late phase, wide, bright rim
+            OscillaPose(name: "Nebula", knobValues: [0.5, 0.85, 0.75]),    // deep in the burst, radiant
+        ],
+        renderScale: 0.7
+    )
+
     // MARK: - Catalog
 
     static let all: [OscillaPatch] = [
         drift, tidepool, nightGarden, supercell, swarm, inkwell, analogSunday,
+        nova,
     ]
 }

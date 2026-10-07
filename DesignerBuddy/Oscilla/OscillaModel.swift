@@ -34,6 +34,12 @@ enum OscillaEngine: String, Codable, CaseIterable {
     case water            // shaderWater (distortion)
     case circleWave       // shaderCircleWave (generative/additive)
     case metaballs        // randomMetaball2D (generative, composites over layers below)
+    case shine            // shaderShine (generative grayscale burst, Nishitsuji via my-toybox).
+                          //   Params: 0 tempo, 1 zoom, 2 gain, 3 phase. p0 (tempo) scrubs
+                          //   unwrapped tan phase across 1/tan singularities (full-field
+                          //   flashes, session-age-scaled) — BASE DATA ONLY, never
+                          //   knob/LFO/gate/pose-varied (photosensitivity hazard). p3
+                          //   (phase) is the bounded, knob/gate/pose-safe hook.
     case inkFluid         // stable-fluid sim (STATEFUL base layer — MTKView, not a shader fold)
     case kuwahara         // shaderOilPaint (filter, layerEffect, samples 6px)
     case colorGrade       // shaderColorGrade (filter; param 0 = look selector, FIX in base)
@@ -51,6 +57,7 @@ enum OscillaEngine: String, Codable, CaseIterable {
         case .water: 3
         case .circleWave: 5
         case .metaballs: 5
+        case .shine: 4
         case .inkFluid: 4
         case .kuwahara: 1
         case .colorGrade: 2
@@ -118,6 +125,13 @@ struct OscillaGate: Codable {
     var release: Double        // seconds, exponential fall
     var targets: [ParamTarget] // envelope lerps param from its CURRENT value toward .to; .from unused
     var hapticIntensity: Float // 0 disables haptic
+    /// The envelope peak at a zero-velocity strike; 1.0 = velocity-insensitive
+    /// (every strike full strength). Nova's Strike ships 0.35.
+    /// MUST stay the LAST stored property (trailing default — every labeled
+    /// factory call site compiles unchanged).
+    /// NOTE: same Codable-key caveat as needsPhoto — synthesized Decodable
+    /// REQUIRES this key; Bench JSON is export-only today.
+    var velocityFloor: Float = 1.0
 }
 
 /// A pose is stored in KNOB space (values per knob, same order as knobs) —
@@ -156,8 +170,11 @@ struct OscillaPerformance {
     var knobs: [Float]                    // current knob values 0–1
     var morph: Morph?                     // active pose morph
     /// Per gate: last fire time + the envelope value AT that instant
-    /// (so retriggers are click-free). (.distantPast, 0) when never fired.
-    var gateFires: [(fired: Date, level: Float)]
+    /// (so retriggers are click-free) + the strike velocity 0…1 — where the
+    /// pad was struck (1 = bottom/hard, 0 = top/soft).
+    /// (.distantPast, 0, 1) when never fired; velocity defaults to 1 wherever
+    /// a fire is synthesized.
+    var gateFires: [(fired: Date, level: Float, velocity: Float)]
     var activePose: Int?                  // highlight only
 
     struct Morph {
@@ -170,7 +187,7 @@ struct OscillaPerformance {
     init(patch: OscillaPatch) {
         knobs = patch.knobs.map(\.defaultValue)
         morph = nil
-        gateFires = Array(repeating: (fired: Date.distantPast, level: 0),
+        gateFires = Array(repeating: (fired: Date.distantPast, level: 0, velocity: 1),
                           count: patch.gates.count)
         activePose = nil
     }
@@ -198,22 +215,34 @@ enum OscillaEval {
         return values
     }
 
-    /// Click-free retriggerable envelope. For t = now.timeIntervalSince(fired):
-    ///   t < attack:  lerp(level, 1, Float(t / attack))          // rises from the level at fire time
-    ///   else:        exp(-log(20) * Float((t - attack) / release))  // ≈0.05 at t = attack + release
-    /// Values below 0.005 are treated as 0. env(0) = level (continuity on
-    /// retrigger); both branches equal 1 at t = attack. Pure function of time.
-    /// A never-fired gate (fired == .distantPast) is explicitly 0.
-    static func gateEnvelope(_ gate: OscillaGate, fired: Date, level: Float, now: Date) -> Float {
+    /// Click-free retriggerable, velocity-scaled envelope. `velocity` is the
+    /// strike's force 0…1 — where the pad was struck (1 = bottom/hard,
+    /// 0 = top/soft). The peak is computed ONCE, shared by both branches, and
+    /// CLAMPED to the carried level so a soft strike over a hot envelope
+    /// re-arms the decay instead of popping (every shipped attack is
+    /// sub-frame — a descending "rise" would render as an instantaneous drop):
+    ///   raw  = velocityFloor + (1 - velocityFloor) * velocity
+    ///   peak = max(raw, level)
+    /// For t = now.timeIntervalSince(fired):
+    ///   t < attack:  level + (peak - level) * Float(t / attack)              // rises from the level at fire time
+    ///   else:        peak * exp(-log(20) * Float((t - attack) / release))    // ≈0.05·peak at t = attack + release
+    /// Values below 0.005 are treated as 0. Properties: env(0) = level
+    /// (continuity on retrigger); monotone non-descending rise; both branches
+    /// meet at peak at t = attack; at velocityFloor 1.0, peak = max(1, level)
+    /// = 1 — bitwise v0.2 behavior. Pure function of time. A never-fired gate
+    /// (fired == .distantPast) is explicitly 0.
+    static func gateEnvelope(_ gate: OscillaGate, fired: Date, level: Float, velocity: Float, now: Date) -> Float {
         if fired == .distantPast { return 0 }
         let t = now.timeIntervalSince(fired)
+        let raw = gate.velocityFloor + (1 - gate.velocityFloor) * velocity
+        let peak = max(raw, level)
         let value: Float
         if t < gate.attack {
             let riseProgress = Float(t / gate.attack)
-            value = level + (1 - level) * riseProgress
+            value = level + (peak - level) * riseProgress
         } else {
             let fallTime = Float((t - gate.attack) / gate.release)
-            value = exp(-log(Float(20)) * fallTime)
+            value = peak * exp(-log(Float(20)) * fallTime)
         }
         return value < 0.005 ? 0 : value
     }
@@ -238,7 +267,8 @@ enum OscillaEval {
     /// Order of application: knob targets set values (lerp from→to by curved
     /// knob), then LFO targets ADD depth * lfoValue * (to - from) / 2 centered
     /// on the current post-knob value, then gate targets lerp current→.to by
-    /// envelope (reading (fired, level) tuples from perf.gateFires). Clamped 0…1.
+    /// envelope (reading (fired, level, velocity) tuples from perf.gateFires,
+    /// passing velocity through to gateEnvelope). Clamped 0…1.
     /// Index-safe: any target whose (layer, param) is out of range is ignored.
     static func layerParams(
         patch: OscillaPatch,
@@ -276,7 +306,8 @@ enum OscillaEval {
         for (gateIndex, gate) in patch.gates.enumerated() {
             guard gateIndex < perf.gateFires.count else { continue }
             let fire = perf.gateFires[gateIndex]
-            let envelope = gateEnvelope(gate, fired: fire.fired, level: fire.level, now: now)
+            let envelope = gateEnvelope(gate, fired: fire.fired, level: fire.level,
+                                        velocity: fire.velocity, now: now)
             guard envelope > 0 else { continue }
             for target in gate.targets {
                 guard targetInRange(target, of: params) else { continue }
@@ -300,8 +331,8 @@ enum OscillaEval {
     /// time-invariant for LFOs (the moon's radius must not pulse):
     ///   clamp( Σ lfo.depth over LFOs sharing any (layer,param) with the
     ///          knob's targets
-    ///        + Σ gateEnvelope(gate, fired:, level:, now:) over gates sharing
-    ///          any (layer,param), 0, 1 )
+    ///        + Σ gateEnvelope(gate, fired:, level:, velocity:, now:) over
+    ///          gates sharing any (layer,param), 0, 1 )
     static func modulationAmount(onKnob knobIndex: Int, patch: OscillaPatch,
                                  perf: OscillaPerformance, elapsed: Double,
                                  now: Date) -> Float {
@@ -315,7 +346,8 @@ enum OscillaEval {
             guard gateIndex < perf.gateFires.count else { continue }
             guard sharesAnyTarget(gate.targets, knobTargets) else { continue }
             let fire = perf.gateFires[gateIndex]
-            total += gateEnvelope(gate, fired: fire.fired, level: fire.level, now: now)
+            total += gateEnvelope(gate, fired: fire.fired, level: fire.level,
+                                  velocity: fire.velocity, now: now)
         }
         return min(max(total, 0), 1)
     }

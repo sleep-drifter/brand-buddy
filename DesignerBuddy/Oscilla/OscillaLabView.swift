@@ -464,34 +464,42 @@ struct OscillaLabView: View {
 
     private func gateView(index i: Int, date: Date) -> some View {
         let gate = patch.gates[i]
-        let fire: (fired: Date, level: Float)
+        let fire: (fired: Date, level: Float, velocity: Float)
         if i < perf.gateFires.count {
             fire = perf.gateFires[i]
         } else {
-            fire = (fired: .distantPast, level: 0)
+            fire = (fired: .distantPast, level: 0, velocity: 1)
         }
         let envelope = OscillaEval.gateEnvelope(
-            gate, fired: fire.fired, level: fire.level, now: date)
+            gate, fired: fire.fired, level: fire.level,
+            velocity: fire.velocity, now: date)
         return OscillaGatePad(
             label: gate.label,
             tint: patch.tint.color,
-            onFire: { fireGate(i) },
+            onFire: { v in fireGate(i, velocity: v) },
             envelope: envelope
         )
     }
 
     /// Click-free retrigger: carry the envelope's current value into the new
-    /// fire so the rise starts from where the fall left off. Haptic only when
-    /// the gate asks for one.
-    private func fireGate(_ i: Int) {
+    /// fire so the rise starts from where the fall left off (the carried
+    /// level evaluates with the OLD fire's velocity). `velocity` is the new
+    /// strike's force 0…1 (1 = bottom/hard, 0 = top/soft). Haptic only when
+    /// the gate asks for one, scaled through the gate's velocityFloor the
+    /// same way the envelope peak is — legacy gates (floor 1.0) keep
+    /// full-strength haptics.
+    private func fireGate(_ i: Int, velocity: Float) {
         guard i < patch.gates.count, i < perf.gateFires.count else { return }
         let old = perf.gateFires[i]
         let carried = OscillaEval.gateEnvelope(
-            patch.gates[i], fired: old.fired, level: old.level, now: Date())
-        perf.gateFires[i] = (fired: Date(), level: carried)
-        if patch.gates[i].hapticIntensity > 0 {
+            patch.gates[i], fired: old.fired, level: old.level,
+            velocity: old.velocity, now: Date())
+        perf.gateFires[i] = (fired: Date(), level: carried, velocity: velocity)
+        let gate = patch.gates[i]
+        if gate.hapticIntensity > 0 {
             var e = HapticStudioEvent.defaultTransient(at: 0)
-            e.intensity = patch.gates[i].hapticIntensity
+            e.intensity = gate.hapticIntensity
+                * (gate.velocityFloor + (1 - gate.velocityFloor) * velocity)
             haptics.preview(event: e)
         }
     }
