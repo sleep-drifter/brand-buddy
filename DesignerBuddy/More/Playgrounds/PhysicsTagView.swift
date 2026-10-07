@@ -110,10 +110,13 @@ private struct ParamSync: ViewModifier {
     let colorScheme: ColorScheme
 
     func body(content: Content) -> some View {
-        content
+        // Split into two sub-chains: newer compilers time out type-checking
+        // the six onChange calls as one expression.
+        let motion = content
             .onChange(of: usesDeviceMotion) { _, v in scene.usesDeviceMotion = v }
             .onChange(of: gravity) { _, v in scene.gravityStrength = CGFloat(v) }
             .onChange(of: bounciness) { _, v in scene.bounciness = CGFloat(v) }
+        return motion
             .onChange(of: tagCount) { _, v in scene.tagCount = Int(v.rounded()) }
             .onChange(of: tagSize) { _, v in scene.sizeScale = CGFloat(v) }
             .onChange(of: colorScheme) { _, _ in scene.backgroundColor = .systemBackground }

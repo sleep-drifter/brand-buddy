@@ -80,7 +80,7 @@ struct KeyboardPatternsView: View {
                     .focused($focus, equals: .email)
                     .submitLabel(.next)
                     .keyboardType(.emailAddress)
-                    .textContentType(.email)
+                    .textContentType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .onSubmit { focus = .password }
