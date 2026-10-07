@@ -122,6 +122,19 @@ struct OscillaRenderer {
                 )
             ))
 
+        case .metaballs:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.randomMetaball2D(
+                    .float2(size),
+                    .float(time),
+                    .float(1 + p[0] * 15),        // p0 count  → 1–16 balls (FIX in base data; int-cast pops if modulated)
+                    .float(0.06 + p[1] * 0.28),   // p1 size
+                    .float(0.1 + p[2] * 1.4),     // p2 speed  (scrubs phase: t = time*speed UNWRAPPED — knob-paced moves only; NEVER gate or LFO this param, the jump scales with session age)
+                    .float(0.05 + p[3] * 0.5),    // p3 fusion (smooth-min smoothing)
+                    .float(p[4])                  // p4 hue    (fence near patch tint hue in data)
+                )
+            ))
+
         case .grain:
             return AnyView(view.colorEffect(
                 ShaderLibrary.shaderGrain(
