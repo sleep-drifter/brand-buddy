@@ -75,14 +75,20 @@ Hardware controller, when it exists: **Sway**.
 
 | # | Patch | Engine | Teaches | Notes |
 |---|---|---|---|---|
-| 1 | Drift | **Volumetric clouds** + gradient | Knobs are safe | First-launch patch; knobs: Weather, Warmth, Tide |
-| 2 | Tidepool | Seascape + caustics | Gates = note-ons | Pad tap = droplet envelope |
-| 3 | Night Garden | Star Nest + Domain Warp | Poses & morphs | 8 constellation poses; Depth is log zoom (octave easter egg) |
+| 1 | Drift | **Chroma field** + grain *(subst.)* | Knobs are safe | First-launch patch; knobs: Weather, Warmth, Tide |
+| 2 | Tidepool | Chroma field + water + circle wave *(subst.)* | Gates = note-ons | Pad tap ("Drop") = droplet envelope |
+| 3 | Night Garden | Star Nest + Domain Warp + vignette | Poses & morphs | v0 ships 4 poses; Depth is expo zoom (octave easter egg) |
 | 4 | Nova | **Shine shader** (B&W burst) | Velocity/expression | Soft strike = shiver of light, hard = supernova + decay. Replaced "Coals" |
 | 5 | Inkwell | Stable fluid (Navier-Stokes), sumi-e mono | Gesture; restraint | Deliberately NOT mistake-proof — the practice instrument |
 | 6 | Analog Sunday | Photo in → Kuwahara + halftone + grain | Filter patches, personal content | Macro knob: *Decade* |
 | 7 | Swarm | Metaball/flocking | The machine plays itself; you conduct | Knobs: Cohesion, Scatter; pad = startle |
 | 8 | Supercell | Domain warp + storm | Mastery; A/B morph crossfade | Fences wide on purpose; the performer's patch |
+
+**Engine substitutions (v0, on purpose — do not revert):** the Shadertoy
+Seascape and Protean Clouds ports are **CC BY-NC-SA (non-commercial)** and
+heavy raymarchers, so Drift ships on chromaGradientArt and Tidepool on
+chromaField + water + circleWave — all in-house/MIT and cheap. Revisit only
+with a relicense or replacement engines.
 
 **Bench (second wave):** Coals (fire/thermal, pressure = blowing on
 embers), Sunflower (phyllotaxis; ONE knob sweeping the golden angle
@@ -113,22 +119,36 @@ motorized faders that glide on patch load. MIDI-learn UX: tap on-screen
 control, wiggle knob, bound. Latency budget ~15–30ms BLE interval = feels
 attached. Spring-return fader or ribbon (SoftPot) as the "mod wheel."
 
-## v0: Oscilla Lab (decided — building inside DesignerBuddy)
+## v0: Oscilla Lab — SHIPPED (Oct 2026, PR #48)
 
-Prototype ships as a DesignerBuddy playground ("Oscilla Lab") to reuse the
-working CI + TestFlight loop; extract to a dedicated repo/app once the
-engine sings. v0 scope:
+Lives as the **Oscilla Lab** playground in DesignerBuddy
+(`DesignerBuddy/Oscilla/`, five files), reusing the CI + TestFlight loop;
+extract to a dedicated repo/app once the engine sings. What landed:
 
-- Patch model per the JSON sketch (fences, curves, renamed controls,
-  macros, palette, poses, mods, gates) — data only, Codable.
-- Engine runtime: parameter registry, LFO + attack/release envelopes,
-  mod matrix evaluated per frame, pose capture + timed morph.
-- Play-mode UI: full-bleed render, 3–5 named knobs with the orbital
-  modulation indicator, gate pads, pose row. No numbers, no menus.
-- Factory patches whose engines are already in-repo: Drift (clouds),
-  Tidepool (seascape), Night Garden (star nest + domain warp).
-- Deferred past v0: 15s video capture, Bench (patch editor) UI, Nova
-  (needs Shine port), hardware input, patch sharing.
+- **OscillaModel** — Codable patch model (layers, fenced knob targets with
+  linear/expo curves, LFOs, gates, poses in knob space) + `OscillaEval`,
+  the stateless per-frame resolver: knobs SET, LFOs ADD centered swings,
+  gates lerp toward their target by a click-free retriggerable envelope
+  (a re-fire carries the prior envelope level into its attack).
+- **OscillaRenderer** — layer-stack compositor mirroring the shipped
+  shader call sites argument-for-argument; switch dispatch + typed locals
+  (type-checker-safety house rule).
+- **OscillaControls** — ring knob with the orbital modulation moon
+  (radius = summed source depth, angle = LFO phase), latched gate pad
+  (one fire per press), tap/hold pose pads (combined gesture, no
+  double-fire). No numbers anywhere; knob drags beat scroll.
+- **OscillaFactoryPatches** — Drift, Tidepool, Night Garden, each 3 knobs /
+  1 gate / 1 LFO (always sharing a param with a knob so the moon shows) /
+  4 poses.
+- **OscillaLabView** — hero + chips + pose row + knobs + gates; pose tap
+  morphs (1.6s smoothstep), hold captures; grabbing a knob bakes the
+  morph; gate fires trigger HapticStudioEngine transients.
+- Process note: the spec survived an adversarial critique panel (15
+  upheld findings, 2 compile blockers caught before implementation) and
+  a staged implementation + cross-file audit; build green first try.
+- Deferred past v0 (unchanged): 15s video capture, Bench (patch editor)
+  UI, Nova (needs Shine port), hardware input, patch sharing, render-scale
+  thermal tuning (`renderScale` is stored but unused).
 
 ## Open questions
 
