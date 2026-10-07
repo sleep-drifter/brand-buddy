@@ -42,6 +42,13 @@ SOFTWARE.
 turn credits Jos Stam, "Stable Fluids," SIGGRAPH 1999 — an algorithm, not
 copyrightable expression — and TypeGPU below.)
 
+The Shine shader (`shaderShine` in `ShadersPlayground.metal`) is also ported
+from my-toybox, whose source credits an original shader shared by Yohei
+Nishitsuji (x.com/YoheiNishitsuji/status/1857332718692094395). my-toybox
+publishes its adaptation under the MIT terms above; explicit permission from
+the original author should be verified before any commercial distribution of
+this effect (tracked in OSCILLA.md's open questions).
+
 ## TypeGPU — MIT License
 
 The stable-fluid Metal implementation is inspired by TypeGPU's stable-fluid

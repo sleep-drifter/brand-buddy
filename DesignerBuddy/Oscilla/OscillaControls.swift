@@ -123,22 +123,25 @@ struct OscillaKnob: View {
 /// Gate pad: large rounded square; press fires immediately — exactly once per
 /// press, via a per-press latch. Visual glow/scale driven by the live
 /// envelope value fed back from OscillaEval.gateEnvelope.
+/// strike low = hard, high = soft — the pad is velocity-sensitive.
 struct OscillaGatePad: View {
     let label: String
     var tint: Color
-    var onFire: () -> Void
+    var onFire: (Float) -> Void        // velocity 0–1 (1 = bottom/hard, 0 = top/soft)
     var envelope: Float                // live 0–1 from eval, drives glow
 
     /// Per-press latch: true from first touch until the finger lifts.
     @State private var pressed = false
 
     private static let cornerRadius: CGFloat = 20
+    /// One constant for BOTH the frame and the velocity division — no drift.
+    private static let height: CGFloat = 84
 
     var body: some View {
         let env = Double(min(max(envelope, 0), 1))
         return padFace(env: env)
             .frame(maxWidth: .infinity)
-            .frame(height: 84)
+            .frame(height: Self.height)
             .scaleEffect(1 + 0.02 * CGFloat(env))
             .contentShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
             .gesture(latchGesture)
@@ -162,13 +165,16 @@ struct OscillaGatePad: View {
     }
 
     /// Fires exactly once per press: the latch sets on the first onChanged
-    /// and only clears when the finger lifts.
+    /// and only clears when the finger lifts. Velocity is the vertical
+    /// position of the first touch within the pad (the drag location is in
+    /// the pad's own coordinate space), bottom = hard = 1.
     private var latchGesture: some Gesture {
         DragGesture(minimumDistance: 0)
-            .onChanged { _ in
+            .onChanged { drag in
                 if !pressed {
                     pressed = true
-                    onFire()
+                    let v = min(max(Float(drag.location.y / Self.height), 0), 1)
+                    onFire(v)
                 }
             }
             .onEnded { _ in
@@ -282,10 +288,10 @@ private struct OscillaKnobPreviewHost: View {
     VStack(spacing: 24) {
         OscillaGatePad(label: "Bloom",
                        tint: Color(red: 1.0, green: 0.72, blue: 0.35),
-                       onFire: {}, envelope: 0)
+                       onFire: { _ in }, envelope: 0)
         OscillaGatePad(label: "Drop",
                        tint: Color(red: 0.35, green: 0.85, blue: 0.8),
-                       onFire: {}, envelope: 0.85)
+                       onFire: { _ in }, envelope: 0.85)
     }
     .padding(32)
     .frame(maxWidth: .infinity, maxHeight: .infinity)

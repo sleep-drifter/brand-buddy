@@ -205,6 +205,17 @@ struct OscillaRenderer {
                 )
             ))
 
+        case .shine:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderShine(
+                    .float2(size),
+                    .float(time * (0.1 + p[0] * 0.5)),  // p0 tempo — SCRUBS unwrapped tan phase ACROSS 1/tan SINGULARITIES (full-field flashes, session-age-scaled): never knob/LFO/gate/pose-vary it — BASE DATA ONLY. (A tempo knob needs per-frame phase accumulation — a v0.4 engine change, not data.)
+                    .float(0.4 + p[1] * 1.2),           // p1 zoom → 0.4–1.6 of the base framing
+                    .float(0.45 + p[2] * 1.3),          // p2 gain (exposure)
+                    .float(p[3] * 6.283185)             // p3 phase → one full tan period, BOUNDED — the gate-safe strike hook
+                )
+            ))
+
         case .inkFluid:
             return view   // unreachable via the fold (stateful branch returns early); pass through defensively
 
