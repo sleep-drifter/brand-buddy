@@ -11,7 +11,22 @@
 
 import SwiftUI
 
-/// Engines are the shaders v0 uses, by stable id. Raw values are serialized.
+/// Engines are the shaders Oscilla uses, by stable id. Raw values are serialized.
+///
+/// DATA RULES (stateful engines, v0.2):
+///  - A stateful engine must be layer 0 AND the ONLY layer of its patch
+///    (v0.2 — its look is baked in-fragment). Never fold shader effects over
+///    the stateful view.
+///  - A stateful patch's gates may ALL have empty `targets` (EVENT gates):
+///    the envelope still evaluates for pad glow/haptics via gateEnvelope, and
+///    the renderer consumes each WIRED fire as an edge trigger, bound
+///    POSITIONALLY per the factory ordering contract — Inkwell: gates[0] =
+///    Drop, splash at tapPoint; gates[1] = Rinse, clears the sim. An
+///    empty-target gate the renderer is not wired to still glows and fires
+///    haptics but drives nothing. Empty-target gates are a
+///    stateful-patch-only affordance.
+///  - LFO/gate semantics on a stateful engine INTEGRATE into the sim (they
+///    do not revert when the modulator does) — fence depths low.
 enum OscillaEngine: String, Codable, CaseIterable {
     case chromaField      // chromaGradientArt (generative)
     case starNest         // shaderStarNest (generative)
@@ -19,6 +34,10 @@ enum OscillaEngine: String, Codable, CaseIterable {
     case water            // shaderWater (distortion)
     case circleWave       // shaderCircleWave (generative/additive)
     case metaballs        // randomMetaball2D (generative, composites over layers below)
+    case inkFluid         // stable-fluid sim (STATEFUL base layer — MTKView, not a shader fold)
+    case kuwahara         // shaderOilPaint (filter, layerEffect, samples 6px)
+    case colorGrade       // shaderColorGrade (filter; param 0 = look selector, FIX in base)
+    case halftone         // shaderHalftone (filter)
     case grain            // shaderGrain (filter)
     case vignette         // shaderVignette (filter)
 
@@ -32,10 +51,20 @@ enum OscillaEngine: String, Codable, CaseIterable {
         case .water: 3
         case .circleWave: 5
         case .metaballs: 5
+        case .inkFluid: 4
+        case .kuwahara: 1
+        case .colorGrade: 2
+        case .halftone: 3
         case .grain: 2
         case .vignette: 2
         }
     }
+
+    /// True for engines that own live simulation state (an MTKView the
+    /// renderer returns directly instead of folding shader effects). See the
+    /// DATA RULES above for the patch-shape constraints a stateful engine
+    /// imposes.
+    var isStateful: Bool { self == .inkFluid }
 }
 
 struct OscillaLayer: Codable {
@@ -108,7 +137,11 @@ struct OscillaPatch: Codable, Identifiable {
     var lfos: [OscillaLFO]
     var gates: [OscillaGate]
     var poses: [OscillaPose]   // exactly 4 in v0
-    var renderScale: CGFloat   // stored but UNUSED in v0 (reserved for thermal tuning)
+    var renderScale: CGFloat   // hero render downscale (lab clamps 0.25–1); stateful patches ignore it
+    /// Folds layers over a user photo instead of Color.black when true.
+    /// NOTE: synthesized Decodable REQUIRES this key; Bench JSON is export-only
+    /// today — add decodeIfPresent init(from:) when patch IMPORT ever lands.
+    var needsPhoto: Bool = false
 }
 
 /// Codable color (SwiftUI.Color isn't Codable).

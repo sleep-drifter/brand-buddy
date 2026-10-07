@@ -2,29 +2,99 @@
 //
 // The synth's voice: shader composition. Takes a patch's layer stack plus the
 // resolved [layer][param] values from OscillaEval.layerParams and folds the
-// engines over Color.black, one SwiftUI shader effect per layer. Each engine
-// case maps its normalized 0–1 params to the physical shader arguments,
-// mirroring the shipped call sites in ShadersPlaygroundView.applyEffect and
-// FluidGradientView argument-for-argument. Pure function of
-// (patch, params, time, size, tapPoint) — no state, no views of its own.
+// engines over a seed — Color.black, or the user's photo when the patch sets
+// needsPhoto — one SwiftUI shader effect per layer. Each engine case maps its
+// normalized 0–1 params to the physical shader arguments, mirroring the
+// shipped call sites in ShadersPlaygroundView.applyEffect and
+// FluidGradientView argument-for-argument. A stateful patch (layer 0
+// engine.isStateful) skips the fold entirely: the renderer returns the live
+// fluid view directly and NEVER applies shader effects over it. Pure function
+// of its inputs — any live state belongs to the fluid view's coordinator,
+// never to this type.
 
 import SwiftUI
 import UIKit
 
+/// Everything the fluid engine needs from the lab, bundled so render() gains
+/// a single trailing defaulted parameter. `drop.fired` and `rinse` are
+/// consumed as EDGE triggers by the fluid view's coordinator; `.distantPast`
+/// is the "never fired" sentinel the coordinator ignores.
+struct OscillaFluidInput {
+    var brush: OscillaFluidBrush
+    var drop: OscillaFluidDrop
+    var rinse: Date
+}
+
 /// Composites a patch's layer stack. Pure function of (patch, params, time,
-/// size, tapPoint). Mirrors ShadersPlaygroundView.applyEffect exactly.
+/// size, tapPoint, baseImage, fluid). Mirrors ShadersPlaygroundView.applyEffect
+/// exactly for the fold engines.
 struct OscillaRenderer {
 
-    /// Folds layers over Color.black. `params` comes from OscillaEval.layerParams.
+    /// Folds layers over the seed: Color.black, or `baseImage` when
+    /// `patch.needsPhoto`. `params` comes from OscillaEval.layerParams.
     /// `size` is the laid-out point size (used for .float2(size) args). `tap`
     /// feeds circleWave/starNest center (defaults to center of size).
+    /// A stateful patch returns the fluid view early — no fold; `fluid` is the
+    /// lab's live input for it (nil renders the sim with an inert brush).
     static func render(patch: OscillaPatch, params: [[Float]],
-                       time: Float, size: CGSize, tap: CGPoint?) -> AnyView {
+                       time: Float, size: CGSize, tap: CGPoint?,
+                       baseImage: UIImage? = nil,
+                       fluid: OscillaFluidInput? = nil) -> AnyView {
+        // STATEFUL: a stateful engine is layer 0 and the ONLY layer (data
+        // rule), so the sim view replaces the fold entirely. NEVER fold
+        // shader effects over the representable — SwiftUI shader effects
+        // cannot rasterize UIKit content (runtime warning + placeholder).
+        if patch.layers.first?.engine.isStateful == true {
+            return statefulView(patch: patch, params: params, fluid: fluid)
+        }
+
+        // EMPTY PHOTO: no photo loaded yet → quiet black, no fold. Folding
+        // the filters over black renders a flickering gray halftone lattice
+        // that reads as damage, not an idle instrument; the lab's picker
+        // capsule overlays this.
+        if patch.needsPhoto && baseImage == nil {
+            return AnyView(Color.black)
+        }
+
         let center = tap ?? CGPoint(x: size.width / 2, y: size.height / 2)
-        return zip(patch.layers, params).reduce(AnyView(Color.black)) { acc, pair in
+        let seed: AnyView = seedView(patch: patch, baseImage: baseImage, size: size)
+        return zip(patch.layers, params).reduce(seed) { acc, pair in
             applyEngine(pair.0.engine, to: acc, p: pair.1, time: time,
                         size: size, center: center, tint: patch.tint.color)
         }
+    }
+
+    // MARK: - Stateful branch + seed
+
+    /// The stateful early return. `.id(patch.id)` is MANDATORY — it tears
+    /// down the ~5 MB Metal heap on patch switch. `fluid == nil` still
+    /// returns the live view with an inert brush (and `.distantPast` edge
+    /// sentinels the coordinator ignores) — never a shader-fold placeholder.
+    private static func statefulView(patch: OscillaPatch, params: [[Float]],
+                                     fluid: OscillaFluidInput?) -> AnyView {
+        let input = fluid ?? OscillaFluidInput(
+            brush: OscillaFluidBrush(location: .zero, last: nil, isDown: false),
+            drop: OscillaFluidDrop(fired: .distantPast, level: 0, point: nil),
+            rinse: .distantPast)
+        let view = OscillaFluidView(params: params.first ?? [],
+                                    brush: input.brush,
+                                    drop: input.drop,
+                                    rinse: input.rinse)
+        return AnyView(view.id(patch.id))
+    }
+
+    /// The fold's base view: the user photo filling `size` (house pattern:
+    /// resizable → scaledToFill → frame → clipped) when the patch wants one
+    /// and has one, else Color.black.
+    private static func seedView(patch: OscillaPatch, baseImage: UIImage?,
+                                 size: CGSize) -> AnyView {
+        guard patch.needsPhoto, let baseImage else { return AnyView(Color.black) }
+        return AnyView(
+            Image(uiImage: baseImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size.width, height: size.height)
+                .clipped())
     }
 
     // MARK: - Engine dispatch
@@ -134,6 +204,29 @@ struct OscillaRenderer {
                     .float(p[4])                  // p4 hue    (fence near patch tint hue in data)
                 )
             ))
+
+        case .inkFluid:
+            return view   // unreachable via the fold (stateful branch returns early); pass through defensively
+
+        case .kuwahara:
+            return AnyView(view.layerEffect(
+                ShaderLibrary.shaderOilPaint(
+                    .float(1 + p[0] * 5)      // radius 1–6; INT-CAST steps at .2/.4/.6/.8 — knob-paced ONLY, never LFO/gate
+                ),
+                maxSampleOffset: CGSize(width: 6, height: 6)))
+
+        case .colorGrade:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderColorGrade(
+                    .float(round(p[0] * 6)),  // look 0–6 (2 = Warm Vintage) — FIX in base, int-cast
+                    .float(p[1]))))           // amount, continuous
+
+        case .halftone:
+            return AnyView(view.colorEffect(
+                ShaderLibrary.shaderHalftone(
+                    .float(3 + p[0] * 21),    // cell 3–24px, continuous
+                    .float(p[1] * .pi),       // screen angle — rotates about ORIGIN; keep at base
+                    .float(p[2]))))           // ink 0 color → 1 mono
 
         case .grain:
             return AnyView(view.colorEffect(

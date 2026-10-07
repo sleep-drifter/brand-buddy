@@ -10,6 +10,7 @@
 // ScrollView lab archetype, dark canvas house style; elapsed time always
 // comes from a stored startDate so Float never sees reference-date magnitudes.
 
+import PhotosUI
 import SwiftUI
 
 struct OscillaLabView: View {
@@ -20,6 +21,13 @@ struct OscillaLabView: View {
     @State private var perf = OscillaPerformance(patch: OscillaFactory.drift)
     private let startDate = Date()        // Float-precision rule
     @State private var tapPoint: CGPoint?
+    /// The user's photo for needsPhoto patches. KEPT across patch switches —
+    /// only needsPhoto patches read it, everything else ignores it.
+    @State private var photo: UIImage?
+    @State private var photoItem: PhotosPickerItem?
+    /// The latest paint sample for the stateful (fluid) hero; reset on patch
+    /// switch so a stroke never leaks across instruments.
+    @State private var fluidBrush = OscillaFluidBrush(location: .zero, last: nil, isDown: false)
     @State private var showBench = false
     @StateObject private var haptics = HapticStudioEngine()
     @StateObject private var capture = OscillaCaptureController()
@@ -66,6 +74,21 @@ struct OscillaLabView: View {
             // Every background transition still passes through .background.
             if newPhase == .background { capture.disarm() }
         }
+        // Photo load (needsPhoto patches, house pattern): decode downsampled
+        // via byPreparingThumbnail — size is in PIXELS, aspect-preserving,
+        // and never materializes the full bitmap. (NOT UIGraphicsImageRenderer
+        // with its default format: that inherits the 3x screen scale and
+        // would upscale memory 9x.)
+        .onChange(of: photoItem) { _, newItem in
+            guard let newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self),
+                   let ui = UIImage(data: data) {
+                    photo = await ui.byPreparingThumbnail(
+                        ofSize: CGSize(width: 2048, height: 2048)) ?? ui
+                }
+            }
+        }
         .onAppear { haptics.start() }
         .onDisappear {
             haptics.stop()
@@ -92,7 +115,12 @@ struct OscillaLabView: View {
     // MARK: - Hero
 
     /// Full-width shader canvas, height 420, rounded 28 with a hairline
-    /// border (dark canvas house style). Tapping aims circleWave/starNest.
+    /// border (dark canvas house style). Tapping aims circleWave/starNest;
+    /// on a stateful patch the surface's own high-priority drag paints (and
+    /// a sub-8pt drag aims Drop instead — see paintGesture). needsPhoto
+    /// patches grow the photo picker overlays here: the capsule centered
+    /// over the quiet black, the swap button top-LEADING (capture controls
+    /// own top-trailing).
     private func hero(date: Date, elapsed: Double) -> some View {
         GeometryReader { geo in
             heroSurface(date: date, elapsed: elapsed, size: geo.size)
@@ -107,6 +135,16 @@ struct OscillaLabView: View {
         .overlay(alignment: .topTrailing) {
             captureControls(elapsed: elapsed)
         }
+        .overlay {
+            if patch.needsPhoto && photo == nil {
+                photoPickerCapsule
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            if patch.needsPhoto && photo != nil {
+                photoSwapButton
+            }
+        }
         .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .onTapGesture { location in
             tapPoint = location
@@ -114,16 +152,140 @@ struct OscillaLabView: View {
     }
 
     /// One resolved frame: eval the patch + performance at this instant and
-    /// hand the layer params to the renderer. v0 renders at the laid-out
-    /// size; patch.renderScale is reserved for thermal tuning.
+    /// hand the layer params to the renderer. A stateful (fluid) patch gets
+    /// the live surface plus the painting drag; a fold patch renders at
+    /// patch.renderScale (clamped 0.25–1) and is scaled back up to the hero.
     private func heroSurface(date: Date, elapsed: Double, size: CGSize) -> some View {
         let time = Float(elapsed)
         let params: [[Float]] = OscillaEval.layerParams(
             patch: patch, perf: perf, elapsed: elapsed, now: date)
-        let rendered: AnyView = OscillaRenderer.render(
-            patch: patch, params: params, time: time, size: size, tap: tapPoint)
-        return rendered
+        let surface: AnyView
+        if patch.layers.first?.engine.isStateful == true {
+            surface = statefulSurface(params: params, time: time, size: size)
+        } else {
+            surface = foldSurface(params: params, time: time, size: size)
+        }
+        return surface
             .frame(width: size.width, height: size.height)
+    }
+
+    /// The stateful (fluid) hero: rendered at the laid-out size (the MTKView
+    /// owns its own resolution — renderScale is ignored) with the painting
+    /// drag attached HERE, on the rendered surface INSIDE the GeometryReader,
+    /// before the hero's overlays are applied — a high-priority drag on the
+    /// outer hero would swallow the capture/share buttons' taps.
+    private func statefulSurface(params: [[Float]], time: Float, size: CGSize) -> AnyView {
+        let rendered: AnyView = OscillaRenderer.render(
+            patch: patch, params: params, time: time, size: size,
+            tap: tapPoint, baseImage: photo, fluid: fluidInput())
+        return AnyView(rendered.highPriorityGesture(paintGesture()))
+    }
+
+    /// The fold (non-stateful) hero. renderScale < 1 renders a smaller copy
+    /// and scales it back up: scaleEffect does not change layout bounds, so
+    /// the hero's clipShape/contentShape/gestures stay in full-size space —
+    /// only the size/tap passed into render() scale. Center anchor is
+    /// required: .topLeading under the default centered outer frame would
+    /// offset the raster and clip.
+    private func foldSurface(params: [[Float]], time: Float, size: CGSize) -> AnyView {
+        guard patch.renderScale < 1 else {
+            return OscillaRenderer.render(
+                patch: patch, params: params, time: time, size: size,
+                tap: tapPoint, baseImage: photo)
+        }
+        let scale = min(max(patch.renderScale, 0.25), 1)
+        let scaledSize = CGSize(width: size.width * scale, height: size.height * scale)
+        let scaledTap = tapPoint.map { CGPoint(x: $0.x * scale, y: $0.y * scale) }
+        let rendered: AnyView = OscillaRenderer.render(
+            patch: patch, params: params, time: time, size: scaledSize,
+            tap: scaledTap, baseImage: photo)
+        return AnyView(rendered
+            .frame(width: scaledSize.width, height: scaledSize.height)
+            .scaleEffect(1 / scale, anchor: .center)   // center anchor + default
+            .frame(width: size.width, height: size.height))  // centered frame maps exactly onto size
+    }
+
+    /// The fluid engine's live input. Drop/Rinse bind POSITIONALLY per the
+    /// factory ordering contract — Drop = gates[0]/gateFires[0], Rinse =
+    /// gates[1]/gateFires[1]. A stateful patch without both gates is a data
+    /// bug: degrade to a fully inert input (`.distantPast` edge sentinels the
+    /// coordinator ignores) instead of guessing at the wiring.
+    private func fluidInput() -> OscillaFluidInput {
+        guard patch.gates.count >= 2, perf.gateFires.count >= 2 else {
+            return OscillaFluidInput(
+                brush: OscillaFluidBrush(location: .zero, last: nil, isDown: false),
+                drop: OscillaFluidDrop(fired: .distantPast, level: 0, point: nil),
+                rinse: .distantPast)
+        }
+        let dropFire = perf.gateFires[0]
+        let drop = OscillaFluidDrop(
+            fired: dropFire.fired, level: dropFire.level, point: tapPoint)
+        return OscillaFluidInput(
+            brush: fluidBrush, drop: drop, rinse: perf.gateFires[1].fired)
+    }
+
+    /// The painting drag, stateful patches only: minimumDistance 0, HIGH
+    /// priority — paint beats the lab ScrollView's pan, the same mechanism
+    /// and rationale as OscillaKnob. The nil `last` on a stroke's first
+    /// sample prevents a corner-to-finger ink jet (the coordinator maps a
+    /// nil last to delta ZERO). onEnded drops the brush, and a gesture whose
+    /// total travel stayed under ~8pt also aims Drop via tapPoint — the
+    /// high-priority drag suppresses the hero's .onTapGesture on stateful
+    /// patches, so tap aiming folds into the drag (the first onChanged
+    /// sample remains the "dab"). Tradeoff, stated: on a stateful patch the
+    /// hero owns its touches — scrolling the lab must start outside the hero
+    /// (chips/knobs/gates below). NEVER .simultaneousGesture (vertical
+    /// strokes would scroll + shear the stroke on the permanent-ink patch)
+    /// and NEVER .scrollDisabled (the gate row falls below the fold on
+    /// standard-height phones).
+    private func paintGesture() -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                fluidBrush = OscillaFluidBrush(
+                    location: value.location,
+                    last: fluidBrush.isDown ? fluidBrush.location : nil,
+                    isDown: true)
+            }
+            .onEnded { value in
+                fluidBrush.isDown = false
+                let travel = hypot(value.translation.width, value.translation.height)
+                if travel < 8 {
+                    tapPoint = value.location
+                }
+            }
+    }
+
+    // MARK: - Photo (needsPhoto patches)
+
+    /// Centered glass invitation over the quiet black hero while a
+    /// needsPhoto patch has no photo yet (the renderer early-outs to
+    /// Color.black behind this).
+    private var photoPickerCapsule: some View {
+        PhotosPicker(selection: $photoItem, matching: .images) {
+            Label("choose a photo", systemImage: "photo.on.rectangle")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.85))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial, in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Small glass swap control once a photo is loaded — top-LEADING; the
+    /// capture controls own the top-trailing corner.
+    private var photoSwapButton: some View {
+        PhotosPicker(selection: $photoItem, matching: .images) {
+            Image(systemName: "photo.on.rectangle")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.85))
+                .frame(width: 32, height: 32)
+                .background(.ultraThinMaterial, in: Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .padding(10)
     }
 
     // MARK: - Patch chips
@@ -172,6 +334,9 @@ struct OscillaLabView: View {
             patch = newPatch
             perf = OscillaPerformance(patch: newPatch)
             tapPoint = nil
+            // A stroke never leaks across instruments; `photo` is KEPT —
+            // only needsPhoto patches read it.
+            fluidBrush = OscillaFluidBrush(location: .zero, last: nil, isDown: false)
         }
     }
 
