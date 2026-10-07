@@ -1,11 +1,11 @@
 // OscillaFactoryPatches.swift — Oscilla Lab v0
 //
-// The five factory patches: the instruments that ship with the synth.
+// The seven factory patches: the instruments that ship with the synth.
 // Each patch authors a layer stack (engines with normalized 0–1 base params),
-// three macro knobs in the patch's own language, one LFO, one gate, and four
-// poses (stored in knob space, so morphs always stay inside the fences).
-// Pure static data — no views, no shaders, no state. OscillaLabView reads
-// OscillaFactory.all; OscillaEval resolves these targets per frame.
+// three macro knobs in the patch's own language, one LFO, one or two gates,
+// and four poses (stored in knob space, so morphs always stay inside the
+// fences). Pure static data — no views, no shaders, no state. OscillaLabView
+// reads OscillaFactory.all; OscillaEval resolves these targets per frame.
 //
 // NOTE: Engines diverge from OSCILLA.md's factory table ON PURPOSE —
 // Seascape/Protean Clouds are CC BY-NC-SA (non-commercial) and heavy
@@ -19,6 +19,10 @@
 //   water:       0 speed, 1 strength, 2 frequency
 //   circleWave:  0 brightness, 1 speed, 2 strength, 3 density, 4 hue
 //   metaballs:   0 count, 1 size, 2 speed, 3 fusion, 4 hue
+//   inkFluid:    0 flow, 1 brush, 2 fade, 3 swirl
+//   kuwahara:    0 radius
+//   colorGrade:  0 look, 1 amount
+//   halftone:    0 cell, 1 angle, 2 ink
 //   grain:       0 intensity, 1 size
 //   vignette:    0 radius, 1 softness
 
@@ -466,7 +470,227 @@ enum OscillaFactory {
         renderScale: 1.0
     )
 
+    // MARK: - Inkwell (inkFluid — stateful)
+    //
+    // Deep ink-blue sumi-e well: the stable-fluid sim IS the instrument. The
+    // only stateful patch — .inkFluid must be layer 0 AND the only layer (its
+    // sumi-e look is baked in-fragment; the renderer returns the live MTKView
+    // and never folds shader effects over it). Flow paces the sim's time
+    // step; Brush sizes the finger's stamp; Fade (expo — the first half of
+    // the travel barely forgives) dissolves ink and defaults to 0: INK IS
+    // PERMANENT, the restraint teacher. Swirl (vorticity) rests gentle in
+    // base data at 0.15.
+    //
+    // GATE ORDER IS A RENDERER CONTRACT. Both gates are EVENT gates with
+    // empty targets — the envelope still glows the pad and fires haptics; the
+    // fluid renderer binds the fires POSITIONALLY: gates[0] = "Drop" (splash
+    // at tapPoint — a drop is a drop, constant full strength; the envelope
+    // level drives pad glow only), gates[1] = "Rinse" (fluidClear wipes the
+    // sim — the only eraser, deliberately a decision and not a knob).
+    // Reordering or inserting gates here silently rewires Drop/Rinse.
+    //
+    // The 29s LFO breathes Flow at depth 0.12 — LFO/gate effects INTEGRATE
+    // into a stateful sim (they do not revert when the modulator does), so
+    // depths stay low. Poses pose the WATER, never the painting — the 15s
+    // capture is the only way to keep a painting. (Supersedes OSCILLA.md's
+    // generic "full-state snapshot" pose language for stateful patches.)
+    static let inkwell = OscillaPatch(
+        id: "inkwell",
+        name: "Inkwell",
+        subtitle: "what you put down, stays",
+        tint: ColorSpec(r: 0.25, g: 0.3, b: 0.42),
+        layers: [
+            // inkFluid: flow, brush, fade, swirl. flow/brush/fade are
+            // knob-owned; fade 0 = the ink is permanent; swirl rests at base.
+            OscillaLayer(engine: .inkFluid, base: [0.62, 0.35, 0.0, 0.15]),
+        ],
+        knobs: [
+            OscillaKnobSpec(
+                label: "Flow",
+                curve: .linear,
+                targets: [
+                    ParamTarget(layer: 0, param: 0, from: 0.0, to: 1.0),    // sim time step
+                ],
+                defaultValue: 0.62
+            ),
+            OscillaKnobSpec(
+                label: "Brush",
+                curve: .linear,
+                targets: [
+                    ParamTarget(layer: 0, param: 1, from: 0.0, to: 1.0),    // stamp radius
+                ],
+                defaultValue: 0.35
+            ),
+            OscillaKnobSpec(
+                label: "Fade",
+                curve: .expo,          // the first half of the travel barely forgives
+                targets: [
+                    ParamTarget(layer: 0, param: 2, from: 0.0, to: 1.0),    // ink dissolve
+                ],
+                defaultValue: 0.0
+            ),
+        ],
+        lfos: [
+            // Shares inkFluid flow (0, 0) with Flow → orbital moon. Fenced at
+            // depth 0.12: effects INTEGRATE on a stateful sim — keep it low.
+            OscillaLFO(
+                shape: .sine,
+                period: 29,
+                depth: 0.12,
+                targets: [
+                    ParamTarget(layer: 0, param: 0, from: 0.0, to: 1.0),
+                ]
+            ),
+        ],
+        gates: [
+            // ORDER IS A RENDERER CONTRACT — the fluid renderer consumes
+            // these fires positionally (see the MARK comment above). EVENT
+            // gates: empty targets; the envelope drives pad glow/haptics only.
+            OscillaGate(
+                label: "Drop",
+                attack: 0.01,
+                release: 1.2,
+                targets: [],           // gates[0]: renderer splashes at tapPoint, full strength always
+                hapticIntensity: 0.7
+            ),
+            OscillaGate(
+                label: "Rinse",
+                attack: 0.01,
+                release: 0.6,
+                targets: [],           // gates[1]: renderer clears the sim (fluidClear) — the only eraser
+                hapticIntensity: 0.3
+            ),
+        ],
+        poses: [
+            // Knob space: [Flow, Brush, Fade]. Poses pose the WATER, never
+            // the painting — the 15s capture is the only way to keep one.
+            // Squall caps Flow at 0.85: taste + stability fence with the
+            // swirl base at 0.15.
+            OscillaPose(name: "Still Water", knobValues: [0.3, 0.25, 0.0]),  // slow, fine, permanent
+            OscillaPose(name: "Stream", knobValues: [0.62, 0.35, 0.1]),      // the resting sound, barely forgiving
+            OscillaPose(name: "Squall", knobValues: [0.85, 0.6, 0.05]),      // fast, broad, near-permanent
+            OscillaPose(name: "Dry Paper", knobValues: [0.15, 0.5, 0.65]),   // sketching — strokes sink away
+        ],
+        renderScale: 1.0
+    )
+
+    // MARK: - Analog Sunday (kuwahara + colorGrade + halftone + grain + vignette)
+    //
+    // Faded-amber photo lab — the first needsPhoto patch: the fold runs over
+    // the user's photo (no photo loaded → the renderer early-outs to quiet
+    // black and the lab's picker capsule invites). Decade is THE macro: one
+    // knob slides the print back through time — grade amount, halftone cell,
+    // halftone ink, and grain intensity travel together. Paint drives the
+    // kuwahara radius (1→5): the INT-CAST steps are the discrete-brush feel
+    // AND the perf fence at hero size — never widen the range past 0.8.
+    // Paper ages the stock: grain size up while the vignette closes in.
+    // renderScale 0.7 — the first live user of the field: kuwahara is up to
+    // 144 layer samples/px at the Paint cap on a 420pt hero; tune per device
+    // via the Bench slider.
+    //
+    // NEVER modulate (LFO/gate) kuwahara radius (L0.p0) or colorGrade look
+    // (L1.p0) — both are int-cast in the renderer and pop. The halftone angle
+    // (L2.p1) rotates about the ORIGIN — keep it fixed at base, never sweep.
+    // "Flash" snaps the print ALMOST all the way back to the present: the
+    // cell tightens to the renderer's 3px floor (the shipped shader has no
+    // bypass, so a fine screen always remains; the dot screen crawls and
+    // re-tessellates through the 0.8s release — filmic, intended; grain
+    // freezing momentarily stops the LFO flicker — intended), then decays
+    // back into its decade. Decade and Flash sharing (1,1)/(2,0)/(2,2)/(3,0)
+    // is legal — gates lerp current → .to, and those params are continuous.
+    static let analogSunday = OscillaPatch(
+        id: "analogSunday",
+        name: "Analog Sunday",
+        subtitle: "every photo is already a memory",
+        tint: ColorSpec(r: 0.85, g: 0.66, b: 0.44),
+        layers: [
+            // kuwahara: radius is knob-owned (Paint default resolved:
+            // 0.0 + 0.8·0.4 = 0.32).
+            OscillaLayer(engine: .kuwahara, base: [0.32]),
+            // colorGrade: look FIXED at 0.34 → round(0.34·6) = 2 Warm Vintage
+            // (0.34, not 0.333 — keeps the float arithmetic safely above
+            // 1.5·⅙); amount is knob-owned (Decade default resolved).
+            OscillaLayer(engine: .colorGrade, base: [0.34, 0.46]),
+            // halftone: cell + ink are knob-owned (Decade default resolved);
+            // angle 0.25 FIXED — rotates about the ORIGIN, never sweep.
+            OscillaLayer(engine: .halftone, base: [0.336, 0.25, 0.3825]),
+            // grain: intensity knob-owned (Decade), size knob-owned (Paper).
+            OscillaLayer(engine: .grain, base: [0.3475, 0.45]),
+            // vignette: radius knob-owned (Paper); softness rests at base.
+            OscillaLayer(engine: .vignette, base: [0.425, 0.5]),
+        ],
+        knobs: [
+            OscillaKnobSpec(
+                label: "Decade",
+                curve: .linear,
+                targets: [
+                    ParamTarget(layer: 1, param: 1, from: 0.1, to: 0.9),    // grade amount
+                    ParamTarget(layer: 2, param: 0, from: 0.12, to: 0.6),   // halftone cell 5.5→15.6px
+                    ParamTarget(layer: 2, param: 2, from: 0.0, to: 0.85),   // ink → newsprint
+                    ParamTarget(layer: 3, param: 0, from: 0.1, to: 0.65),   // grain intensity
+                ],
+                defaultValue: 0.45
+            ),
+            OscillaKnobSpec(
+                label: "Paint",
+                curve: .linear,
+                targets: [
+                    ParamTarget(layer: 0, param: 0, from: 0.0, to: 0.8),    // kuwahara radius 1→5 — int steps + perf fence; never past 0.8
+                ],
+                defaultValue: 0.4
+            ),
+            OscillaKnobSpec(
+                label: "Paper",
+                curve: .linear,
+                targets: [
+                    ParamTarget(layer: 3, param: 1, from: 0.2, to: 0.7),    // grain size
+                    ParamTarget(layer: 4, param: 0, from: 0.55, to: 0.3),   // vignette closes as the paper ages
+                ],
+                defaultValue: 0.5
+            ),
+        ],
+        lfos: [
+            // Shares grain intensity (3, 0) with Decade → the moon rides the
+            // macro. Grain self-animates, so this flickers exposure, not motion.
+            OscillaLFO(
+                shape: .sine,
+                period: 19,
+                depth: 0.15,
+                targets: [
+                    ParamTarget(layer: 3, param: 0, from: 0.1, to: 0.65),
+                ]
+            ),
+        ],
+        gates: [
+            // Gates read only .to; .from documents the resting base value.
+            OscillaGate(
+                label: "Flash",
+                attack: 0.02,
+                release: 0.8,
+                targets: [
+                    ParamTarget(layer: 1, param: 1, from: 0.46, to: 0.05),   // grade almost off
+                    ParamTarget(layer: 2, param: 2, from: 0.3825, to: 0.0),  // ink back to color
+                    ParamTarget(layer: 2, param: 0, from: 0.336, to: 0.0),   // cell to the 3px floor — no shader bypass, a fine screen remains
+                    ParamTarget(layer: 3, param: 0, from: 0.3475, to: 0.05), // grain nearly freezes
+                    ParamTarget(layer: 4, param: 0, from: 0.425, to: 0.9),   // vignette opens wide
+                ],
+                hapticIntensity: 0.6
+            ),
+        ],
+        poses: [
+            // Knob space: [Decade, Paint, Paper].
+            OscillaPose(name: "Seventies", knobValues: [0.65, 0.5, 0.55]),   // warm drugstore print
+            OscillaPose(name: "Fifties", knobValues: [0.85, 0.3, 0.7]),      // newsprint on heavy stock
+            OscillaPose(name: "Yesterday", knobValues: [0.3, 0.45, 0.35]),   // barely aged
+            OscillaPose(name: "Today", knobValues: [0.05, 0.35, 0.2]),       // keeps a faint ~5.5px screen — every photo is already a memory
+        ],
+        renderScale: 0.7,
+        needsPhoto: true
+    )
+
     // MARK: - Catalog
 
-    static let all: [OscillaPatch] = [drift, tidepool, nightGarden, supercell, swarm]
+    static let all: [OscillaPatch] = [
+        drift, tidepool, nightGarden, supercell, swarm, inkwell, analogSunday,
+    ]
 }

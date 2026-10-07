@@ -549,3 +549,103 @@ fragment half4 fluidImageFS(
     half4 color = half4(bgTex.sample(samp, bgUV));
     return half4(color.rgb, 1.0h);
 }
+
+// ============================================================================
+// Oscilla v0.2 additions — APPEND-ONLY (everything above is the shipped
+// playground solver and stays untouched). fluidDrop / fluidClear / fluidSumiFS
+// are dispatched by OscillaFluidView's coordinator. Same MIT provenance as the
+// kernels above — see THIRD_PARTY_LICENSES.md at the repo root.
+// ============================================================================
+
+// ============================================================================
+// Compute: Drop – radial note-on splash. Reuses BrushParams: pos = splash
+// center (grid coords), radius, forceScale = splash strength, inkAmount;
+// delta is unused (the force is radial, not directional).
+//
+// INVARIANT (shared with fluidBrush): writes EVERY texel of forceDst/inkDst
+// unconditionally — the far Gaussian tail is ~0 in rgba16Float, and the
+// full-texture overwrite doubles as the clear of the injection textures.
+// Never add a radius guard that skips writes without an else-write-zero.
+// ============================================================================
+
+kernel void fluidDrop(
+    texture2d<float, access::write> forceDst [[texture(0)]],
+    texture2d<float, access::write> inkDst   [[texture(1)]],
+    constant BrushParams&           brush    [[buffer(0)]],
+    uint2                           gid      [[thread_position_in_grid]]
+) {
+    float dx = float(gid.x) - float(brush.pos.x);
+    float dy = float(gid.y) - float(brush.pos.y);
+    float distSq = dx * dx + dy * dy;
+    float radiusSq = brush.radius * brush.radius;
+
+    float w = exp(-distSq / radiusSq);
+
+    // Radial outward push. The center cell has no direction (normalize of a
+    // zero-length vector is NaN), so it receives ink but zero force.
+    float2 forceVec = float2(0.0);
+    if (distSq > 0.0) {
+        forceVec = brush.forceScale * w * normalize(float2(dx, dy));
+    }
+    float ink = brush.inkAmount * w;
+
+    forceDst.write(float4(forceVec, 0.0, 1.0), gid);
+    inkDst.write(float4(ink, 0.0, 0.0, 1.0), gid);
+}
+
+// ============================================================================
+// Compute: Clear – zero one sim-state texture. The only way to clear .private
+// heap textures (no CPU replaceRegion; blit fills cover buffers, not
+// textures; recreating a heap texture leaves UNDEFINED contents). The
+// coordinator dispatches it over all six sim-state textures (vel ×2, ink ×2,
+// pressure ×2) once at init and on each Rinse edge — pressure included, or
+// the warm-started Jacobi field re-injects ghost velocity via fluidProject
+// for several frames after the page goes blank.
+// ============================================================================
+
+kernel void fluidClear(
+    texture2d<float, access::write> dst [[texture(0)]],
+    uint2                           gid [[thread_position_in_grid]]
+) {
+    dst.write(float4(0.0, 0.0, 0.0, 1.0), gid);
+}
+
+// ============================================================================
+// Fragment: Sumi-e ink visualization — Oscilla's Inkwell look. A variant of
+// fluidInkFS with the same vertex stage and bindings (ink texture(0),
+// sampler(0)) so it slots into the shipped render pass. Paper, carbon, grain,
+// and vignette are FIXED constants, not params — the sumi-e look is the
+// patch's identity; the knobs control the water.
+// ============================================================================
+
+// Hash copied from ShadersPlayground.metal's shaderGrain construction, kept
+// LOCAL to this file. Seeded from uv ONLY — no time term, so the paper grain
+// is static and never shimmers.
+static inline float sumiHash(float2 p) {
+    return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
+}
+
+fragment float4 fluidSumiFS(
+    FluidVSOut                      in   [[stage_in]],
+    texture2d<half, access::sample> tex  [[texture(0)]],
+    sampler                         samp [[sampler(0)]]
+) {
+    const float3 paper  = float3(0.96, 0.94, 0.90);
+    const float3 carbon = float3(0.07, 0.07, 0.08);
+
+    float density = float(tex.sample(samp, in.uv).x);
+    float3 col = mix(paper, carbon, saturate(density));
+
+    // Static paper grain — same (noise - 0.5) * intensity shape as shaderGrain.
+    const float grainIntensity = 0.035;
+    col += (sumiHash(in.uv) - 0.5) * grainIntensity;
+
+    // Edge vignette, smoothstep like shaderVignette.
+    const float radius = 1.0;
+    const float softness = 0.8;
+    float dist = length((in.uv - 0.5) * 2.0);
+    float vig = smoothstep(radius + softness, radius - softness, dist);
+    col = saturate(col) * vig;
+
+    return float4(col, 1.0);
+}
