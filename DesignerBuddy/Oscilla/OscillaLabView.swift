@@ -22,6 +22,11 @@ struct OscillaLabView: View {
     @State private var tapPoint: CGPoint?
     @State private var showBench = false
     @StateObject private var haptics = HapticStudioEngine()
+    @StateObject private var capture = OscillaCaptureController()
+    @Environment(\.scenePhase) private var scenePhase
+    /// The last exported clip URL, stashed so the share sheet's onDismiss can
+    /// delete the file even after .sheet(item:) has already nilled exportedClip.
+    @State private var lastClipURL: URL?
 
     // MARK: - Body
 
@@ -46,8 +51,26 @@ struct OscillaLabView: View {
                 .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.45)))
                 .presentationDragIndicator(.visible)
         }
+        .sheet(item: $capture.exportedClip, onDismiss: cleanUpSharedClip) { clip in
+            ActivityViewController(activityItems: [clip.url], applicationActivities: nil)
+                .ignoresSafeArea()
+        }
+        .onChange(of: capture.exportedClip?.url) { _, newURL in
+            if let newURL { lastClipURL = newURL }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // Only on real backgrounding: .inactive also fires for system
+            // alerts OVER the scene — including ReplayKit's own consent alert
+            // on the first arm and the photo-add alert from "Save Video" —
+            // and disarming there would kill the very capture being set up.
+            // Every background transition still passes through .background.
+            if newPhase == .background { capture.disarm() }
+        }
         .onAppear { haptics.start() }
-        .onDisappear { haptics.stop() }
+        .onDisappear {
+            haptics.stop()
+            capture.disarm()
+        }
     }
 
     /// Everything time-driven lives inside the TimelineView closure so the
@@ -61,6 +84,7 @@ struct OscillaLabView: View {
             poseRow
             knobRow(date: date, elapsed: elapsed)
             gateRow(date: date)
+            captureCaption
             footer
         }
     }
@@ -79,6 +103,9 @@ struct OscillaLabView: View {
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .strokeBorder(.white.opacity(0.08))
+        }
+        .overlay(alignment: .topTrailing) {
+            captureControls(elapsed: elapsed)
         }
         .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .onTapGesture { location in
@@ -301,6 +328,90 @@ struct OscillaLabView: View {
             var e = HapticStudioEvent.defaultTransient(at: 0)
             e.intensity = patch.gates[i].hapticIntensity
             haptics.preview(event: e)
+        }
+    }
+
+    // MARK: - Capture
+
+    /// Capture controls in the hero's top-trailing corner — deliberately
+    /// small, the hero is the instrument. Hidden entirely (with the whole
+    /// feature) while ReplayKit reports unavailable: simulator, or another
+    /// recording already in flight.
+    @ViewBuilder
+    private func captureControls(elapsed: Double) -> some View {
+        switch capture.phase {
+        case .unavailable:
+            EmptyView()
+        case .idle:
+            captureGlassButton(systemName: "record.circle") { capture.arm() }
+                .padding(10)
+        case .buffering:
+            HStack(spacing: 8) {
+                bufferingDot(elapsed: elapsed)
+                captureGlassButton(systemName: "square.and.arrow.up") {
+                    // Close the Bench first: with backgroundInteraction the
+                    // save button is tappable at the small detent, and SwiftUI
+                    // can't present the share sheet over a sibling sheet.
+                    showBench = false
+                    capture.saveClip()
+                }
+            }
+            .padding(10)
+        case .arming, .exporting:
+            ProgressView()
+                .controlSize(.small)
+                .frame(width: 32, height: 32)
+                .background(.ultraThinMaterial, in: Circle())
+                .padding(10)
+        }
+    }
+
+    /// One small glass circle: ultra-thin material over the shader, plain
+    /// button style so no system chrome fights the canvas.
+    private func captureGlassButton(
+        systemName: String, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.85))
+                .frame(width: 32, height: 32)
+                .background(.ultraThinMaterial, in: Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// A subtle tint dot that breathes while the rolling buffer is live. The
+    /// pulse is computed from elapsed — everything here re-renders every
+    /// frame inside TimelineView anyway, so no repeatForever animation has
+    /// to fight the frame clock.
+    private func bufferingDot(elapsed: Double) -> some View {
+        Circle()
+            .fill(patch.tint.color)
+            .frame(width: 7, height: 7)
+            .opacity(0.45 + 0.3 * sin(elapsed * 2.4))
+    }
+
+    /// One line on the capture loop, next to the footer; hidden (with the
+    /// whole feature) when ReplayKit is unavailable.
+    @ViewBuilder
+    private var captureCaption: some View {
+        if capture.phase != .unavailable {
+            Text("tap ◉ to arm · play · share the last 15s")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 4)
+        }
+    }
+
+    /// Best-effort cleanup once the share sheet goes away. The URL comes from
+    /// the stash, not capture.exportedClip — .sheet(item:) nils the item as
+    /// part of dismissal, so reading it here would race.
+    private func cleanUpSharedClip() {
+        if let url = lastClipURL {
+            capture.deleteClip(url)
+            lastClipURL = nil
         }
     }
 

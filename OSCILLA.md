@@ -119,6 +119,46 @@ motorized faders that glide on patch load. MIDI-learn UX: tap on-screen
 control, wiggle knob, bound. Latency budget ~15–30ms BLE interval = feels
 attached. Spring-return fader or ribbon (SoftPot) as the "mod wheel."
 
+## Multiplayer (logged Oct 2026 — not building yet)
+
+Two phones, one instrument ("local multiplayer"). Two shapes, both wanted:
+
+- **Controller mode**: one phone renders, the other is a pure control
+  surface. This is architecturally IDENTICAL to the Sway hardware plan —
+  the second phone is a control manifest ("3 knobs, 2 pads") streaming
+  events over the same transport hardware will use. Build multiplayer
+  first and Sway inherits a proven protocol; the phone is the zero-solder
+  test harness.
+- **Mirror mode**: both phones render the same image, four hands on one
+  patch. Cheap by accident: OscillaEval is a pure function of
+  (patch, performance, time), so syncing = one tiny performance struct +
+  a clock-offset estimate (shared epoch; gate fire times rebased). No
+  frame streaming. Roles fall out naturally — one player on knobs
+  (weather), one on gates/poses (notes); the 15s capture becomes proof
+  of a duet; the handpan principle doubles (two strangers can't break it).
+
+Transport v1: MultipeerConnectivity (same-room, serverless). Design note
+for the mod matrix: sources eventually carry a player id. Deferred until
+after migration — needs local-network permission prompts the catalog app
+shouldn't carry.
+
+## Migration to a dedicated repo/app (criteria, decided Oct 2026)
+
+Oscilla will not scale inside DesignerBuddy. Rather than a date, migrate
+when the FIRST of these hits (Matt has delegated the call on the moment):
+
+1. The next feature needs app-level surface the catalog shouldn't carry:
+   local-network/multiplayer permissions, own icon + branding, own
+   StoreKit, App Intents. (Multiplayer is exactly this trigger.)
+2. The patch factory outgrows playground navigation / starts to feel like
+   an app inside an app.
+3. A playtester beyond Matt needs a build (sharing DesignerBuddy exposes
+   the whole catalog).
+
+Sequence: finish the in-repo patch wave (Inkwell, Analog Sunday, Nova
+once the Shine source project is found) + one on-device Bench-lite tuning
+round → migrate → multiplayer becomes the new app's first native feature.
+
 ## v0: Oscilla Lab — SHIPPED (Oct 2026, PR #48)
 
 Lives as the **Oscilla Lab** playground in DesignerBuddy
