@@ -186,9 +186,34 @@ extract to a dedicated repo/app once the engine sings. What landed:
 - Process note: the spec survived an adversarial critique panel (15
   upheld findings, 2 compile blockers caught before implementation) and
   a staged implementation + cross-file audit; build green first try.
-- Deferred past v0 (unchanged): 15s video capture, Bench (patch editor)
-  UI, Nova (needs Shine port), hardware input, patch sharing, render-scale
-  thermal tuning (`renderScale` is stored but unused).
+
+## v0.1 — SHIPPED (Oct 2026, PRs #50 + #51)
+
+- **metaballs engine** (`randomMetaball2D`, MIT-safe): autonomous bodies on
+  Lissajous paths — the logomark motif wandering inside a patch. Ball count
+  fixed in data (int-cast pops), speed knob-only (phase term is unwrapped:
+  gating it would teleport the swarm by session age — critique catch).
+- **Supercell** (steel-blue, the performer's patch): full-span fences,
+  domain warp's 1↔2-octave cliff at Shear's midpoint; Wall/Anvil author
+  Pressure ≥ 0.75 so the morph pops the cliff at any LFO phase. Strike =
+  tap-aimed circleWave lightning.
+- **Swarm** (firefly green, the machine plays itself): Cohesion fuses,
+  Scatter speeds/shrinks, Startle breaks the swarm into individuals that
+  re-gather over 1.8s.
+- **Bench-lite** (`OscillaBenchView`): dev tuning sheet over the live lab —
+  fences, curves, LFO/gate numbers, layer bases — behind a half-height
+  detent with the hero still playable; Copy JSON / ShareLink exports for
+  baking tuned values back into the factory. Player Bench stays deferred.
+- **The 15s capture loop** (`OscillaCaptureController` + lab wiring):
+  ReplayKit clip buffering — `exportClip` is system-capped at exactly 15s,
+  so the spec IS the API ceiling. Explicit-tap arm (consent alert),
+  `.arming` state so a disarm during the alert is never lost, disarm on
+  real backgrounding only, share-sheet export with temp-file cleanup.
+  Records the whole app screen; chrome-free canvas capture stays on the
+  roadmap for patch cover art.
+- Deferred still: player Bench, Nova (needs Shine port), hardware input,
+  patch sharing, patch JSON import (export-only today), render-scale
+  thermal tuning, chrome-free capture.
 
 ## Open questions
 
@@ -196,4 +221,3 @@ extract to a dedicated repo/app once the engine sings. What landed:
 - Trademark/legal check on "Oscilla"; reserve App Store name + domain.
 - Thermal/battery budget: render-scale and 30fps ambient mode targets.
 - Monetization shape (unsaid so far: likely paid app or patch packs — TBD).
-- 15s capture implementation (ReplayKit vs AVAssetWriter from the render).
