@@ -59,7 +59,12 @@ struct OscillaLabView: View {
             if let newURL { lastClipURL = newURL }
         }
         .onChange(of: scenePhase) { _, newPhase in
-            if newPhase != .active { capture.disarm() }
+            // Only on real backgrounding: .inactive also fires for system
+            // alerts OVER the scene — including ReplayKit's own consent alert
+            // on the first arm and the photo-add alert from "Save Video" —
+            // and disarming there would kill the very capture being set up.
+            // Every background transition still passes through .background.
+            if newPhase == .background { capture.disarm() }
         }
         .onAppear { haptics.start() }
         .onDisappear {
@@ -343,10 +348,16 @@ struct OscillaLabView: View {
         case .buffering:
             HStack(spacing: 8) {
                 bufferingDot(elapsed: elapsed)
-                captureGlassButton(systemName: "square.and.arrow.up") { capture.saveClip() }
+                captureGlassButton(systemName: "square.and.arrow.up") {
+                    // Close the Bench first: with backgroundInteraction the
+                    // save button is tappable at the small detent, and SwiftUI
+                    // can't present the share sheet over a sibling sheet.
+                    showBench = false
+                    capture.saveClip()
+                }
             }
             .padding(10)
-        case .exporting:
+        case .arming, .exporting:
             ProgressView()
                 .controlSize(.small)
                 .frame(width: 32, height: 32)

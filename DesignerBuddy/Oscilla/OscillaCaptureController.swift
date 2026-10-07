@@ -21,9 +21,11 @@ import ReplayKit
 final class OscillaCaptureController: NSObject, ObservableObject, RPScreenRecorderDelegate {
 
     /// Capture state machine. unavailable hides the feature entirely;
-    /// idle ⇄ buffering on arm/disarm; buffering → exporting → buffering
+    /// idle → arming → buffering on arm (arming covers the async start —
+    /// seconds long on first arm while the consent alert is up — so a disarm
+    /// in that window is never lost); buffering → exporting → buffering
     /// around a save (the rolling buffer keeps running underneath an export).
-    enum Phase { case unavailable, idle, buffering, exporting }
+    enum Phase { case unavailable, idle, arming, buffering, exporting }
 
     @Published var phase: Phase
     /// A finished export — drives the share sheet via `.sheet(item:)`.
@@ -49,26 +51,36 @@ final class OscillaCaptureController: NSObject, ObservableObject, RPScreenRecord
     /// spam, the button is simply there to try again.
     func arm() {
         guard phase == .idle else { return }
+        phase = .arming   // synchronous: blocks double-taps, makes disarm visible
         Task {
             do {
                 try await RPScreenRecorder.shared().startClipBuffering()
-                if phase == .idle { phase = .buffering }
+                if phase == .arming {
+                    phase = .buffering
+                } else {
+                    // Disarmed (or went unavailable) while the start — and
+                    // possibly the consent alert — was in flight: the user
+                    // said stop, so tear the fresh buffer straight back down.
+                    try? await RPScreenRecorder.shared().stopClipBuffering()
+                }
             } catch {
-                // Back in idle: phase was never set optimistically, so the
-                // failing path never left .idle. If it reads .buffering here,
-                // a concurrent arm genuinely succeeded (leave it); if
-                // .unavailable, the delegate flipped it (leave that too).
+                // Consent denied / recorder busy: back to idle unless a
+                // disarm or availability flip already moved the state.
+                if phase == .arming { phase = .idle }
             }
         }
     }
 
     /// Stop the rolling buffer. Called from the explicit stop tap, from
-    /// onDisappear, and when scenePhase leaves .active — disarming twice is
-    /// a cheap no-op. Also bails out of an in-flight export: the export
-    /// completion sees phase != .exporting and leaves .idle alone.
+    /// onDisappear, and when the scene is backgrounded — disarming twice is
+    /// a cheap no-op. Also bails out of an in-flight arm (its own task sees
+    /// phase != .arming and tears the buffer down) or export (the completion
+    /// sees phase != .exporting and leaves .idle alone).
     func disarm() {
-        guard phase == .buffering || phase == .exporting else { return }
+        guard phase == .arming || phase == .buffering || phase == .exporting else { return }
+        let wasArming = (phase == .arming)
         phase = .idle
+        guard !wasArming else { return }   // the arm task handles its own teardown
         Task {
             do {
                 try await RPScreenRecorder.shared().stopClipBuffering()
