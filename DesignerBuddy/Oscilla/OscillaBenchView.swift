@@ -103,7 +103,7 @@ struct OscillaBenchView: View {
         } header: {
             Text("Render")
         } footer: {
-            Text("stored but unused in v0")
+            Text("fold patches render the hero at this scale (clamped 0.25–1); stateful patches ignore it")
         }
     }
 
